@@ -225,6 +225,139 @@ def interpret_results(results):
     })
     interpretation['winner_count'][winner] += 1
 
+    # 10. エントロピー（情報量）
+    entropy1 = results['entropy']['img1']
+    entropy2 = results['entropy']['img2']
+
+    if abs(entropy1 - entropy2) < 0.1:
+        entropy_eval = "同等の情報量"
+        winner = 'draw'
+    elif entropy2 > entropy1:
+        entropy_eval = f"画像2の方が情報量が多い（より複雑）"
+        winner = 'img2'
+    else:
+        entropy_eval = f"画像1の方が情報量が多い（より複雑）"
+        winner = 'img1'
+
+    interpretation['items'].append({
+        'name': 'エントロピー',
+        'value': f"画像1: {entropy1:.3f} | 画像2: {entropy2:.3f}",
+        'explanation': '画像の情報量・複雑さ (高いほど複雑)',
+        'evaluation': entropy_eval,
+        'winner': winner
+    })
+    interpretation['winner_count'][winner] += 1
+
+    # 11. テクスチャ複雑度
+    texture1 = results['texture']['img1']['texture_complexity']
+    texture2 = results['texture']['img2']['texture_complexity']
+
+    if abs(texture1 - texture2) < 5:
+        texture_eval = "同等のテクスチャ複雑度"
+        winner = 'draw'
+    elif texture2 > texture1:
+        texture_eval = f"画像2の方がテクスチャが豊富"
+        winner = 'img2'
+    else:
+        texture_eval = f"画像1の方がテクスチャが豊富"
+        winner = 'img1'
+
+    interpretation['items'].append({
+        'name': 'テクスチャ複雑度',
+        'value': f"画像1: {texture1:.1f} | 画像2: {texture2:.1f}",
+        'explanation': 'テクスチャの複雑さ (高いほど詳細)',
+        'evaluation': texture_eval,
+        'winner': winner
+    })
+    interpretation['winner_count'][winner] += 1
+
+    # 12. 局所品質（パッチSSIM）
+    local_ssim_mean = results['local_quality']['mean_ssim']
+    local_ssim_std = results['local_quality']['std_ssim']
+
+    if local_ssim_mean >= 0.9:
+        local_eval = "局所的にも非常に類似（品質均一）"
+    elif local_ssim_mean >= 0.7:
+        local_eval = "局所的に良好な類似性"
+    elif local_ssim_mean >= 0.5:
+        local_eval = "局所的にやや差異あり"
+    else:
+        local_eval = "局所的に大きな差異あり"
+
+    interpretation['items'].append({
+        'name': '局所品質（均一性）',
+        'value': f"平均: {local_ssim_mean:.3f}, 標準偏差: {local_ssim_std:.3f}",
+        'explanation': 'パッチ単位での品質のばらつき (標準偏差が低いほど均一)',
+        'evaluation': local_eval,
+        'winner': 'draw'
+    })
+
+    # 13. ヒストグラム相関
+    hist_corr = results['histogram_correlation']
+
+    if hist_corr >= 0.95:
+        hist_eval = "ヒストグラムがほぼ一致"
+    elif hist_corr >= 0.80:
+        hist_eval = "ヒストグラムが類似"
+    elif hist_corr >= 0.50:
+        hist_eval = "ヒストグラムにやや差あり"
+    else:
+        hist_eval = "ヒストグラムが大きく異なる"
+
+    interpretation['items'].append({
+        'name': 'ヒストグラム相関',
+        'value': f"{hist_corr:.4f}",
+        'explanation': '輝度分布の類似度 (1.0=完全一致)',
+        'evaluation': hist_eval,
+        'winner': 'draw'
+    })
+
+    # 14. LAB色空間分析（明度）
+    if 'LAB' in results['color_distribution']['img1']:
+        lab1_L = results['color_distribution']['img1']['LAB']['L_mean']
+        lab2_L = results['color_distribution']['img2']['LAB']['L_mean']
+
+        if abs(lab1_L - lab2_L) < 5:
+            lab_eval = "明度がほぼ同等"
+            winner = 'draw'
+        elif lab2_L > lab1_L:
+            lab_eval = f"画像2の方が明るい (差: {lab2_L - lab1_L:.1f})"
+            winner = 'draw'
+        else:
+            lab_eval = f"画像1の方が明るい (差: {lab1_L - lab2_L:.1f})"
+            winner = 'draw'
+
+        interpretation['items'].append({
+            'name': 'LAB明度',
+            'value': f"画像1: {lab1_L:.1f} | 画像2: {lab2_L:.1f}",
+            'explanation': '知覚的な明るさ (高いほど明るい)',
+            'evaluation': lab_eval,
+            'winner': winner
+        })
+
+    # 15. 総合スコア比較
+    score1 = results['total_score']['img1']
+    score2 = results['total_score']['img2']
+
+    if abs(score1 - score2) < 5:
+        score_eval = "総合スコアがほぼ同等"
+        winner = 'draw'
+    elif score2 > score1:
+        score_eval = f"画像2の方が総合スコアが高い (差: {score2 - score1:.1f}点)"
+        winner = 'img2'
+    else:
+        score_eval = f"画像1の方が総合スコアが高い (差: {score1 - score2:.1f}点)"
+        winner = 'img1'
+
+    interpretation['items'].append({
+        'name': '総合スコア',
+        'value': f"画像1: {score1:.1f} | 画像2: {score2:.1f}",
+        'explanation': '5項目の総合評価 (100点満点)',
+        'evaluation': score_eval,
+        'winner': winner
+    })
+    interpretation['winner_count'][winner] += 1
+
     # 総合判定
     img1_wins = interpretation['winner_count']['img1']
     img2_wins = interpretation['winner_count']['img2']
