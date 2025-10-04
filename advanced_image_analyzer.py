@@ -2,6 +2,12 @@ import cv2
 import numpy as np
 from skimage.metrics import structural_similarity as ssim
 from skimage.metrics import peak_signal_noise_ratio as psnr
+try:
+    from skimage.metrics import structural_similarity as compare_ssim
+    from pytorch_msssim import ms_ssim as pytorch_ms_ssim
+    MS_SSIM_AVAILABLE = True
+except ImportError:
+    MS_SSIM_AVAILABLE = False
 import matplotlib
 matplotlib.use('Agg')  # GUI非表示のバックエンドを使用
 import matplotlib.pyplot as plt
@@ -12,9 +18,91 @@ from skimage import feature
 import json
 from datetime import datetime
 
+# LPIPS用インポート
+try:
+    import torch
+    import torch.nn.functional as F
+    import lpips
+    LPIPS_AVAILABLE = True
+
+    # GPU利用可否をチェック
+    if torch.cuda.is_available():
+        DEVICE = torch.device('cuda')
+        GPU_AVAILABLE = True
+        GPU_NAME = torch.cuda.get_device_name(0)
+    else:
+        DEVICE = torch.device('cpu')
+        GPU_AVAILABLE = False
+        GPU_NAME = None
+except ImportError:
+    LPIPS_AVAILABLE = False
+    GPU_AVAILABLE = False
+    DEVICE = None
+    GPU_NAME = None
+    torch = None
+
+# CPU/GPUモニタリング用
+try:
+    import psutil
+    import GPUtil
+    MONITORING_AVAILABLE = True
+except ImportError:
+    MONITORING_AVAILABLE = False
+
 # 日本語フォント設定
 plt.rcParams['font.family'] = ['MS Gothic', 'Yu Gothic', 'Meiryo', 'sans-serif']
 plt.rcParams['axes.unicode_minus'] = False  # マイナス記号の文字化け対策
+
+def get_system_usage():
+    """CPU/GPU使用率を取得"""
+    usage_info = {}
+
+    if MONITORING_AVAILABLE:
+        # CPU使用率
+        usage_info['cpu_percent'] = psutil.cpu_percent(interval=0.1)
+        usage_info['cpu_count'] = psutil.cpu_count()
+
+        # メモリ使用率
+        memory = psutil.virtual_memory()
+        usage_info['ram_percent'] = memory.percent
+        usage_info['ram_used_gb'] = memory.used / (1024**3)
+        usage_info['ram_total_gb'] = memory.total / (1024**3)
+
+        # GPU使用率
+        try:
+            gpus = GPUtil.getGPUs()
+            if gpus:
+                gpu = gpus[0]
+                usage_info['gpu_percent'] = gpu.load * 100
+                usage_info['gpu_memory_percent'] = gpu.memoryUtil * 100
+                usage_info['gpu_memory_used_mb'] = gpu.memoryUsed
+                usage_info['gpu_memory_total_mb'] = gpu.memoryTotal
+                usage_info['gpu_temp'] = gpu.temperature
+            else:
+                usage_info['gpu_percent'] = None
+        except:
+            usage_info['gpu_percent'] = None
+
+    return usage_info
+
+def print_usage_status(stage_name):
+    """処理段階ごとの使用率を表示"""
+    if not MONITORING_AVAILABLE:
+        return
+
+    usage = get_system_usage()
+
+    print(f"\n[{stage_name}] システム使用状況:")
+    print(f"  CPU: {usage.get('cpu_percent', 0):.1f}% ({usage.get('cpu_count', 0)}コア)")
+    print(f"  RAM: {usage.get('ram_percent', 0):.1f}% ({usage.get('ram_used_gb', 0):.1f}/{usage.get('ram_total_gb', 0):.1f} GB)")
+
+    if usage.get('gpu_percent') is not None:
+        print(f"  GPU: {usage.get('gpu_percent', 0):.1f}% 使用中")
+        print(f"  VRAM: {usage.get('gpu_memory_percent', 0):.1f}% ({usage.get('gpu_memory_used_mb', 0):.0f}/{usage.get('gpu_memory_total_mb', 0):.0f} MB)")
+        if usage.get('gpu_temp'):
+            print(f"  GPU温度: {usage.get('gpu_temp')}°C")
+    else:
+        print(f"  GPU: 未使用（CPU処理中）")
 
 def calculate_sharpness(image_gray):
     """シャープネス（鮮鋭度）計算 - ラプラシアン分散法"""
@@ -31,6 +119,332 @@ def calculate_entropy(image_gray):
     hist = hist.ravel() / hist.sum()
     hist = hist[hist > 0]
     return -np.sum(hist * np.log2(hist))
+
+def calculate_lpips(img1_rgb, img2_rgb):
+    """
+    LPIPS（知覚的類似度）計算
+
+    Returns:
+        float: LPIPS距離（0に近いほど知覚的に類似）
+    """
+    if not LPIPS_AVAILABLE:
+        return None, None
+
+    try:
+        # 警告を抑制
+        import warnings
+        warnings.filterwarnings('ignore', category=UserWarning, module='torchvision')
+
+        # LPIPSモデルをロード（AlexNetベース）
+        loss_fn = lpips.LPIPS(net='alex').to(DEVICE)
+
+        # 評価モードに設定（推論用）
+        loss_fn.eval()
+
+        # 画像をPyTorchテンソルに変換 [0-255] -> [-1, 1]
+        def to_tensor(img):
+            # RGB -> PyTorchの順序 (C, H, W)
+            img_tensor = torch.from_numpy(img).permute(2, 0, 1).float()
+            # [0, 255] -> [-1, 1]
+            img_tensor = (img_tensor / 127.5) - 1.0
+            # バッチ次元を追加してGPU/CPUに転送
+            return img_tensor.unsqueeze(0).to(DEVICE)
+
+        img1_tensor = to_tensor(img1_rgb)
+        img2_tensor = to_tensor(img2_rgb)
+
+        # GPU使用率取得（GPUの場合）
+        gpu_usage = None
+        if GPU_AVAILABLE:
+            torch.cuda.synchronize()
+            gpu_usage = torch.cuda.memory_allocated() / torch.cuda.max_memory_allocated() * 100
+
+        # LPIPS距離を計算
+        with torch.no_grad():
+            distance = loss_fn(img1_tensor, img2_tensor)
+
+        return float(distance.item()), gpu_usage
+
+    except Exception as e:
+        print(f"LPIPS計算エラー: {e}")
+        return None, None
+
+def calculate_ssim_gpu(img1_rgb, img2_rgb):
+    """
+    GPU対応SSIM計算（PyTorch使用）
+
+    Returns:
+        float: SSIM値（1.0に近いほど類似）
+    """
+    if not LPIPS_AVAILABLE or torch is None:
+        # PyTorchがない場合はCPU版にフォールバック
+        return ssim(img1_rgb, img2_rgb, channel_axis=2)
+
+    try:
+        # pytorch-msssimが利用可能ならそれを使用
+        if MS_SSIM_AVAILABLE:
+            from pytorch_msssim import ssim as pytorch_ssim
+
+            def to_tensor(img):
+                img_tensor = torch.from_numpy(img).permute(2, 0, 1).float()
+                img_tensor = img_tensor / 255.0
+                return img_tensor.unsqueeze(0).to(DEVICE)
+
+            img1_tensor = to_tensor(img1_rgb)
+            img2_tensor = to_tensor(img2_rgb)
+
+            with torch.no_grad():
+                ssim_val = pytorch_ssim(img1_tensor, img2_tensor, data_range=1.0)
+            return float(ssim_val.item())
+
+        # pytorch-msssimがない場合は独自GPU実装
+        else:
+            def to_tensor(img):
+                img_tensor = torch.from_numpy(img).permute(2, 0, 1).float()
+                img_tensor = img_tensor / 255.0
+                return img_tensor.unsqueeze(0).to(DEVICE)
+
+            img1_tensor = to_tensor(img1_rgb)
+            img2_tensor = to_tensor(img2_rgb)
+
+            # 簡易SSIM計算（GPU上で平均と分散を計算）
+            with torch.no_grad():
+                mu1 = F.avg_pool2d(img1_tensor, 11, 1, 5)
+                mu2 = F.avg_pool2d(img2_tensor, 11, 1, 5)
+
+                mu1_sq = mu1 ** 2
+                mu2_sq = mu2 ** 2
+                mu1_mu2 = mu1 * mu2
+
+                sigma1_sq = F.avg_pool2d(img1_tensor ** 2, 11, 1, 5) - mu1_sq
+                sigma2_sq = F.avg_pool2d(img2_tensor ** 2, 11, 1, 5) - mu2_sq
+                sigma12 = F.avg_pool2d(img1_tensor * img2_tensor, 11, 1, 5) - mu1_mu2
+
+                C1 = 0.01 ** 2
+                C2 = 0.03 ** 2
+
+                ssim_map = ((2 * mu1_mu2 + C1) * (2 * sigma12 + C2)) / \
+                          ((mu1_sq + mu2_sq + C1) * (sigma1_sq + sigma2_sq + C2))
+
+                ssim_val = torch.mean(ssim_map)
+
+            return float(ssim_val.item())
+
+    except Exception as e:
+        print(f"GPU SSIM計算エラー（CPU版にフォールバック）: {e}")
+        return ssim(img1_rgb, img2_rgb, channel_axis=2)
+
+def calculate_psnr_gpu(img1_rgb, img2_rgb):
+    """
+    GPU対応PSNR計算（PyTorch使用）
+
+    Returns:
+        float: PSNR値（高いほど類似）
+    """
+    if not LPIPS_AVAILABLE or torch is None:
+        # PyTorchがない場合はCPU版にフォールバック
+        return psnr(img1_rgb, img2_rgb)
+
+    try:
+        # 画像をPyTorchテンソルに変換
+        def to_tensor(img):
+            img_tensor = torch.from_numpy(img).permute(2, 0, 1).float()
+            img_tensor = img_tensor / 255.0
+            return img_tensor.unsqueeze(0).to(DEVICE)
+
+        img1_tensor = to_tensor(img1_rgb)
+        img2_tensor = to_tensor(img2_rgb)
+
+        # MSE計算
+        with torch.no_grad():
+            mse = F.mse_loss(img1_tensor, img2_tensor)
+
+            if mse == 0:
+                return float('inf')
+
+            # PSNR計算
+            psnr_val = 10 * torch.log10(1.0 / mse)
+
+        return float(psnr_val.item())
+
+    except Exception as e:
+        print(f"GPU PSNR計算エラー（CPU版にフォールバック）: {e}")
+        return psnr(img1_rgb, img2_rgb)
+
+def calculate_sharpness_gpu(img_gray):
+    """
+    GPU対応シャープネス計算（ラプラシアン分散）
+
+    Returns:
+        float: シャープネス値（高いほど鮮明）
+    """
+    if not LPIPS_AVAILABLE or torch is None:
+        # PyTorchがない場合はCPU版にフォールバック
+        laplacian = cv2.Laplacian(img_gray, cv2.CV_64F)
+        return laplacian.var()
+
+    try:
+        # 画像をPyTorchテンソルに変換
+        img_tensor = torch.from_numpy(img_gray).float().unsqueeze(0).unsqueeze(0).to(DEVICE) / 255.0
+
+        # ラプラシアンカーネル
+        laplacian_kernel = torch.tensor([[0, 1, 0],
+                                         [1, -4, 1],
+                                         [0, 1, 0]], dtype=torch.float32).unsqueeze(0).unsqueeze(0).to(DEVICE)
+
+        # 畳み込み
+        with torch.no_grad():
+            laplacian = F.conv2d(img_tensor, laplacian_kernel, padding=1)
+            variance = torch.var(laplacian)
+
+        return float(variance.item()) * 255 * 255  # スケール調整
+
+    except Exception as e:
+        print(f"GPU シャープネス計算エラー（CPU版にフォールバック）: {e}")
+        laplacian = cv2.Laplacian(img_gray, cv2.CV_64F)
+        return laplacian.var()
+
+def estimate_noise_gpu(img_gray):
+    """
+    GPU対応ノイズ推定（高周波成分のエネルギー）
+
+    Returns:
+        float: ノイズレベル推定値
+    """
+    if not LPIPS_AVAILABLE or torch is None:
+        # CPU版にフォールバック
+        H = cv2.dct(np.float32(img_gray) / 255.0)
+        noise_level = np.sum(np.abs(H[int(H.shape[0]*0.9):, int(H.shape[1]*0.9):]))
+        return noise_level
+
+    try:
+        # 画像をPyTorchテンソルに変換
+        img_tensor = torch.from_numpy(img_gray).float().unsqueeze(0).unsqueeze(0).to(DEVICE) / 255.0
+
+        # 高周波フィルタ（簡易版）
+        high_pass_kernel = torch.tensor([[-1, -1, -1],
+                                         [-1,  8, -1],
+                                         [-1, -1, -1]], dtype=torch.float32).unsqueeze(0).unsqueeze(0).to(DEVICE)
+
+        with torch.no_grad():
+            high_freq = F.conv2d(img_tensor, high_pass_kernel, padding=1)
+            noise_level = torch.mean(torch.abs(high_freq))
+
+        return float(noise_level.item()) * 100  # スケール調整
+
+    except Exception as e:
+        print(f"GPU ノイズ推定エラー（CPU版にフォールバック）: {e}")
+        H = cv2.dct(np.float32(img_gray) / 255.0)
+        noise_level = np.sum(np.abs(H[int(H.shape[0]*0.9):, int(H.shape[1]*0.9):]))
+        return noise_level
+
+def detect_edges_gpu(img_gray):
+    """
+    GPU対応エッジ検出（Sobelフィルタ）
+
+    Returns:
+        float: エッジ密度
+    """
+    if not LPIPS_AVAILABLE or torch is None:
+        # CPU版にフォールバック
+        edges = cv2.Canny(img_gray, 100, 200)
+        return np.sum(edges) / (edges.shape[0] * edges.shape[1] * 255) * 100
+
+    try:
+        # 画像をPyTorchテンソルに変換
+        img_tensor = torch.from_numpy(img_gray).float().unsqueeze(0).unsqueeze(0).to(DEVICE) / 255.0
+
+        # Sobelフィルタ
+        sobel_x = torch.tensor([[-1, 0, 1],
+                               [-2, 0, 2],
+                               [-1, 0, 1]], dtype=torch.float32).unsqueeze(0).unsqueeze(0).to(DEVICE)
+
+        sobel_y = torch.tensor([[-1, -2, -1],
+                               [ 0,  0,  0],
+                               [ 1,  2,  1]], dtype=torch.float32).unsqueeze(0).unsqueeze(0).to(DEVICE)
+
+        with torch.no_grad():
+            edge_x = F.conv2d(img_tensor, sobel_x, padding=1)
+            edge_y = F.conv2d(img_tensor, sobel_y, padding=1)
+            edges = torch.sqrt(edge_x**2 + edge_y**2)
+            edge_density = torch.sum(edges > 0.1) / edges.numel() * 100
+
+        return float(edge_density.item())
+
+    except Exception as e:
+        print(f"GPU エッジ検出エラー（CPU版にフォールバック）: {e}")
+        edges = cv2.Canny(img_gray, 100, 200)
+        return np.sum(edges) / (edges.shape[0] * edges.shape[1] * 255) * 100
+
+def calculate_color_difference_gpu(img1_rgb, img2_rgb):
+    """
+    GPU対応LAB色空間での色差計算
+
+    Returns:
+        float: 平均色差（ΔE）
+    """
+    if not LPIPS_AVAILABLE or torch is None:
+        # CPU版にフォールバック
+        img1_lab = cv2.cvtColor(img1_rgb, cv2.COLOR_RGB2LAB)
+        img2_lab = cv2.cvtColor(img2_rgb, cv2.COLOR_RGB2LAB)
+        delta_e = np.sqrt(np.sum((img1_lab.astype(float) - img2_lab.astype(float)) ** 2, axis=2))
+        return np.mean(delta_e)
+
+    try:
+        # 画像をPyTorchテンソルに変換
+        def to_tensor(img):
+            img_tensor = torch.from_numpy(img).permute(2, 0, 1).float()
+            return img_tensor.unsqueeze(0).to(DEVICE) / 255.0
+
+        img1_tensor = to_tensor(img1_rgb)
+        img2_tensor = to_tensor(img2_rgb)
+
+        # 簡易的な色差計算（RGB空間）
+        with torch.no_grad():
+            color_diff = torch.sqrt(torch.sum((img1_tensor - img2_tensor) ** 2, dim=1))
+            mean_diff = torch.mean(color_diff)
+
+        return float(mean_diff.item()) * 255  # スケール調整
+
+    except Exception as e:
+        print(f"GPU 色差計算エラー（CPU版にフォールバック）: {e}")
+        img1_lab = cv2.cvtColor(img1_rgb, cv2.COLOR_RGB2LAB)
+        img2_lab = cv2.cvtColor(img2_rgb, cv2.COLOR_RGB2LAB)
+        delta_e = np.sqrt(np.sum((img1_lab.astype(float) - img2_lab.astype(float)) ** 2, axis=2))
+        return np.mean(delta_e)
+
+def calculate_ms_ssim(img1_rgb, img2_rgb):
+    """
+    MS-SSIM（Multi-Scale SSIM）計算
+
+    Returns:
+        float: MS-SSIM値（1.0に近いほど類似）
+    """
+    if not MS_SSIM_AVAILABLE:
+        return None
+
+    try:
+        # 画像をPyTorchテンソルに変換 [0-255] -> [0, 1]
+        def to_tensor(img):
+            # RGB -> PyTorchの順序 (C, H, W)
+            img_tensor = torch.from_numpy(img).permute(2, 0, 1).float()
+            # [0, 255] -> [0, 1]
+            img_tensor = img_tensor / 255.0
+            # バッチ次元を追加してGPU/CPUに転送
+            return img_tensor.unsqueeze(0).to(DEVICE)
+
+        img1_tensor = to_tensor(img1_rgb)
+        img2_tensor = to_tensor(img2_rgb)
+
+        # MS-SSIM計算（data_range=1.0で正規化済み画像用）
+        with torch.no_grad():
+            ms_ssim_val = pytorch_ms_ssim(img1_tensor, img2_tensor, data_range=1.0)
+
+        return float(ms_ssim_val.item())
+
+    except Exception as e:
+        print(f"MS-SSIM計算エラー: {e}")
+        return None
 
 def analyze_local_quality(img1, img2, patch_size=64):
     """局所的な品質分析 - パッチ単位でSSIMを計算"""
@@ -258,11 +672,15 @@ def create_comparison_report(results, img1_name, img2_name, output_dir):
     ax1 = plt.subplot(2, 3, 1)
     breakdown = results['total_score']['breakdown']
 
-    categories = ['シャープネス', 'コントラスト', 'ノイズ対策', 'エッジ保持', '歪み抑制']
+    categories = ['シャープネス', 'コントラスト', 'エントロピー', 'ノイズ対策', 'エッジ保持', '歪み抑制', 'テクスチャ']
     img1_values = [breakdown['img1']['sharpness'], breakdown['img1']['contrast'],
-                   breakdown['img1']['noise'], breakdown['img1']['edge'], breakdown['img1']['artifact']]
+                   breakdown['img1']['entropy'], breakdown['img1']['noise'],
+                   breakdown['img1']['edge'], breakdown['img1']['artifact'],
+                   breakdown['img1']['texture']]
     img2_values = [breakdown['img2']['sharpness'], breakdown['img2']['contrast'],
-                   breakdown['img2']['noise'], breakdown['img2']['edge'], breakdown['img2']['artifact']]
+                   breakdown['img2']['entropy'], breakdown['img2']['noise'],
+                   breakdown['img2']['edge'], breakdown['img2']['artifact'],
+                   breakdown['img2']['texture']]
 
     x = np.arange(len(categories))
     width = 0.35
@@ -323,9 +741,9 @@ PSNR: {results['psnr']:.2f} dB
 
     # エッジ比較
     ax4 = plt.subplot(2, 3, 4)
-    edge_data = [results['edges']['img1_count'], results['edges']['img2_count']]
+    edge_data = [results['edges']['img1_density'], results['edges']['img2_density']]
     ax4.bar(['画像1', '画像2'], edge_data, color=['#3498db', '#9b59b6'])
-    ax4.set_ylabel('エッジピクセル数', fontsize=11, fontweight='bold')
+    ax4.set_ylabel('エッジ密度 (%)', fontsize=11, fontweight='bold')
     ax4.set_title('エッジ保持率', fontsize=13, fontweight='bold', pad=10)
     ax4.grid(axis='y', alpha=0.3)
 
@@ -468,33 +886,106 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results'):
     print(f"画像2ファイルサイズ: {size2:.2f} MB")
     print(f"サイズ差: {abs(size1 - size2):.2f} MB ({((size2/size1 - 1) * 100):+.1f}%)")
 
+    # GPU/CPU情報
+    print(f"\n計算デバイス情報:")
+    if LPIPS_AVAILABLE:
+        if GPU_AVAILABLE:
+            print(f"  GPU: {GPU_NAME}")
+            print(f"  CUDA利用可能: はい")
+            print(f"  VRAMサイズ: {torch.cuda.get_device_properties(0).total_memory / (1024**3):.1f} GB")
+        else:
+            print(f"  GPU: なし（CPU使用）")
+            print(f"  CUDA利用可能: いいえ")
+    else:
+        print(f"  PyTorch未インストール（GPU機能無効）")
+
     results['basic_info'] = {
         'img1_size': [int(img1.shape[1]), int(img1.shape[0])],
         'img2_size': [int(img2.shape[1]), int(img2.shape[0])],
         'img1_filesize_mb': round(size1, 2),
-        'img2_filesize_mb': round(size2, 2)
+        'img2_filesize_mb': round(size2, 2),
+        'gpu_available': GPU_AVAILABLE,
+        'gpu_name': GPU_NAME,
+        'device': str(DEVICE) if DEVICE else 'N/A'
     }
 
     # 2. 構造類似性（SSIM）
     print("\n【2. 構造類似性（SSIM）】")
     print("1.0 = 完全一致、0.0 = 全く違う")
-    ssim_score = ssim(img1_rgb, img2_rgb, channel_axis=2)
+    if GPU_AVAILABLE:
+        print(f"[GPU処理] デバイス: {DEVICE}")
+    print_usage_status("SSIM計算開始（GPU使用）" if GPU_AVAILABLE else "SSIM計算開始（CPU使用）")
+    ssim_score = calculate_ssim_gpu(img1_rgb, img2_rgb)
     print(f"SSIM: {ssim_score:.4f}")
 
     results['ssim'] = round(ssim_score, 4)
 
+    # 2.5. MS-SSIM（Multi-Scale SSIM）
+    print("\n【2.5. MS-SSIM（マルチスケールSSIM）】")
+    print("複数スケールでの構造類似性（1.0に近いほど類似）")
+    print_usage_status("MS-SSIM計算開始")
+    ms_ssim_score = calculate_ms_ssim(img1_rgb, img2_rgb)
+
+    if ms_ssim_score is not None:
+        print(f"MS-SSIM: {ms_ssim_score:.4f}")
+        if ms_ssim_score >= 0.99:
+            print("  評価: ほぼ完全に一致")
+        elif ms_ssim_score >= 0.95:
+            print("  評価: 非常に類似")
+        elif ms_ssim_score >= 0.90:
+            print("  評価: 類似")
+        elif ms_ssim_score >= 0.80:
+            print("  評価: やや類似")
+        else:
+            print("  評価: 異なる")
+        results['ms_ssim'] = round(ms_ssim_score, 4)
+    else:
+        print("  ※MS-SSIM計算をスキップしました（ライブラリ未インストール）")
+        results['ms_ssim'] = None
+
     # 3. PSNR
     print("\n【3. PSNR（ピーク信号対雑音比）】")
     print("数値が高いほど類似（30dB以上で視覚的にほぼ同一）")
-    psnr_score = psnr(img1_rgb, img2_rgb)
+    print_usage_status("PSNR計算開始（GPU使用）" if GPU_AVAILABLE else "PSNR計算開始（CPU使用）")
+    psnr_score = calculate_psnr_gpu(img1_rgb, img2_rgb)
     print(f"PSNR: {psnr_score:.2f} dB")
 
     results['psnr'] = round(psnr_score, 2)
 
+    # 3.5. LPIPS（知覚的類似度）
+    print("\n【3.5. LPIPS（知覚的類似度）】")
+    print("深層学習ベースの知覚的類似度（0に近いほど類似）")
+    print_usage_status("LPIPS計算開始")
+    lpips_score, gpu_usage = calculate_lpips(img1_rgb, img2_rgb)
+    print_usage_status("LPIPS計算完了")
+
+    if lpips_score is not None:
+        print(f"LPIPS: {lpips_score:.4f}")
+        if GPU_AVAILABLE and gpu_usage is not None:
+            print(f"  GPU使用: はい（メモリ使用率: {gpu_usage:.1f}%）")
+        elif GPU_AVAILABLE:
+            print(f"  GPU使用: はい")
+        else:
+            print(f"  GPU使用: いいえ（CPU処理）")
+
+        if lpips_score < 0.1:
+            print("  評価: 知覚的にほぼ同一")
+        elif lpips_score < 0.3:
+            print("  評価: 知覚的に類似")
+        elif lpips_score < 0.5:
+            print("  評価: やや異なる")
+        else:
+            print("  評価: 大きく異なる")
+        results['lpips'] = round(lpips_score, 4)
+    else:
+        print("  ※LPIPS計算をスキップしました（ライブラリ未インストール）")
+        results['lpips'] = None
+
     # 4. シャープネス（鮮鋭度）
     print("\n【4. シャープネス（鮮鋭度）】")
-    sharpness1 = calculate_sharpness(img1_gray)
-    sharpness2 = calculate_sharpness(img2_gray)
+    print_usage_status("シャープネス計算開始（GPU使用）" if GPU_AVAILABLE else "シャープネス計算開始（CPU使用）")
+    sharpness1 = calculate_sharpness_gpu(img1_gray)
+    sharpness2 = calculate_sharpness_gpu(img2_gray)
     print(f"画像1シャープネス: {sharpness1:.2f}")
     print(f"画像2シャープネス: {sharpness2:.2f}")
     print(f"差: {abs(sharpness1 - sharpness2):.2f} ({((sharpness2/sharpness1 - 1) * 100):+.1f}%)")
@@ -535,15 +1026,12 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results'):
 
     # 7. ノイズレベル
     print("\n【7. ノイズレベル分析】")
-    h, w = img1_gray.shape
-    roi1 = img1_gray[h//3:2*h//3, w//3:2*w//3]
-    roi2 = img2_gray[h//3:2*h//3, w//3:2*w//3]
-
-    noise1 = np.std(roi1)
-    noise2 = np.std(roi2)
-    print(f"画像1ノイズ標準偏差: {noise1:.2f}")
-    print(f"画像2ノイズ標準偏差: {noise2:.2f}")
-    print(f"差: {abs(noise1 - noise2):.2f} ({((noise2/noise1 - 1) * 100):+.1f}%)")
+    print_usage_status("ノイズ推定開始（GPU使用）" if GPU_AVAILABLE else "ノイズ推定開始（CPU使用）")
+    noise1 = estimate_noise_gpu(img1_gray)
+    noise2 = estimate_noise_gpu(img2_gray)
+    print(f"画像1ノイズレベル: {noise1:.2f}")
+    print(f"画像2ノイズレベル: {noise2:.2f}")
+    print(f"差: {abs(noise1 - noise2):.2f} ({((noise2/noise1 - 1) * 100 if noise1 != 0 else 0):+.1f}%)")
 
     results['noise'] = {
         'img1': round(noise1, 2),
@@ -569,20 +1057,18 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results'):
 
     # 9. エッジ保持率
     print("\n【9. エッジ保持率】")
-    edges1 = cv2.Canny(img1_gray, 100, 200)
-    edges2 = cv2.Canny(img2_gray, 100, 200)
+    print_usage_status("エッジ検出開始（GPU使用）" if GPU_AVAILABLE else "エッジ検出開始（CPU使用）")
+    edge_density1 = detect_edges_gpu(img1_gray)
+    edge_density2 = detect_edges_gpu(img2_gray)
 
-    edge_count1 = np.count_nonzero(edges1)
-    edge_count2 = np.count_nonzero(edges2)
-
-    print(f"画像1エッジピクセル数: {edge_count1:,}")
-    print(f"画像2エッジピクセル数: {edge_count2:,}")
-    print(f"差: {abs(edge_count1 - edge_count2):,} ({((edge_count2/edge_count1 - 1) * 100):+.1f}%)")
+    print(f"画像1エッジ密度: {edge_density1:.2f}%")
+    print(f"画像2エッジ密度: {edge_density2:.2f}%")
+    print(f"差: {abs(edge_density1 - edge_density2):.2f}% ({((edge_density2/edge_density1 - 1) * 100 if edge_density1 != 0 else 0):+.1f}%)")
 
     results['edges'] = {
-        'img1_count': edge_count1,
-        'img2_count': edge_count2,
-        'difference_pct': round((edge_count2/edge_count1 - 1) * 100, 1)
+        'img1_density': round(edge_density1, 2),
+        'img2_density': round(edge_density2, 2),
+        'difference_pct': round((edge_density2/edge_density1 - 1) * 100 if edge_density1 != 0 else 0, 1)
     }
 
     # 10. 色分布分析
@@ -615,14 +1101,8 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results'):
     print(f"    画像2: {color_stats2['LAB']['b_mean']:.1f} ± {color_stats2['LAB']['b_std']:.1f}")
 
     # Delta E (CIE2000) - 知覚的色差
-    lab1 = cv2.cvtColor(img1_rgb, cv2.COLOR_RGB2LAB)
-    lab2 = cv2.cvtColor(img2_rgb, cv2.COLOR_RGB2LAB)
-
-    # 簡易Delta E計算（ユークリッド距離）
-    delta_L = color_stats1['LAB']['L_mean'] - color_stats2['LAB']['L_mean']
-    delta_a = color_stats1['LAB']['a_mean'] - color_stats2['LAB']['a_mean']
-    delta_b = color_stats1['LAB']['b_mean'] - color_stats2['LAB']['b_mean']
-    delta_e = np.sqrt(delta_L**2 + delta_a**2 + delta_b**2)
+    print_usage_status("色差計算開始（GPU使用）" if GPU_AVAILABLE else "色差計算開始（CPU使用）")
+    delta_e = calculate_color_difference_gpu(img1_rgb, img2_rgb)
 
     print(f"\n  ΔE (色差): {delta_e:.2f}")
     print(f"    (ΔE < 1: 人間の目では区別不可, ΔE < 5: 許容範囲, ΔE > 10: 明確な違い)")
@@ -693,28 +1173,65 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results'):
 
     # 各指標を絶対値で評価（両画像を独立して採点）
 
-    # 画像1のスコア
-    sharp1_score = min(sharpness1 / 5, 100)  # 500が満点
-    contrast1_score = min(contrast1, 100)  # 100が満点
-    noise1_score = max(0, 100 - noise1)  # 0が満点
-    edge1_score = min(edge_count1 / 10000, 100)  # 1,000,000が満点
-    artifact1_total = block_noise1 + ringing1
-    artifact1_score = max(0, 100 - artifact1_total / 50)  # 低いほど良い
+    # 画像1のスコア（17項目）
+    # 1. SSIM（類似度として参考値）
+    ssim_score_val = ssim_score * 100
 
-    # 画像2のスコア
+    # 2. MS-SSIM
+    ms_ssim_score_val = (results.get('ms_ssim', 0) or 0) * 100
+
+    # 3. PSNR
+    psnr_score_val = min(psnr_score * 2, 100)
+
+    # 4. LPIPS（低いほど良い、反転）
+    lpips_score_val = max(0, 100 - (results.get('lpips', 0) or 0) * 1000) if results.get('lpips') else 50
+
+    # 5. シャープネス
+    sharp1_score = min(sharpness1 / 5, 100)
     sharp2_score = min(sharpness2 / 5, 100)
+
+    # 6. コントラスト
+    contrast1_score = min(contrast1, 100)
     contrast2_score = min(contrast2, 100)
-    noise2_score = max(0, 100 - noise2)
-    edge2_score = min(edge_count2 / 10000, 100)
+
+    # 7. エントロピー
+    entropy1_score = min(entropy1 / 8 * 100, 100)
+    entropy2_score = min(entropy2 / 8 * 100, 100)
+
+    # 8. ノイズ（低いほど良い）
+    noise1_score = max(0, 100 - noise1 / 2)
+    noise2_score = max(0, 100 - noise2 / 2)
+
+    # 9. アーティファクト（低いほど良い）
+    artifact1_total = block_noise1 + ringing1
     artifact2_total = block_noise2 + ringing2
+    artifact1_score = max(0, 100 - artifact1_total / 50)
     artifact2_score = max(0, 100 - artifact2_total / 50)
 
-    # SSIM/PSNRは類似度なので参考値
-    ssim_points = ssim_score * 100
-    psnr_points = min(psnr_score * 2, 100)
+    # 10. エッジ保持
+    edge1_score = min(edge_density1 * 2, 100)
+    edge2_score = min(edge_density2 * 2, 100)
 
-    total1 = (sharp1_score + contrast1_score + noise1_score + edge1_score + artifact1_score) / 5
-    total2 = (sharp2_score + contrast2_score + noise2_score + edge2_score + artifact2_score) / 5
+    # 11. 色差（低いほど良い）
+    color_diff_score = max(0, 100 - delta_e * 2)
+
+    # 12. テクスチャ
+    texture1_score = min(texture1['texture_complexity'] * 10, 100)
+    texture2_score = min(texture2['texture_complexity'] * 10, 100)
+
+    # 13. 局所品質
+    local_quality_score = results['local_quality']['mean_ssim'] * 100
+
+    # 14. ヒストグラム
+    histogram_score = hist_corr * 100
+
+    # 画像1の総合スコア（画像品質項目のみ）
+    total1 = (sharp1_score + contrast1_score + entropy1_score + noise1_score +
+              artifact1_score + edge1_score + texture1_score) / 7
+
+    # 画像2の総合スコア（画像品質項目のみ）
+    total2 = (sharp2_score + contrast2_score + entropy2_score + noise2_score +
+              artifact2_score + edge2_score + texture2_score) / 7
 
     print(f"画像1総合スコア: {total1:.1f} / 100")
     print(f"画像2総合スコア: {total2:.1f} / 100")
@@ -726,16 +1243,24 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results'):
     else:
         print(f"→ 同等の品質")
 
-    print("\n【スコア内訳】")
-    print(f"           画像1   画像2")
-    print(f"シャープネス: {sharp1_score:5.1f}   {sharp2_score:5.1f}")
-    print(f"コントラスト: {contrast1_score:5.1f}   {contrast2_score:5.1f}")
-    print(f"ノイズ対策:   {noise1_score:5.1f}   {noise2_score:5.1f}")
-    print(f"エッジ保持:   {edge1_score:5.1f}   {edge2_score:5.1f}")
-    print(f"歪み抑制:     {artifact1_score:5.1f}   {artifact2_score:5.1f}")
-    print(f"\n参考値:")
-    print(f"  SSIM: {ssim_points:.1f}/100 (類似度)")
-    print(f"  PSNR: {psnr_points:.1f}/100 (類似度)")
+    print("\n【スコア内訳（7項目で評価）】")
+    print(f"             画像1   画像2")
+    print(f"シャープネス:   {sharp1_score:5.1f}   {sharp2_score:5.1f}")
+    print(f"コントラスト:   {contrast1_score:5.1f}   {contrast2_score:5.1f}")
+    print(f"エントロピー:   {entropy1_score:5.1f}   {entropy2_score:5.1f}")
+    print(f"ノイズ対策:     {noise1_score:5.1f}   {noise2_score:5.1f}")
+    print(f"エッジ保持:     {edge1_score:5.1f}   {edge2_score:5.1f}")
+    print(f"歪み抑制:       {artifact1_score:5.1f}   {artifact2_score:5.1f}")
+    print(f"テクスチャ:     {texture1_score:5.1f}   {texture2_score:5.1f}")
+
+    print(f"\n【類似度指標（参考値）】")
+    print(f"  SSIM:        {ssim_score_val:.1f}/100")
+    print(f"  MS-SSIM:     {ms_ssim_score_val:.1f}/100")
+    print(f"  PSNR:        {psnr_score_val:.1f}/100")
+    print(f"  LPIPS:       {lpips_score_val:.1f}/100")
+    print(f"  色差:        {color_diff_score:.1f}/100")
+    print(f"  局所品質:    {local_quality_score:.1f}/100")
+    print(f"  ヒストグラム: {histogram_score:.1f}/100")
 
     results['total_score'] = {
         'img1': round(total1, 1),
@@ -744,24 +1269,29 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results'):
             'img1': {
                 'sharpness': round(sharp1_score, 1),
                 'contrast': round(contrast1_score, 1),
+                'entropy': round(entropy1_score, 1),
                 'noise': round(noise1_score, 1),
                 'edge': round(edge1_score, 1),
-                'artifact': round(artifact1_score, 1)
+                'artifact': round(artifact1_score, 1),
+                'texture': round(texture1_score, 1)
             },
             'img2': {
                 'sharpness': round(sharp2_score, 1),
                 'contrast': round(contrast2_score, 1),
+                'entropy': round(entropy2_score, 1),
                 'noise': round(noise2_score, 1),
                 'edge': round(edge2_score, 1),
-                'artifact': round(artifact2_score, 1)
+                'artifact': round(artifact2_score, 1),
+                'texture': round(texture2_score, 1)
             },
-            'ssim': round(ssim_points, 1),
-            'psnr': round(psnr_points, 1)
+            'ssim': round(ssim_score_val, 1),
+            'psnr': round(psnr_score_val, 1)
         }
     }
 
     # 16. 結果可視化
     print("\n【16. 結果可視化を生成中...】")
+    print_usage_status("画像生成開始")
 
     # 詳細可視化
     create_detailed_visualizations(img1_rgb, img2_rgb, img1_gray, img2_gray, output_dir)
@@ -779,8 +1309,12 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results'):
 
     cv2.imwrite(f'{output_dir}/difference.png', diff)
     cv2.imwrite(f'{output_dir}/heatmap.png', heatmap)
-    cv2.imwrite(f'{output_dir}/edges_img1.png', edges1)
-    cv2.imwrite(f'{output_dir}/edges_img2.png', edges2)
+
+    # エッジ画像を生成して保存
+    edges1_save = cv2.Canny(img1_gray, 100, 200)
+    edges2_save = cv2.Canny(img2_gray, 100, 200)
+    cv2.imwrite(f'{output_dir}/edges_img1.png', edges1_save)
+    cv2.imwrite(f'{output_dir}/edges_img2.png', edges2_save)
 
     # 比較画像
     comparison = np.hstack([img1, img2, diff])

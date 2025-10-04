@@ -4,8 +4,16 @@ import threading
 import os
 from advanced_image_analyzer import analyze_images
 import json
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageDraw
 import customtkinter as ctk
+
+# CPU/GPUモニタリング
+try:
+    import psutil
+    import GPUtil
+    MONITORING_AVAILABLE = True
+except ImportError:
+    MONITORING_AVAILABLE = False
 
 # CustomTkinter設定
 ctk.set_appearance_mode("dark")  # ダークモード
@@ -27,8 +35,19 @@ class ModernImageAnalyzerGUI:
         self.img2_path = tk.StringVar()
         self.output_dir = tk.StringVar(value="analysis_results")
         self.analysis_results = None
+        self.current_step = ""
+
+        # モニタリング用
+        self.monitoring_active = False
+        self.cpu_usage = 0
+        self.gpu_usage = 0
+        self.ram_usage = 0
 
         self.create_modern_ui()
+
+        # リアルタイムモニタリング開始
+        if MONITORING_AVAILABLE:
+            self.start_monitoring()
 
     def create_modern_ui(self):
         # メインコンテナ
@@ -73,6 +92,65 @@ class ModernImageAnalyzerGUI:
             text_color="#888888"
         )
         subtitle_label.place(x=130, y=70)
+
+        # システムモニター（右上）
+        if MONITORING_AVAILABLE:
+            monitor_frame = ctk.CTkFrame(header_frame, fg_color="transparent")
+            monitor_frame.place(x=850, y=15)
+
+            # CPUメーター
+            self.cpu_label = ctk.CTkLabel(
+                monitor_frame,
+                text="CPU",
+                font=("Arial", 10, "bold"),
+                text_color="#00ffff"
+            )
+            self.cpu_label.grid(row=0, column=0, padx=10)
+
+            self.cpu_canvas = tk.Canvas(
+                monitor_frame,
+                width=60,
+                height=60,
+                bg="#1e2740",
+                highlightthickness=0
+            )
+            self.cpu_canvas.grid(row=1, column=0, padx=10)
+
+            # GPUメーター
+            self.gpu_label = ctk.CTkLabel(
+                monitor_frame,
+                text="GPU",
+                font=("Arial", 10, "bold"),
+                text_color="#00ff88"
+            )
+            self.gpu_label.grid(row=0, column=1, padx=10)
+
+            self.gpu_canvas = tk.Canvas(
+                monitor_frame,
+                width=60,
+                height=60,
+                bg="#1e2740",
+                highlightthickness=0
+            )
+            self.gpu_canvas.grid(row=1, column=1, padx=10)
+
+            # RAMメーター
+            self.ram_label = ctk.CTkLabel(
+                monitor_frame,
+                text="RAM",
+                font=("Arial", 10, "bold"),
+                text_color="#ffaa00"
+            )
+            self.ram_label.grid(row=0, column=2, padx=10)
+
+            self.ram_canvas = tk.Canvas(
+                monitor_frame,
+                width=60,
+                height=60,
+                bg="#1e2740",
+                highlightthickness=0
+            )
+            self.ram_canvas.grid(row=1, column=2, padx=10)
 
         # コンテンツエリア
         content_frame = ctk.CTkFrame(main_container, fg_color="#0a0e27")
@@ -296,6 +374,76 @@ class ModernImageAnalyzerGUI:
         )
         self.result_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
+    def draw_circular_meter(self, canvas, percentage, color):
+        """円形メーターを描画"""
+        canvas.delete("all")
+
+        # 背景円
+        canvas.create_oval(5, 5, 55, 55, outline="#444444", width=3)
+
+        # 使用率の円弧
+        if percentage > 0:
+            extent = -percentage * 3.6  # 360度 = 100%
+            canvas.create_arc(
+                5, 5, 55, 55,
+                start=90,
+                extent=extent,
+                outline=color,
+                width=4,
+                style=tk.ARC
+            )
+
+        # パーセンテージ表示
+        canvas.create_text(
+            30, 30,
+            text=f"{int(percentage)}%",
+            fill=color,
+            font=("Arial", 12, "bold")
+        )
+
+    def update_system_monitor(self):
+        """システム使用率を更新"""
+        if not MONITORING_AVAILABLE:
+            return
+
+        try:
+            # CPU使用率
+            self.cpu_usage = psutil.cpu_percent(interval=0.1)
+
+            # RAM使用率
+            self.ram_usage = psutil.virtual_memory().percent
+
+            # GPU使用率
+            try:
+                gpus = GPUtil.getGPUs()
+                if gpus:
+                    self.gpu_usage = gpus[0].load * 100
+                else:
+                    self.gpu_usage = 0
+            except:
+                self.gpu_usage = 0
+
+            # メーター更新
+            self.draw_circular_meter(self.cpu_canvas, self.cpu_usage, "#00ffff")
+            self.draw_circular_meter(self.gpu_canvas, self.gpu_usage, "#00ff88")
+            self.draw_circular_meter(self.ram_canvas, self.ram_usage, "#ffaa00")
+
+        except Exception as e:
+            pass
+
+        # 1秒後に再実行
+        if self.monitoring_active:
+            self.root.after(1000, self.update_system_monitor)
+
+    def start_monitoring(self):
+        """モニタリング開始"""
+        self.monitoring_active = True
+        self.update_system_monitor()
+
+    def stop_monitoring(self):
+        """モニタリング停止"""
+        self.monitoring_active = False
+
     def browse_image1(self):
         filename = filedialog.askopenfilename(
             title="画像1を選択",
@@ -340,14 +488,28 @@ class ModernImageAnalyzerGUI:
         self.analyze_btn.configure(state='disabled')
         self.progress.set(0)
         self.progress.start()
-        self.status_label.configure(text="分析中... しばらくお待ちください", text_color="#00ffff")
+        self.current_step = "初期化中..."
+        self.status_label.configure(text=f"分析中: {self.current_step}", text_color="#00ffff")
         self.result_text.delete("1.0", tk.END)
         self.interpretation_text.delete("1.0", tk.END)
+
+        # 進捗更新スレッドを開始
+        self.update_progress_display()
 
         # 別スレッドで分析実行
         thread = threading.Thread(target=self.run_analysis)
         thread.daemon = True
         thread.start()
+
+    def update_progress_display(self):
+        """進捗状況を定期的に更新"""
+        if self.current_step and self.analyze_btn.cget('state') == 'disabled':
+            self.status_label.configure(text=f"分析中: {self.current_step}")
+            self.root.after(100, self.update_progress_display)
+
+    def progress_callback(self, step_name):
+        """分析ステップ更新用コールバック"""
+        self.current_step = step_name
 
     def run_analysis(self):
         try:
@@ -355,7 +517,22 @@ class ModernImageAnalyzerGUI:
             from io import StringIO
 
             old_stdout = sys.stdout
-            sys.stdout = captured_output = StringIO()
+
+            # カスタム出力クラスで進捗を捕捉
+            class ProgressCapture(StringIO):
+                def __init__(self, gui, *args, **kwargs):
+                    super().__init__(*args, **kwargs)
+                    self.gui = gui
+
+                def write(self, s):
+                    super().write(s)
+                    # 進捗情報を抽出
+                    if '【' in s and '】' in s:
+                        step = s.split('【')[1].split('】')[0]
+                        self.gui.current_step = step
+                    return len(s)
+
+            sys.stdout = captured_output = ProgressCapture(self)
 
             results = analyze_images(
                 self.img1_path.get(),

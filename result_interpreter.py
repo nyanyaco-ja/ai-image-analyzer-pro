@@ -40,6 +40,28 @@ def interpret_results(results):
         'winner': winner
     })
 
+    # 1.5. MS-SSIM（Multi-Scale SSIM）
+    if results.get('ms_ssim') is not None:
+        ms_ssim_val = results['ms_ssim']
+        if ms_ssim_val >= 0.99:
+            ms_ssim_eval = "ほぼ完全に一致（マルチスケールでも同一）"
+        elif ms_ssim_val >= 0.95:
+            ms_ssim_eval = "非常に類似（複数スケールで高類似）"
+        elif ms_ssim_val >= 0.90:
+            ms_ssim_eval = "類似（複数スケールで良好）"
+        elif ms_ssim_val >= 0.80:
+            ms_ssim_eval = "やや類似"
+        else:
+            ms_ssim_eval = "異なる"
+
+        interpretation['items'].append({
+            'name': 'MS-SSIM (マルチスケールSSIM)',
+            'value': f"{ms_ssim_val:.4f}",
+            'explanation': '複数スケールでの構造類似度 (SSIMの改良版、1.0=完全一致)',
+            'evaluation': ms_ssim_eval,
+            'winner': 'draw'
+        })
+
     # 2. PSNR（信号対雑音比）
     psnr_val = results['psnr']
     if psnr_val >= 40:
@@ -62,6 +84,26 @@ def interpret_results(results):
         'evaluation': psnr_eval,
         'winner': winner
     })
+
+    # 2.5. LPIPS（知覚的類似度）
+    if results.get('lpips') is not None:
+        lpips_val = results['lpips']
+        if lpips_val < 0.1:
+            lpips_eval = "知覚的にほぼ同一（人間の目では区別困難）"
+        elif lpips_val < 0.3:
+            lpips_eval = "知覚的に類似"
+        elif lpips_val < 0.5:
+            lpips_eval = "知覚的にやや異なる"
+        else:
+            lpips_eval = "知覚的に大きく異なる"
+
+        interpretation['items'].append({
+            'name': 'LPIPS (知覚的類似度)',
+            'value': f"{lpips_val:.4f}",
+            'explanation': 'AI/深層学習ベースの知覚的類似度 (0に近いほど類似)',
+            'evaluation': lpips_eval,
+            'winner': 'draw'
+        })
 
     # 3. シャープネス（鮮鋭度）
     sharp1 = results['sharpness']['img1']
@@ -135,8 +177,8 @@ def interpret_results(results):
     interpretation['winner_count'][winner] += 1
 
     # 6. エッジ保持率
-    edge1 = results['edges']['img1_count']
-    edge2 = results['edges']['img2_count']
+    edge1 = results['edges']['img1_density']
+    edge2 = results['edges']['img2_density']
     edge_diff = results['edges']['difference_pct']
 
     if edge2 > edge1:
