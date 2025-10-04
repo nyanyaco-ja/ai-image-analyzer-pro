@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+
+# 分析結果フォルダ
+analysis_results/
+results/
+output/
+
+# テスト画像
+*.png
+*.jpg
+*.jpeg
+*.bmp
+*.tiff
+*.webp
+!icon.ico
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ログファイル
+*.log
