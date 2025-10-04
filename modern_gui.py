@@ -33,6 +33,7 @@ class ModernImageAnalyzerGUI:
         # 変数
         self.img1_path = tk.StringVar()
         self.img2_path = tk.StringVar()
+        self.original_path = tk.StringVar()  # 元画像（オプション）
         self.output_dir = tk.StringVar(value="analysis_results")
         self.analysis_results = None
         self.current_step = ""
@@ -161,9 +162,13 @@ class ModernImageAnalyzerGUI:
         left_panel.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
         left_panel.pack_propagate(False)
 
+        # スクロール可能なフレーム
+        scrollable_frame = ctk.CTkScrollableFrame(left_panel, fg_color="transparent")
+        scrollable_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+
         # 画像選択セクション
-        input_section = ctk.CTkFrame(left_panel, fg_color="transparent")
-        input_section.pack(fill=tk.X, padx=20, pady=20)
+        input_section = ctk.CTkFrame(scrollable_frame, fg_color="transparent")
+        input_section.pack(fill=tk.X)
 
         # 画像1
         img1_label = ctk.CTkLabel(
@@ -228,6 +233,64 @@ class ModernImageAnalyzerGUI:
             hover_color="#00cccc"
         )
         img2_btn.pack(fill=tk.X, pady=(0, 20))
+
+        # 元画像（オプション）
+        original_label = ctk.CTkLabel(
+            input_section,
+            text="🎯 元画像（オプション）",
+            font=("Arial", 16, "bold"),
+            text_color="#ffa500"
+        )
+        original_label.pack(anchor="w", pady=(0, 10))
+
+        original_sublabel = ctk.CTkLabel(
+            input_section,
+            text="※ AI超解像の精度評価用（低解像度画像）",
+            font=("Arial", 10),
+            text_color="#888888"
+        )
+        original_sublabel.pack(anchor="w", pady=(0, 5))
+
+        original_entry = ctk.CTkEntry(
+            input_section,
+            textvariable=self.original_path,
+            placeholder_text="元画像を選択（省略可）...",
+            height=40,
+            corner_radius=10,
+            font=("Arial", 11)
+        )
+        original_entry.pack(fill=tk.X, pady=(0, 10))
+
+        original_btn_frame = ctk.CTkFrame(input_section, fg_color="transparent")
+        original_btn_frame.pack(fill=tk.X, pady=(0, 20))
+
+        original_btn = ctk.CTkButton(
+            original_btn_frame,
+            text="参照",
+            command=self.browse_original,
+            height=40,
+            width=200,
+            corner_radius=10,
+            font=("Arial", 12, "bold"),
+            fg_color="#ffa500",
+            text_color="#000000",
+            hover_color="#cc8400"
+        )
+        original_btn.pack(side=tk.LEFT, padx=(0, 10))
+
+        clear_original_btn = ctk.CTkButton(
+            original_btn_frame,
+            text="クリア",
+            command=lambda: self.original_path.set(""),
+            height=40,
+            width=100,
+            corner_radius=10,
+            font=("Arial", 12),
+            fg_color="#555555",
+            text_color="#ffffff",
+            hover_color="#777777"
+        )
+        clear_original_btn.pack(side=tk.LEFT)
 
         # 出力フォルダ
         output_label = ctk.CTkLabel(
@@ -295,8 +358,8 @@ class ModernImageAnalyzerGUI:
         self.status_label.pack()
 
         # ボタングループ
-        button_group = ctk.CTkFrame(left_panel, fg_color="transparent")
-        button_group.pack(side=tk.BOTTOM, fill=tk.X, padx=20, pady=20)
+        button_group = ctk.CTkFrame(scrollable_frame, fg_color="transparent")
+        button_group.pack(fill=tk.X, pady=(20, 0))
 
         btn_report = ctk.CTkButton(
             button_group,
@@ -466,6 +529,17 @@ class ModernImageAnalyzerGUI:
         if filename:
             self.img2_path.set(filename)
 
+    def browse_original(self):
+        filename = filedialog.askopenfilename(
+            title="元画像を選択（低解像度）",
+            filetypes=[
+                ("画像ファイル", "*.png *.jpg *.jpeg *.bmp *.tiff *.webp"),
+                ("すべてのファイル", "*.*")
+            ]
+        )
+        if filename:
+            self.original_path.set(filename)
+
     def browse_output(self):
         dirname = filedialog.askdirectory(title="出力フォルダを選択")
         if dirname:
@@ -537,7 +611,8 @@ class ModernImageAnalyzerGUI:
             results = analyze_images(
                 self.img1_path.get(),
                 self.img2_path.get(),
-                self.output_dir.get()
+                self.output_dir.get(),
+                self.original_path.get() if self.original_path.get() else None
             )
 
             sys.stdout = old_stdout

@@ -660,7 +660,8 @@ def create_detailed_visualizations(img1_rgb, img2_rgb, img1_gray, img2_gray, out
     cb2.ax.tick_params(labelsize=8)
 
     plt.tight_layout()
-    plt.savefig(f'{output_dir}/detailed_analysis.png', dpi=150, bbox_inches='tight')
+    output_path = os.path.join(output_dir, 'detailed_analysis.png')
+    plt.savefig(output_path, dpi=150, bbox_inches='tight')
     plt.close()
 
 def create_comparison_report(results, img1_name, img2_name, output_dir):
@@ -717,13 +718,31 @@ def create_comparison_report(results, img1_name, img2_name, output_dir):
 
     delta_e_value = results['color_distribution'].get('delta_e', 0)
 
+    # SSIM/PSNR/delta_eは元画像の有無で形式が異なる
+    ssim_data = results['ssim']
+    if isinstance(ssim_data, dict):
+        ssim_display = f"画像1: {ssim_data['img1_vs_original']:.4f}\n  画像2: {ssim_data['img2_vs_original']:.4f}"
+    else:
+        ssim_display = f"{ssim_data:.4f}"
+
+    psnr_data = results['psnr']
+    if isinstance(psnr_data, dict):
+        psnr_display = f"画像1: {psnr_data['img1_vs_original']:.2f} dB\n  画像2: {psnr_data['img2_vs_original']:.2f} dB"
+    else:
+        psnr_display = f"{psnr_data:.2f} dB"
+
+    if isinstance(delta_e_value, dict):
+        delta_e_display = f"画像1: {delta_e_value['img1_vs_original']:.2f}\n  画像2: {delta_e_value['img2_vs_original']:.2f}"
+    else:
+        delta_e_display = f"{delta_e_value:.2f}"
+
     info_text = f"""
 【主要指標】
 
-SSIM: {results['ssim']:.4f}
+SSIM: {ssim_display}
   (1.0 = 完全一致)
 
-PSNR: {results['psnr']:.2f} dB
+PSNR: {psnr_display}
   (30dB以上で視覚的に同等)
 
 シャープネス:
@@ -731,7 +750,7 @@ PSNR: {results['psnr']:.2f} dB
   画像2: {results['sharpness']['img2']:.2f}
   差: {results['sharpness']['difference_pct']:+.1f}%
 
-色差 (ΔE): {delta_e_value:.2f}
+色差 (ΔE): {delta_e_display}
   (< 5: 許容, > 10: 明確な違い)
     """
 
@@ -791,10 +810,11 @@ PSNR: {results['psnr']:.2f} dB
     ax6.grid(axis='y', alpha=0.3)
 
     plt.tight_layout()
-    plt.savefig(f'{output_dir}/comparison_report.png', dpi=150, bbox_inches='tight')
+    report_path = os.path.join(output_dir, 'comparison_report.png')
+    plt.savefig(report_path, dpi=150, bbox_inches='tight')
     plt.close()
 
-    return f'{output_dir}/comparison_report.png'
+    return report_path
 
 def imread_unicode(filename):
     """日本語パスに対応した画像読み込み（透明背景対応）"""
@@ -823,7 +843,7 @@ def imread_unicode(filename):
         print(f"画像読み込みエラー: {e}")
         return None
 
-def analyze_images(img1_path, img2_path, output_dir='analysis_results'):
+def analyze_images(img1_path, img2_path, output_dir='analysis_results', original_path=None):
     """
     2つの画像を詳細に比較分析する（拡張版）
 
@@ -831,6 +851,7 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results'):
     img1_path: 画像1のパス（例: chaiNNer）
     img2_path: 画像2のパス（例: Upscayl）
     output_dir: 結果保存ディレクトリ
+    original_path: 元画像のパス（オプション、AI超解像の精度評価用）
     """
 
     # 出力ディレクトリ作成
@@ -839,6 +860,17 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results'):
     # 画像読み込み（日本語パス対応）
     img1 = imread_unicode(img1_path)
     img2 = imread_unicode(img2_path)
+
+    # 元画像の読み込み（オプション）
+    img_original = None
+    if original_path:
+        img_original = imread_unicode(original_path)
+        if img_original is not None:
+            print(f"\n✅ 元画像を読み込みました: {original_path}")
+            print(f"   元画像サイズ: {img_original.shape[1]} x {img_original.shape[0]} px")
+        else:
+            print(f"\n⚠️  元画像の読み込みに失敗しました: {original_path}")
+            img_original = None
 
     if img1 is None or img2 is None:
         print("エラー: 画像ファイルが読み込めません")
@@ -856,6 +888,18 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results'):
         # 画像2を画像1のサイズに合わせる
         img2 = cv2.resize(img2, (img1.shape[1], img1.shape[0]), interpolation=cv2.INTER_LANCZOS4)
 
+    # 元画像のリサイズ処理（アップスケール）
+    img_original_rgb = None
+    img_original_gray = None
+    if img_original is not None:
+        target_size = (img1.shape[1], img1.shape[0])  # 画像1のサイズに合わせる
+        print(f"\n🔄 元画像をアップスケール中...")
+        print(f"   {img_original.shape[1]}x{img_original.shape[0]} → {target_size[0]}x{target_size[1]}")
+        img_original_upscaled = cv2.resize(img_original, target_size, interpolation=cv2.INTER_LANCZOS4)
+        img_original_rgb = cv2.cvtColor(img_original_upscaled, cv2.COLOR_BGR2RGB)
+        img_original_gray = cv2.cvtColor(img_original_upscaled, cv2.COLOR_BGR2GRAY)
+        print(f"   ✅ アップスケール完了")
+
     # RGB変換（OpenCVはBGRなので）
     img1_rgb = cv2.cvtColor(img1, cv2.COLOR_BGR2RGB)
     img2_rgb = cv2.cvtColor(img2, cv2.COLOR_BGR2RGB)
@@ -868,7 +912,9 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results'):
     results = {
         'timestamp': datetime.now().isoformat(),
         'image1_path': img1_path,
-        'image2_path': img2_path
+        'image2_path': img2_path,
+        'original_path': original_path,
+        'has_original': img_original_rgb is not None
     }
 
     print("=" * 80)
@@ -915,10 +961,26 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results'):
     if GPU_AVAILABLE:
         print(f"[GPU処理] デバイス: {DEVICE}")
     print_usage_status("SSIM計算開始（GPU使用）" if GPU_AVAILABLE else "SSIM計算開始（CPU使用）")
-    ssim_score = calculate_ssim_gpu(img1_rgb, img2_rgb)
-    print(f"SSIM: {ssim_score:.4f}")
 
-    results['ssim'] = round(ssim_score, 4)
+    if img_original_rgb is not None:
+        # 元画像がある場合：それぞれ元画像との類似度を計算
+        ssim_img1_vs_orig = calculate_ssim_gpu(img1_rgb, img_original_rgb)
+        ssim_img2_vs_orig = calculate_ssim_gpu(img2_rgb, img_original_rgb)
+        print(f"画像1 vs 元画像 SSIM: {ssim_img1_vs_orig:.4f}")
+        print(f"画像2 vs 元画像 SSIM: {ssim_img2_vs_orig:.4f}")
+        if ssim_img1_vs_orig > ssim_img2_vs_orig:
+            print(f"→ 画像1の方が元画像に近い (+{(ssim_img1_vs_orig - ssim_img2_vs_orig):.4f})")
+        else:
+            print(f"→ 画像2の方が元画像に近い (+{(ssim_img2_vs_orig - ssim_img1_vs_orig):.4f})")
+        results['ssim'] = {
+            'img1_vs_original': round(ssim_img1_vs_orig, 4),
+            'img2_vs_original': round(ssim_img2_vs_orig, 4)
+        }
+    else:
+        # 元画像がない場合：画像1 vs 画像2
+        ssim_score = calculate_ssim_gpu(img1_rgb, img2_rgb)
+        print(f"SSIM (画像1 vs 画像2): {ssim_score:.4f}")
+        results['ssim'] = round(ssim_score, 4)
 
     # 2.5. MS-SSIM（Multi-Scale SSIM）
     print("\n【2.5. MS-SSIM（マルチスケールSSIM）】")
@@ -947,10 +1009,26 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results'):
     print("\n【3. PSNR（ピーク信号対雑音比）】")
     print("数値が高いほど類似（30dB以上で視覚的にほぼ同一）")
     print_usage_status("PSNR計算開始（GPU使用）" if GPU_AVAILABLE else "PSNR計算開始（CPU使用）")
-    psnr_score = calculate_psnr_gpu(img1_rgb, img2_rgb)
-    print(f"PSNR: {psnr_score:.2f} dB")
 
-    results['psnr'] = round(psnr_score, 2)
+    if img_original_rgb is not None:
+        # 元画像がある場合：それぞれ元画像とのPSNRを計算
+        psnr_img1_vs_orig = calculate_psnr_gpu(img1_rgb, img_original_rgb)
+        psnr_img2_vs_orig = calculate_psnr_gpu(img2_rgb, img_original_rgb)
+        print(f"画像1 vs 元画像 PSNR: {psnr_img1_vs_orig:.2f} dB")
+        print(f"画像2 vs 元画像 PSNR: {psnr_img2_vs_orig:.2f} dB")
+        if psnr_img1_vs_orig > psnr_img2_vs_orig:
+            print(f"→ 画像1の方が元画像に近い (+{(psnr_img1_vs_orig - psnr_img2_vs_orig):.2f} dB)")
+        else:
+            print(f"→ 画像2の方が元画像に近い (+{(psnr_img2_vs_orig - psnr_img1_vs_orig):.2f} dB)")
+        results['psnr'] = {
+            'img1_vs_original': round(psnr_img1_vs_orig, 2),
+            'img2_vs_original': round(psnr_img2_vs_orig, 2)
+        }
+    else:
+        # 元画像がない場合：画像1 vs 画像2
+        psnr_score = calculate_psnr_gpu(img1_rgb, img2_rgb)
+        print(f"PSNR (画像1 vs 画像2): {psnr_score:.2f} dB")
+        results['psnr'] = round(psnr_score, 2)
 
     # 3.5. LPIPS（知覚的類似度）
     print("\n【3.5. LPIPS（知覚的類似度）】")
@@ -1102,15 +1180,33 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results'):
 
     # Delta E (CIE2000) - 知覚的色差
     print_usage_status("色差計算開始（GPU使用）" if GPU_AVAILABLE else "色差計算開始（CPU使用）")
-    delta_e = calculate_color_difference_gpu(img1_rgb, img2_rgb)
 
-    print(f"\n  ΔE (色差): {delta_e:.2f}")
-    print(f"    (ΔE < 1: 人間の目では区別不可, ΔE < 5: 許容範囲, ΔE > 10: 明確な違い)")
+    if img_original_rgb is not None:
+        # 元画像がある場合：それぞれ元画像との色差を計算
+        delta_e_img1_vs_orig = calculate_color_difference_gpu(img1_rgb, img_original_rgb)
+        delta_e_img2_vs_orig = calculate_color_difference_gpu(img2_rgb, img_original_rgb)
+        print(f"\n  画像1 vs 元画像 ΔE: {delta_e_img1_vs_orig:.2f}")
+        print(f"  画像2 vs 元画像 ΔE: {delta_e_img2_vs_orig:.2f}")
+        if delta_e_img1_vs_orig < delta_e_img2_vs_orig:
+            print(f"  → 画像1の方が元画像の色に近い (差: {delta_e_img2_vs_orig - delta_e_img1_vs_orig:.2f})")
+        else:
+            print(f"  → 画像2の方が元画像の色に近い (差: {delta_e_img1_vs_orig - delta_e_img2_vs_orig:.2f})")
+        print(f"    (ΔE < 1: 人間の目では区別不可, ΔE < 5: 許容範囲, ΔE > 10: 明確な違い)")
+        delta_e_result = {
+            'img1_vs_original': round(delta_e_img1_vs_orig, 2),
+            'img2_vs_original': round(delta_e_img2_vs_orig, 2)
+        }
+    else:
+        # 元画像がない場合：画像1 vs 画像2
+        delta_e_val = calculate_color_difference_gpu(img1_rgb, img2_rgb)
+        print(f"\n  ΔE (色差): {delta_e_val:.2f}")
+        print(f"    (ΔE < 1: 人間の目では区別不可, ΔE < 5: 許容範囲, ΔE > 10: 明確な違い)")
+        delta_e_result = round(delta_e_val, 2)
 
     results['color_distribution'] = {
         'img1': color_stats1,
         'img2': color_stats2,
-        'delta_e': round(delta_e, 2)
+        'delta_e': delta_e_result
     }
 
     # 11. 周波数領域分析
@@ -1173,15 +1269,28 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results'):
 
     # 各指標を絶対値で評価（両画像を独立して採点）
 
-    # 画像1のスコア（17項目）
-    # 1. SSIM（類似度として参考値）
-    ssim_score_val = ssim_score * 100
+    # SSIM/PSNRの値を取得（元画像の有無で形式が異なる）
+    if img_original_rgb is not None:
+        # 元画像がある場合：dictから取得
+        ssim_data = results.get('ssim', {})
+        if isinstance(ssim_data, dict):
+            ssim_score_val = (ssim_data.get('img1_vs_original', 0) + ssim_data.get('img2_vs_original', 0)) / 2 * 100
+        else:
+            ssim_score_val = 0
 
+        psnr_data = results.get('psnr', {})
+        if isinstance(psnr_data, dict):
+            psnr_score_val = min((psnr_data.get('img1_vs_original', 0) + psnr_data.get('img2_vs_original', 0)) / 2 * 2, 100)
+        else:
+            psnr_score_val = 0
+    else:
+        # 元画像がない場合：floatから取得
+        ssim_score_val = results.get('ssim', 0) * 100
+        psnr_score_val = min(results.get('psnr', 0) * 2, 100)
+
+    # 画像1のスコア（17項目）
     # 2. MS-SSIM
     ms_ssim_score_val = (results.get('ms_ssim', 0) or 0) * 100
-
-    # 3. PSNR
-    psnr_score_val = min(psnr_score * 2, 100)
 
     # 4. LPIPS（低いほど良い、反転）
     lpips_score_val = max(0, 100 - (results.get('lpips', 0) or 0) * 1000) if results.get('lpips') else 50
@@ -1213,7 +1322,14 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results'):
     edge2_score = min(edge_density2 * 2, 100)
 
     # 11. 色差（低いほど良い）
-    color_diff_score = max(0, 100 - delta_e * 2)
+    delta_e_data = results['color_distribution'].get('delta_e', 0)
+    if isinstance(delta_e_data, dict):
+        # 元画像がある場合：平均値を使用
+        avg_delta_e = (delta_e_data.get('img1_vs_original', 0) + delta_e_data.get('img2_vs_original', 0)) / 2
+        color_diff_score = max(0, 100 - avg_delta_e * 2)
+    else:
+        # 元画像がない場合：単一値を使用
+        color_diff_score = max(0, 100 - delta_e_data * 2)
 
     # 12. テクスチャ
     texture1_score = min(texture1['texture_complexity'] * 10, 100)
@@ -1307,18 +1423,18 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results'):
     diff_gray = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
     heatmap = cv2.applyColorMap(diff_gray, cv2.COLORMAP_JET)
 
-    cv2.imwrite(f'{output_dir}/difference.png', diff)
-    cv2.imwrite(f'{output_dir}/heatmap.png', heatmap)
+    cv2.imwrite(os.path.join(output_dir, 'difference.png'), diff)
+    cv2.imwrite(os.path.join(output_dir, 'heatmap.png'), heatmap)
 
     # エッジ画像を生成して保存
     edges1_save = cv2.Canny(img1_gray, 100, 200)
     edges2_save = cv2.Canny(img2_gray, 100, 200)
-    cv2.imwrite(f'{output_dir}/edges_img1.png', edges1_save)
-    cv2.imwrite(f'{output_dir}/edges_img2.png', edges2_save)
+    cv2.imwrite(os.path.join(output_dir, 'edges_img1.png'), edges1_save)
+    cv2.imwrite(os.path.join(output_dir, 'edges_img2.png'), edges2_save)
 
     # 比較画像
     comparison = np.hstack([img1, img2, diff])
-    cv2.imwrite(f'{output_dir}/comparison.png', comparison)
+    cv2.imwrite(os.path.join(output_dir, 'comparison.png'), comparison)
 
     # JSON形式で結果を保存
     # numpy型をPython標準型に変換するためのカスタムエンコーダ
@@ -1332,7 +1448,8 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results'):
                 return obj.tolist()
             return super(NumpyEncoder, self).default(obj)
 
-    with open(f'{output_dir}/analysis_results.json', 'w', encoding='utf-8') as f:
+    json_path = os.path.join(output_dir, 'analysis_results.json')
+    with open(json_path, 'w', encoding='utf-8') as f:
         json.dump(results, f, indent=2, ensure_ascii=False, cls=NumpyEncoder)
 
     print(f"結果を '{output_dir}/' に保存しました")

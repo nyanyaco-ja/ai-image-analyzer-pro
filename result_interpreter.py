@@ -18,27 +18,52 @@ def interpret_results(results):
     }
 
     # 1. SSIM（構造類似性）
-    ssim_val = results['ssim']
-    if ssim_val >= 0.95:
-        ssim_eval = "ほぼ同一の画像"
-        winner = 'draw'
-    elif ssim_val >= 0.80:
-        ssim_eval = "非常に似ている"
-        winner = 'draw'
-    elif ssim_val >= 0.50:
-        ssim_eval = "やや似ている"
-        winner = 'draw'
-    else:
-        ssim_eval = "大きく異なる"
-        winner = 'draw'
+    has_original = results.get('has_original', False)
+    ssim_data = results['ssim']
 
-    interpretation['items'].append({
-        'name': 'SSIM (構造類似性)',
-        'value': f"{ssim_val:.4f}",
-        'explanation': '画像の構造的な類似度 (1.0=完全一致)',
-        'evaluation': ssim_eval,
-        'winner': winner
-    })
+    if has_original and isinstance(ssim_data, dict):
+        # 元画像がある場合：元画像との類似度で比較
+        ssim_img1 = ssim_data['img1_vs_original']
+        ssim_img2 = ssim_data['img2_vs_original']
+
+        if ssim_img1 > ssim_img2:
+            ssim_eval = f"画像1の方が元画像に近い (SSIM差: +{ssim_img1 - ssim_img2:.4f})"
+            winner = 'img1'
+        elif ssim_img2 > ssim_img1:
+            ssim_eval = f"画像2の方が元画像に近い (SSIM差: +{ssim_img2 - ssim_img1:.4f})"
+            winner = 'img2'
+        else:
+            ssim_eval = "両画像とも元画像に同程度近い"
+            winner = 'draw'
+
+        interpretation['items'].append({
+            'name': 'SSIM (構造類似性)',
+            'value': f"画像1: {ssim_img1:.4f} | 画像2: {ssim_img2:.4f}",
+            'explanation': '元画像との構造的類似度 (1.0=完全一致)',
+            'evaluation': ssim_eval,
+            'winner': winner
+        })
+        interpretation['winner_count'][winner] += 1
+    else:
+        # 元画像がない場合：画像1 vs 画像2
+        ssim_val = ssim_data if isinstance(ssim_data, (int, float)) else 0
+        if ssim_val >= 0.95:
+            ssim_eval = "ほぼ同一の画像"
+        elif ssim_val >= 0.80:
+            ssim_eval = "非常に似ている"
+        elif ssim_val >= 0.50:
+            ssim_eval = "やや似ている"
+        else:
+            ssim_eval = "大きく異なる"
+
+        interpretation['items'].append({
+            'name': 'SSIM (構造類似性)',
+            'value': f"{ssim_val:.4f}",
+            'explanation': '画像の構造的な類似度 (1.0=完全一致)',
+            'evaluation': ssim_eval,
+            'winner': 'draw'
+        })
+        interpretation['winner_count']['draw'] += 1
 
     # 1.5. MS-SSIM（Multi-Scale SSIM）
     if results.get('ms_ssim') is not None:
@@ -61,29 +86,54 @@ def interpret_results(results):
             'evaluation': ms_ssim_eval,
             'winner': 'draw'
         })
+        interpretation['winner_count']['draw'] += 1
 
     # 2. PSNR（信号対雑音比）
-    psnr_val = results['psnr']
-    if psnr_val >= 40:
-        psnr_eval = "品質差なし（ほぼ同一）"
-        winner = 'draw'
-    elif psnr_val >= 30:
-        psnr_eval = "許容範囲の差"
-        winner = 'draw'
-    elif psnr_val >= 20:
-        psnr_eval = "明確な品質差あり"
-        winner = 'draw'
-    else:
-        psnr_eval = "大幅に異なる画像"
-        winner = 'draw'
+    psnr_data = results['psnr']
 
-    interpretation['items'].append({
-        'name': 'PSNR (信号対雑音比)',
-        'value': f"{psnr_val:.2f} dB",
-        'explanation': '画像の劣化度合い (高いほど類似)',
-        'evaluation': psnr_eval,
-        'winner': winner
-    })
+    if has_original and isinstance(psnr_data, dict):
+        # 元画像がある場合：元画像とのPSNRで比較
+        psnr_img1 = psnr_data['img1_vs_original']
+        psnr_img2 = psnr_data['img2_vs_original']
+
+        if psnr_img1 > psnr_img2:
+            psnr_eval = f"画像1の方が元画像に近い (PSNR差: +{psnr_img1 - psnr_img2:.2f} dB)"
+            winner = 'img1'
+        elif psnr_img2 > psnr_img1:
+            psnr_eval = f"画像2の方が元画像に近い (PSNR差: +{psnr_img2 - psnr_img1:.2f} dB)"
+            winner = 'img2'
+        else:
+            psnr_eval = "両画像とも元画像に同程度近い"
+            winner = 'draw'
+
+        interpretation['items'].append({
+            'name': 'PSNR (信号対雑音比)',
+            'value': f"画像1: {psnr_img1:.2f} dB | 画像2: {psnr_img2:.2f} dB",
+            'explanation': '元画像との信号品質 (高いほど近い)',
+            'evaluation': psnr_eval,
+            'winner': winner
+        })
+        interpretation['winner_count'][winner] += 1
+    else:
+        # 元画像がない場合：画像1 vs 画像2
+        psnr_val = psnr_data if isinstance(psnr_data, (int, float)) else 0
+        if psnr_val >= 40:
+            psnr_eval = "品質差なし（ほぼ同一）"
+        elif psnr_val >= 30:
+            psnr_eval = "許容範囲の差"
+        elif psnr_val >= 20:
+            psnr_eval = "明確な品質差あり"
+        else:
+            psnr_eval = "大幅に異なる画像"
+
+        interpretation['items'].append({
+            'name': 'PSNR (信号対雑音比)',
+            'value': f"{psnr_val:.2f} dB",
+            'explanation': '画像の劣化度合い (高いほど類似)',
+            'evaluation': psnr_eval,
+            'winner': 'draw'
+        })
+        interpretation['winner_count']['draw'] += 1
 
     # 2.5. LPIPS（知覚的類似度）
     if results.get('lpips') is not None:
@@ -104,6 +154,7 @@ def interpret_results(results):
             'evaluation': lpips_eval,
             'winner': 'draw'
         })
+        interpretation['winner_count']['draw'] += 1
 
     # 3. シャープネス（鮮鋭度）
     sharp1 = results['sharpness']['img1']
@@ -157,12 +208,13 @@ def interpret_results(results):
     noise1 = results['noise']['img1']
     noise2 = results['noise']['img2']
 
-    if noise2 < noise1:
-        noise_eval = f"画像2の方がノイズが少ない (差: {noise1-noise2:.1f})"
-        winner = 'img2'
-    elif noise1 < noise2:
-        noise_eval = f"画像1の方がノイズが少ない (差: {noise2-noise1:.1f})"
+    # GPU版は値が大きい方がノイズが多い
+    if noise1 < noise2:
+        noise_eval = f"画像1の方がノイズが少ない (差: {abs(noise2-noise1):.1f})"
         winner = 'img1'
+    elif noise2 < noise1:
+        noise_eval = f"画像2の方がノイズが少ない (差: {abs(noise1-noise2):.1f})"
+        winner = 'img2'
     else:
         noise_eval = "同等のノイズレベル"
         winner = 'draw'
@@ -225,24 +277,52 @@ def interpret_results(results):
 
     # 8. 色差（ΔE）
     if 'delta_e' in results.get('color_distribution', {}):
-        delta_e = results['color_distribution']['delta_e']
+        delta_e_data = results['color_distribution']['delta_e']
 
-        if delta_e < 1:
-            color_eval = "色の違いは人間の目では識別不可能"
-        elif delta_e < 5:
-            color_eval = "許容範囲の色差（ほぼ同じ）"
-        elif delta_e < 10:
-            color_eval = "明確な色の違いあり"
+        if has_original and isinstance(delta_e_data, dict):
+            # 元画像がある場合：元画像との色差で比較
+            delta_e_img1 = delta_e_data['img1_vs_original']
+            delta_e_img2 = delta_e_data['img2_vs_original']
+
+            if delta_e_img1 < delta_e_img2:
+                color_eval = f"画像1の方が元画像の色に近い (ΔE差: {delta_e_img2 - delta_e_img1:.2f})"
+                winner = 'img1'
+            elif delta_e_img2 < delta_e_img1:
+                color_eval = f"画像2の方が元画像の色に近い (ΔE差: {delta_e_img1 - delta_e_img2:.2f})"
+                winner = 'img2'
+            else:
+                color_eval = "両画像とも元画像の色に同程度近い"
+                winner = 'draw'
+
+            interpretation['items'].append({
+                'name': '色差 (ΔE)',
+                'value': f"画像1: {delta_e_img1:.2f} | 画像2: {delta_e_img2:.2f}",
+                'explanation': '元画像との知覚的な色の違い (低いほど近い)',
+                'evaluation': color_eval,
+                'winner': winner
+            })
+            interpretation['winner_count'][winner] += 1
         else:
-            color_eval = "大きく異なる色"
+            # 元画像がない場合：画像1 vs 画像2
+            delta_e = delta_e_data if isinstance(delta_e_data, (int, float)) else 0
 
-        interpretation['items'].append({
-            'name': '色差 (ΔE)',
-            'value': f"{delta_e:.2f}",
-            'explanation': '知覚的な色の違い (低いほど類似)',
-            'evaluation': color_eval,
-            'winner': 'draw'
-        })
+            if delta_e < 1:
+                color_eval = "色の違いは人間の目では識別不可能"
+            elif delta_e < 5:
+                color_eval = "許容範囲の色差（ほぼ同じ）"
+            elif delta_e < 10:
+                color_eval = "明確な色の違いあり"
+            else:
+                color_eval = "大きく異なる色"
+
+            interpretation['items'].append({
+                'name': '色差 (ΔE)',
+                'value': f"{delta_e:.2f}",
+                'explanation': '知覚的な色の違い (低いほど類似)',
+                'evaluation': color_eval,
+                'winner': 'draw'
+            })
+            interpretation['winner_count']['draw'] += 1
 
     # 9. 周波数分析
     freq1_high = results['frequency_analysis']['img1']['high_freq_ratio'] * 100
@@ -333,6 +413,7 @@ def interpret_results(results):
         'evaluation': local_eval,
         'winner': 'draw'
     })
+    interpretation['winner_count']['draw'] += 1
 
     # 13. ヒストグラム相関
     hist_corr = results['histogram_correlation']
@@ -353,6 +434,7 @@ def interpret_results(results):
         'evaluation': hist_eval,
         'winner': 'draw'
     })
+    interpretation['winner_count']['draw'] += 1
 
     # 14. LAB色空間分析（明度）
     if 'LAB' in results['color_distribution']['img1']:
@@ -376,6 +458,7 @@ def interpret_results(results):
             'evaluation': lab_eval,
             'winner': winner
         })
+        interpretation['winner_count'][winner] += 1
 
     # 15. 総合スコア比較
     score1 = results['total_score']['img1']
@@ -394,7 +477,7 @@ def interpret_results(results):
     interpretation['items'].append({
         'name': '総合スコア',
         'value': f"画像1: {score1:.1f} | 画像2: {score2:.1f}",
-        'explanation': '5項目の総合評価 (100点満点)',
+        'explanation': '7項目の総合評価 (100点満点)',
         'evaluation': score_eval,
         'winner': winner
     })
