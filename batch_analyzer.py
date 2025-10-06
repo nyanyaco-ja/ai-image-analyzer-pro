@@ -19,9 +19,13 @@ from tqdm import tqdm
 import pandas as pd
 from advanced_image_analyzer import analyze_images
 
-def batch_analyze(config_file):
+def batch_analyze(config_file, progress_callback=None):
     """
     バッチ処理の実行
+
+    Args:
+        config_file: 設定JSONファイルのパス
+        progress_callback: 進捗通知用コールバック関数 (current, total, message)
     """
 
     # 設定読み込み
@@ -68,7 +72,7 @@ def batch_analyze(config_file):
     errors = 0
 
     # 各元画像に対して処理
-    for orig_img_path in tqdm(original_images, desc="元画像処理中"):
+    for idx, orig_img_path in enumerate(tqdm(original_images, desc="元画像処理中")):
         image_id = orig_img_path.stem
 
         # 各超解像モデルの結果と比較
@@ -82,7 +86,10 @@ def batch_analyze(config_file):
                     break
 
             if upscaled_path is None:
-                print(f"⚠️  超解像画像が見つかりません: {model_name}/{image_id}")
+                msg = f"⚠️  超解像画像が見つかりません: {model_name}/{image_id}"
+                print(msg)
+                if progress_callback:
+                    progress_callback(processed, total_pairs, msg)
                 errors += 1
                 continue
 
@@ -90,6 +97,10 @@ def batch_analyze(config_file):
             output_subdir = output_detail_dir / model_name / image_id
 
             try:
+                # 進捗通知
+                if progress_callback:
+                    progress_callback(processed, total_pairs, f"処理中: {image_id} - {model_name}")
+
                 # analyze_images(元画像, 超解像画像, 出力先, 低解像度元画像)
                 # ここでは元画像=低解像度として使用
                 results = analyze_images(
@@ -112,8 +123,10 @@ def batch_analyze(config_file):
                 processed += 1
 
             except Exception as e:
-                print(f"\n❌ エラー: {image_id} - {model_name}")
-                print(f"   {str(e)}")
+                msg = f"❌ エラー: {image_id} - {model_name}: {str(e)}"
+                print(f"\n{msg}")
+                if progress_callback:
+                    progress_callback(processed, total_pairs, msg)
                 errors += 1
                 continue
 

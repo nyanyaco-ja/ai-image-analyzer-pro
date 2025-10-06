@@ -23,7 +23,11 @@ try:
     import torch
     import torch.nn.functional as F
     import lpips
+    import kornia
+    import kornia.filters as KF
+    import kornia.color as KC
     LPIPS_AVAILABLE = True
+    KORNIA_AVAILABLE = True
 
     # GPU利用可否をチェック
     if torch.cuda.is_available():
@@ -36,6 +40,7 @@ try:
         GPU_NAME = None
 except ImportError:
     LPIPS_AVAILABLE = False
+    KORNIA_AVAILABLE = False
     GPU_AVAILABLE = False
     DEVICE = None
     GPU_NAME = None
@@ -273,13 +278,13 @@ def calculate_psnr_gpu(img1_rgb, img2_rgb):
 
 def calculate_sharpness_gpu(img_gray):
     """
-    GPU対応シャープネス計算（ラプラシアン分散）
+    GPU対応シャープネス計算（Kornia Laplacian）
 
     Returns:
         float: シャープネス値（高いほど鮮明）
     """
-    if not LPIPS_AVAILABLE or torch is None:
-        # PyTorchがない場合はCPU版にフォールバック
+    if not KORNIA_AVAILABLE or torch is None:
+        # Korniaがない場合はCPU版にフォールバック
         laplacian = cv2.Laplacian(img_gray, cv2.CV_64F)
         return laplacian.var()
 
@@ -287,14 +292,9 @@ def calculate_sharpness_gpu(img_gray):
         # 画像をPyTorchテンソルに変換
         img_tensor = torch.from_numpy(img_gray).float().unsqueeze(0).unsqueeze(0).to(DEVICE) / 255.0
 
-        # ラプラシアンカーネル
-        laplacian_kernel = torch.tensor([[0, 1, 0],
-                                         [1, -4, 1],
-                                         [0, 1, 0]], dtype=torch.float32).unsqueeze(0).unsqueeze(0).to(DEVICE)
-
-        # 畳み込み
+        # Korniaのラプラシアン
         with torch.no_grad():
-            laplacian = F.conv2d(img_tensor, laplacian_kernel, padding=1)
+            laplacian = KF.laplacian(img_tensor, kernel_size=3)
             variance = torch.var(laplacian)
 
         return float(variance.item()) * 255 * 255  # スケール調整
@@ -340,12 +340,12 @@ def estimate_noise_gpu(img_gray):
 
 def detect_edges_gpu(img_gray):
     """
-    GPU対応エッジ検出（Sobelフィルタ）
+    GPU対応エッジ検出（Kornia Sobel）
 
     Returns:
         float: エッジ密度
     """
-    if not LPIPS_AVAILABLE or torch is None:
+    if not KORNIA_AVAILABLE or torch is None:
         # CPU版にフォールバック
         edges = cv2.Canny(img_gray, 100, 200)
         return np.sum(edges) / (edges.shape[0] * edges.shape[1] * 255) * 100
@@ -354,19 +354,9 @@ def detect_edges_gpu(img_gray):
         # 画像をPyTorchテンソルに変換
         img_tensor = torch.from_numpy(img_gray).float().unsqueeze(0).unsqueeze(0).to(DEVICE) / 255.0
 
-        # Sobelフィルタ
-        sobel_x = torch.tensor([[-1, 0, 1],
-                               [-2, 0, 2],
-                               [-1, 0, 1]], dtype=torch.float32).unsqueeze(0).unsqueeze(0).to(DEVICE)
-
-        sobel_y = torch.tensor([[-1, -2, -1],
-                               [ 0,  0,  0],
-                               [ 1,  2,  1]], dtype=torch.float32).unsqueeze(0).unsqueeze(0).to(DEVICE)
-
+        # Korniaの Sobel
         with torch.no_grad():
-            edge_x = F.conv2d(img_tensor, sobel_x, padding=1)
-            edge_y = F.conv2d(img_tensor, sobel_y, padding=1)
-            edges = torch.sqrt(edge_x**2 + edge_y**2)
+            edges = KF.sobel(img_tensor)
             edge_density = torch.sum(edges > 0.1) / edges.numel() * 100
 
         return float(edge_density.item())
@@ -378,12 +368,12 @@ def detect_edges_gpu(img_gray):
 
 def calculate_color_difference_gpu(img1_rgb, img2_rgb):
     """
-    GPU対応LAB色空間での色差計算
+    GPU対応LAB色空間での色差計算（Kornia）
 
     Returns:
         float: 平均色差（ΔE）
     """
-    if not LPIPS_AVAILABLE or torch is None:
+    if not KORNIA_AVAILABLE or torch is None:
         # CPU版にフォールバック
         img1_lab = cv2.cvtColor(img1_rgb, cv2.COLOR_RGB2LAB)
         img2_lab = cv2.cvtColor(img2_rgb, cv2.COLOR_RGB2LAB)
@@ -399,12 +389,14 @@ def calculate_color_difference_gpu(img1_rgb, img2_rgb):
         img1_tensor = to_tensor(img1_rgb)
         img2_tensor = to_tensor(img2_rgb)
 
-        # 簡易的な色差計算（RGB空間）
+        # KorniaのLAB変換
         with torch.no_grad():
-            color_diff = torch.sqrt(torch.sum((img1_tensor - img2_tensor) ** 2, dim=1))
-            mean_diff = torch.mean(color_diff)
+            img1_lab = KC.rgb_to_lab(img1_tensor)
+            img2_lab = KC.rgb_to_lab(img2_tensor)
+            delta_e = torch.sqrt(torch.sum((img1_lab - img2_lab) ** 2, dim=1))
+            mean_delta_e = torch.mean(delta_e)
 
-        return float(mean_diff.item()) * 255  # スケール調整
+        return float(mean_delta_e.item())
 
     except Exception as e:
         print(f"GPU 色差計算エラー（CPU版にフォールバック）: {e}")
@@ -548,17 +540,33 @@ def analyze_frequency_domain(img_gray):
     }
 
 def analyze_texture(img_gray):
-    """テクスチャ分析 - GLCM（Gray Level Co-occurrence Matrix）"""
-    # LBP (Local Binary Patterns) による簡易テクスチャ分析
-    # 画像サイズを縮小して計算を高速化
-    small = cv2.resize(img_gray, (img_gray.shape[1]//4, img_gray.shape[0]//4))
+    """テクスチャ分析（GPU対応 - Kornia Sobel）"""
+    if not KORNIA_AVAILABLE or torch is None:
+        # CPU版にフォールバック
+        small = cv2.resize(img_gray, (img_gray.shape[1]//4, img_gray.shape[0]//4))
+        sobel_x = cv2.Sobel(small, cv2.CV_64F, 1, 0, ksize=3)
+        sobel_y = cv2.Sobel(small, cv2.CV_64F, 0, 1, ksize=3)
+        texture_complexity = np.sqrt(sobel_x**2 + sobel_y**2).mean()
+        return {'texture_complexity': float(texture_complexity)}
 
-    # 簡易的なテクスチャ複雑度
-    sobel_x = cv2.Sobel(small, cv2.CV_64F, 1, 0, ksize=3)
-    sobel_y = cv2.Sobel(small, cv2.CV_64F, 0, 1, ksize=3)
-    texture_complexity = np.sqrt(sobel_x**2 + sobel_y**2).mean()
+    try:
+        # GPU版
+        img_tensor = torch.from_numpy(img_gray).float().unsqueeze(0).unsqueeze(0).to(DEVICE) / 255.0
+        # ダウンサンプリング
+        img_small = F.interpolate(img_tensor, scale_factor=0.25, mode='bilinear', align_corners=False)
 
-    return {'texture_complexity': float(texture_complexity)}
+        with torch.no_grad():
+            sobel_magnitude = KF.sobel(img_small)
+            texture_complexity = torch.mean(sobel_magnitude)
+
+        return {'texture_complexity': float(texture_complexity.item() * 255)}
+    except Exception as e:
+        print(f"GPU テクスチャ分析エラー（CPU版にフォールバック）: {e}")
+        small = cv2.resize(img_gray, (img_gray.shape[1]//4, img_gray.shape[0]//4))
+        sobel_x = cv2.Sobel(small, cv2.CV_64F, 1, 0, ksize=3)
+        sobel_y = cv2.Sobel(small, cv2.CV_64F, 0, 1, ksize=3)
+        texture_complexity = np.sqrt(sobel_x**2 + sobel_y**2).mean()
+        return {'texture_complexity': float(texture_complexity)}
 
 def create_detailed_visualizations(img1_rgb, img2_rgb, img1_gray, img2_gray, output_dir):
     """詳細な可視化画像を生成"""

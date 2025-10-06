@@ -968,6 +968,17 @@ class ModernImageAnalyzerGUI:
         thread.daemon = True
         thread.start()
 
+    def update_batch_progress(self, current, total, message):
+        """バッチ処理進捗更新（別スレッドから呼ばれる）"""
+        progress = current / total if total > 0 else 0
+        self.root.after(0, lambda: self.batch_progress.set(progress))
+        self.root.after(0, lambda: self.batch_status_label.configure(
+            text=f"処理中: {current}/{total} - {message}",
+            text_color="#00ffff"
+        ))
+        self.root.after(0, lambda: self.batch_result_text.insert(tk.END, f"{message}\n"))
+        self.root.after(0, lambda: self.batch_result_text.see(tk.END))
+
     def run_batch_analysis(self, config):
         """バッチ処理実行"""
         try:
@@ -985,8 +996,8 @@ class ModernImageAnalyzerGUI:
             old_stdout = sys.stdout
             sys.stdout = captured_output = StringIO()
 
-            # バッチ処理実行
-            batch_analyze(temp_config_path)
+            # バッチ処理実行（進捗コールバック付き）
+            batch_analyze(temp_config_path, progress_callback=self.update_batch_progress)
 
             sys.stdout = old_stdout
             output = captured_output.getvalue()

@@ -9,6 +9,7 @@ torch>=2.0.0
 torchvision>=0.15.0
 lpips>=0.1.4
 pytorch-msssim>=1.0.0
+kornia>=0.7.0
 psutil>=5.9.0
 gputil>=1.4.0
 pandas>=2.0.0
