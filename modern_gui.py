@@ -668,62 +668,69 @@ class ModernImageAnalyzerGUI:
         )
         limit_slider_label.pack(side=tk.LEFT, padx=(0, 10))
 
-        # プリセットボタン
+        # プリセットボタン（保存用リスト）
+        self.limit_buttons = {}
+
         preset_frame = ctk.CTkFrame(limit_frame, fg_color="transparent")
         preset_frame.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
-        btn_10 = ctk.CTkButton(
+        # 10枚ボタン
+        self.limit_buttons[10] = ctk.CTkButton(
             preset_frame,
             text="10枚",
-            command=lambda: self.batch_limit.set(10),
+            command=lambda: self.set_batch_limit(10),
             width=60,
             height=25,
             font=("Arial", 9),
             fg_color="#555555",
             hover_color="#777777"
         )
-        btn_10.pack(side=tk.LEFT, padx=2)
+        self.limit_buttons[10].pack(side=tk.LEFT, padx=2)
 
-        btn_30 = ctk.CTkButton(
+        # 30枚ボタン
+        self.limit_buttons[30] = ctk.CTkButton(
             preset_frame,
             text="30枚",
-            command=lambda: self.batch_limit.set(30),
+            command=lambda: self.set_batch_limit(30),
             width=60,
             height=25,
             font=("Arial", 9),
             fg_color="#555555",
             hover_color="#777777"
         )
-        btn_30.pack(side=tk.LEFT, padx=2)
+        self.limit_buttons[30].pack(side=tk.LEFT, padx=2)
 
-        btn_50 = ctk.CTkButton(
+        # 50枚ボタン
+        self.limit_buttons[50] = ctk.CTkButton(
             preset_frame,
             text="50枚",
-            command=lambda: self.batch_limit.set(50),
+            command=lambda: self.set_batch_limit(50),
             width=60,
             height=25,
             font=("Arial", 9),
             fg_color="#555555",
             hover_color="#777777"
         )
-        btn_50.pack(side=tk.LEFT, padx=2)
+        self.limit_buttons[50].pack(side=tk.LEFT, padx=2)
 
-        btn_100 = ctk.CTkButton(
+        # 100枚ボタン
+        self.limit_buttons[100] = ctk.CTkButton(
             preset_frame,
             text="100枚",
-            command=lambda: self.batch_limit.set(100),
+            command=lambda: self.set_batch_limit(100),
             width=60,
             height=25,
             font=("Arial", 9),
             fg_color="#555555",
             hover_color="#777777"
         )
-        btn_100.pack(side=tk.LEFT, padx=2)
+        self.limit_buttons[100].pack(side=tk.LEFT, padx=2)
 
-        btn_all = ctk.CTkButton(
+        # 全てボタン
+        self.limit_buttons[0] = ctk.CTkButton(
             preset_frame,
             text="全て",
-            command=lambda: self.batch_limit.set(0),
+            command=lambda: self.set_batch_limit(0),
             width=60,
             height=25,
             font=("Arial", 9),
@@ -731,7 +738,7 @@ class ModernImageAnalyzerGUI:
             text_color="#000000",
             hover_color="#00dd77"
         )
-        btn_all.pack(side=tk.LEFT, padx=2)
+        self.limit_buttons[0].pack(side=tk.LEFT, padx=2)
 
         # 現在値表示
         self.limit_value_label = ctk.CTkLabel(
@@ -745,6 +752,9 @@ class ModernImageAnalyzerGUI:
 
         # 値変更時のコールバック
         self.batch_limit.trace_add("write", self.update_limit_label)
+
+        # 初期状態：「全て」ボタンをハイライト
+        self.set_batch_limit(0)
 
         # 実行ボタン
         self.batch_analyze_btn = ctk.CTkButton(
@@ -887,6 +897,25 @@ class ModernImageAnalyzerGUI:
         )
         if filename:
             self.stats_csv_path.set(filename)
+
+    def set_batch_limit(self, value):
+        """処理枚数設定とボタンの色更新"""
+        self.batch_limit.set(value)
+
+        # 全ボタンをデフォルト色に戻す
+        for limit_value, button in self.limit_buttons.items():
+            if limit_value == 0:
+                # 「全て」ボタンは特別色
+                if limit_value == value:
+                    button.configure(fg_color="#00ff88", text_color="#000000")
+                else:
+                    button.configure(fg_color="#555555", text_color="#ffffff")
+            else:
+                # 数字ボタン
+                if limit_value == value:
+                    button.configure(fg_color="#00ffff", text_color="#000000")
+                else:
+                    button.configure(fg_color="#555555", text_color="#ffffff")
 
     def update_limit_label(self, *args):
         """処理枚数ラベル更新"""
