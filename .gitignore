@@ -12,6 +12,7 @@ env/
 analysis_results/
 results/
 output/
+analysis_output/
 
 # テスト画像
 *.png
