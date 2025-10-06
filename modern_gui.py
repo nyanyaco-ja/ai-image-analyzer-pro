@@ -416,6 +416,7 @@ class ModernImageAnalyzerGUI:
         # タブ作成
         self.tabview.add("📊 わかりやすい解釈")
         self.tabview.add("📝 詳細データ")
+        self.tabview.add("🔬 バッチ処理")
 
         # わかりやすい解釈タブ
         self.interpretation_text = ctk.CTkTextbox(
@@ -436,6 +437,496 @@ class ModernImageAnalyzerGUI:
             corner_radius=10
         )
         self.result_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # バッチ処理タブ
+        self.create_batch_tab()
+
+    def create_batch_tab(self):
+        """バッチ処理タブのUI作成"""
+        batch_tab = self.tabview.tab("🔬 バッチ処理")
+
+        # スクロール可能なフレーム
+        batch_scroll = ctk.CTkScrollableFrame(batch_tab, fg_color="transparent")
+        batch_scroll.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # 説明セクション
+        info_frame = ctk.CTkFrame(batch_scroll, fg_color="#2d3748", corner_radius=10)
+        info_frame.pack(fill=tk.X, pady=(0, 20))
+
+        info_title = ctk.CTkLabel(
+            info_frame,
+            text="📚 バッチ処理について",
+            font=("Arial", 16, "bold"),
+            text_color="#00ffff"
+        )
+        info_title.pack(anchor="w", padx=15, pady=(15, 5))
+
+        info_text = ctk.CTkLabel(
+            info_frame,
+            text="大量の画像ペア（300枚以上）を自動で分析し、統計的に妥当な閾値を決定します。\n"
+                 "医療画像研究・AIモデル比較に最適です。",
+            font=("Arial", 11),
+            text_color="#cccccc",
+            justify="left"
+        )
+        info_text.pack(anchor="w", padx=15, pady=(0, 15))
+
+        # 設定セクション
+        config_frame = ctk.CTkFrame(batch_scroll, fg_color="#1e2740", corner_radius=10)
+        config_frame.pack(fill=tk.X, pady=(0, 15))
+
+        config_title = ctk.CTkLabel(
+            config_frame,
+            text="⚙️ バッチ処理設定",
+            font=("Arial", 14, "bold"),
+            text_color="#00ffff"
+        )
+        config_title.pack(anchor="w", padx=15, pady=(15, 10))
+
+        # 元画像フォルダ
+        self.batch_original_dir = tk.StringVar()
+        original_label = ctk.CTkLabel(
+            config_frame,
+            text="📁 元画像フォルダ（低解像度）",
+            font=("Arial", 12, "bold"),
+            text_color="#ffffff"
+        )
+        original_label.pack(anchor="w", padx=15, pady=(10, 5))
+
+        original_frame = ctk.CTkFrame(config_frame, fg_color="transparent")
+        original_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
+
+        original_entry = ctk.CTkEntry(
+            original_frame,
+            textvariable=self.batch_original_dir,
+            placeholder_text="dataset/original/",
+            height=35,
+            font=("Arial", 11)
+        )
+        original_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+
+        original_btn = ctk.CTkButton(
+            original_frame,
+            text="参照",
+            command=self.browse_batch_original,
+            width=80,
+            height=35,
+            fg_color="#00ffff",
+            text_color="#000000",
+            hover_color="#00cccc"
+        )
+        original_btn.pack(side=tk.RIGHT)
+
+        # 超解像モデルフォルダ（複数）
+        upscaled_label = ctk.CTkLabel(
+            config_frame,
+            text="🤖 超解像モデルフォルダ（最大5個まで）",
+            font=("Arial", 12, "bold"),
+            text_color="#ffffff"
+        )
+        upscaled_label.pack(anchor="w", padx=15, pady=(10, 5))
+
+        # モデルフォルダ入力欄（5個）
+        self.batch_model_vars = []
+        self.batch_model_name_vars = []
+
+        for i in range(5):
+            model_frame = ctk.CTkFrame(config_frame, fg_color="transparent")
+            model_frame.pack(fill=tk.X, padx=15, pady=5)
+
+            model_name_var = tk.StringVar(value=f"model{i+1}")
+            model_path_var = tk.StringVar()
+
+            self.batch_model_name_vars.append(model_name_var)
+            self.batch_model_vars.append(model_path_var)
+
+            # モデル名入力
+            name_entry = ctk.CTkEntry(
+                model_frame,
+                textvariable=model_name_var,
+                placeholder_text=f"モデル{i+1}名",
+                width=120,
+                height=30,
+                font=("Arial", 10)
+            )
+            name_entry.pack(side=tk.LEFT, padx=(0, 5))
+
+            # パス入力
+            path_entry = ctk.CTkEntry(
+                model_frame,
+                textvariable=model_path_var,
+                placeholder_text=f"dataset/upscayl_model{i+1}/",
+                height=30,
+                font=("Arial", 10)
+            )
+            path_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
+
+            # 参照ボタン
+            browse_btn = ctk.CTkButton(
+                model_frame,
+                text="📁",
+                command=lambda idx=i: self.browse_batch_model(idx),
+                width=40,
+                height=30,
+                fg_color="#555555",
+                hover_color="#777777"
+            )
+            browse_btn.pack(side=tk.RIGHT)
+
+        # 出力先設定
+        output_label = ctk.CTkLabel(
+            config_frame,
+            text="💾 出力設定",
+            font=("Arial", 12, "bold"),
+            text_color="#ffffff"
+        )
+        output_label.pack(anchor="w", padx=15, pady=(15, 5))
+
+        self.batch_output_csv = tk.StringVar(value="results/batch_analysis.csv")
+        self.batch_output_detail = tk.StringVar(value="results/detailed/")
+
+        csv_frame = ctk.CTkFrame(config_frame, fg_color="transparent")
+        csv_frame.pack(fill=tk.X, padx=15, pady=5)
+
+        csv_label = ctk.CTkLabel(csv_frame, text="CSV:", width=80, anchor="w", font=("Arial", 10))
+        csv_label.pack(side=tk.LEFT)
+
+        csv_entry = ctk.CTkEntry(
+            csv_frame,
+            textvariable=self.batch_output_csv,
+            height=30,
+            font=("Arial", 10)
+        )
+        csv_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        detail_frame = ctk.CTkFrame(config_frame, fg_color="transparent")
+        detail_frame.pack(fill=tk.X, padx=15, pady=(5, 15))
+
+        detail_label = ctk.CTkLabel(detail_frame, text="詳細:", width=80, anchor="w", font=("Arial", 10))
+        detail_label.pack(side=tk.LEFT)
+
+        detail_entry = ctk.CTkEntry(
+            detail_frame,
+            textvariable=self.batch_output_detail,
+            height=30,
+            font=("Arial", 10)
+        )
+        detail_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        # 実行ボタン
+        self.batch_analyze_btn = ctk.CTkButton(
+            batch_scroll,
+            text="🚀 バッチ処理開始",
+            command=self.start_batch_analysis,
+            height=50,
+            corner_radius=10,
+            font=("Arial", 16, "bold"),
+            fg_color="#00ff88",
+            text_color="#000000",
+            hover_color="#00dd77"
+        )
+        self.batch_analyze_btn.pack(fill=tk.X, pady=(0, 15))
+
+        # プログレスバー
+        self.batch_progress = ctk.CTkProgressBar(
+            batch_scroll,
+            height=20,
+            corner_radius=10,
+            progress_color="#00ffff"
+        )
+        self.batch_progress.pack(fill=tk.X, pady=(0, 10))
+        self.batch_progress.set(0)
+
+        # ステータス
+        self.batch_status_label = ctk.CTkLabel(
+            batch_scroll,
+            text="設定を入力してバッチ処理を開始してください",
+            font=("Arial", 11),
+            text_color="#888888",
+            wraplength=600
+        )
+        self.batch_status_label.pack(pady=(0, 15))
+
+        # 統計分析セクション
+        stats_frame = ctk.CTkFrame(batch_scroll, fg_color="#1e2740", corner_radius=10)
+        stats_frame.pack(fill=tk.X, pady=(0, 15))
+
+        stats_title = ctk.CTkLabel(
+            stats_frame,
+            text="📊 統計分析・プロット生成",
+            font=("Arial", 14, "bold"),
+            text_color="#00ffff"
+        )
+        stats_title.pack(anchor="w", padx=15, pady=(15, 10))
+
+        stats_info = ctk.CTkLabel(
+            stats_frame,
+            text="バッチ処理完了後、CSVファイルを統計分析して23種類の研究用プロットを生成します。",
+            font=("Arial", 11),
+            text_color="#cccccc",
+            justify="left"
+        )
+        stats_info.pack(anchor="w", padx=15, pady=(0, 10))
+
+        # CSV選択
+        self.stats_csv_path = tk.StringVar()
+
+        csv_select_frame = ctk.CTkFrame(stats_frame, fg_color="transparent")
+        csv_select_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
+
+        csv_select_entry = ctk.CTkEntry(
+            csv_select_frame,
+            textvariable=self.stats_csv_path,
+            placeholder_text="results/batch_analysis.csv を選択...",
+            height=35,
+            font=("Arial", 11)
+        )
+        csv_select_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+
+        csv_select_btn = ctk.CTkButton(
+            csv_select_frame,
+            text="📁 CSV選択",
+            command=self.browse_stats_csv,
+            width=100,
+            height=35,
+            fg_color="#00ffff",
+            text_color="#000000",
+            hover_color="#00cccc"
+        )
+        csv_select_btn.pack(side=tk.RIGHT)
+
+        # 統計分析実行ボタン
+        self.stats_analyze_btn = ctk.CTkButton(
+            stats_frame,
+            text="📈 統計分析＋プロット生成（23種類）",
+            command=self.start_stats_analysis,
+            height=50,
+            corner_radius=10,
+            font=("Arial", 14, "bold"),
+            fg_color="#ffa500",
+            text_color="#000000",
+            hover_color="#cc8400"
+        )
+        self.stats_analyze_btn.pack(fill=tk.X, padx=15, pady=(0, 15))
+
+        # 結果表示エリア
+        self.batch_result_text = ctk.CTkTextbox(
+            batch_scroll,
+            font=("Yu Gothic UI", 10),
+            fg_color="#0a0e27",
+            text_color="#00ff88",
+            corner_radius=10,
+            height=200
+        )
+        self.batch_result_text.pack(fill=tk.BOTH, expand=True)
+
+    def browse_batch_original(self):
+        dirname = filedialog.askdirectory(title="元画像フォルダを選択")
+        if dirname:
+            self.batch_original_dir.set(dirname)
+
+    def browse_batch_model(self, index):
+        dirname = filedialog.askdirectory(title=f"モデル{index+1}のフォルダを選択")
+        if dirname:
+            self.batch_model_vars[index].set(dirname)
+
+    def browse_stats_csv(self):
+        filename = filedialog.askopenfilename(
+            title="CSVファイルを選択",
+            filetypes=[("CSV", "*.csv"), ("すべてのファイル", "*.*")]
+        )
+        if filename:
+            self.stats_csv_path.set(filename)
+
+    def start_batch_analysis(self):
+        """バッチ処理開始"""
+        # バリデーション
+        if not self.batch_original_dir.get():
+            messagebox.showerror("エラー", "元画像フォルダを選択してください")
+            return
+
+        # 有効なモデルフォルダをカウント
+        valid_models = {}
+        for i in range(5):
+            model_name = self.batch_model_name_vars[i].get().strip()
+            model_path = self.batch_model_vars[i].get().strip()
+
+            if model_path:
+                if not model_name:
+                    messagebox.showerror("エラー", f"モデル{i+1}の名前を入力してください")
+                    return
+                valid_models[model_name] = model_path
+
+        if len(valid_models) == 0:
+            messagebox.showerror("エラー", "少なくとも1つの超解像モデルフォルダを選択してください")
+            return
+
+        # 設定ファイル作成
+        config = {
+            "original_dir": self.batch_original_dir.get(),
+            "upscaled_dirs": valid_models,
+            "output_csv": self.batch_output_csv.get(),
+            "output_detail_dir": self.batch_output_detail.get()
+        }
+
+        # UIを無効化
+        self.batch_analyze_btn.configure(state='disabled')
+        self.batch_progress.set(0)
+        self.batch_status_label.configure(text="バッチ処理を開始します...", text_color="#00ffff")
+        self.batch_result_text.delete("1.0", tk.END)
+
+        # 別スレッドで実行
+        thread = threading.Thread(target=self.run_batch_analysis, args=(config,))
+        thread.daemon = True
+        thread.start()
+
+    def run_batch_analysis(self, config):
+        """バッチ処理実行"""
+        try:
+            import sys
+            from io import StringIO
+            from batch_analyzer import batch_analyze
+            from pathlib import Path
+
+            # 一時設定ファイル作成
+            temp_config_path = "temp_batch_config.json"
+            with open(temp_config_path, 'w', encoding='utf-8') as f:
+                json.dump(config, f, indent=2, ensure_ascii=False)
+
+            # 標準出力をキャプチャ
+            old_stdout = sys.stdout
+            sys.stdout = captured_output = StringIO()
+
+            # バッチ処理実行
+            batch_analyze(temp_config_path)
+
+            sys.stdout = old_stdout
+            output = captured_output.getvalue()
+
+            # 一時ファイル削除
+            if os.path.exists(temp_config_path):
+                os.remove(temp_config_path)
+
+            self.root.after(0, self.display_batch_results, output, True, config['output_csv'])
+
+        except Exception as e:
+            sys.stdout = old_stdout
+            self.root.after(0, self.display_batch_results, str(e), False, None)
+
+    def display_batch_results(self, output, success, csv_path):
+        """バッチ処理結果表示"""
+        self.batch_analyze_btn.configure(state='normal')
+        self.batch_progress.set(1 if success else 0)
+
+        self.batch_result_text.insert("1.0", output)
+
+        if success:
+            self.batch_status_label.configure(
+                text=f"✅ バッチ処理完了！CSVファイル: {csv_path}",
+                text_color="#00ff88"
+            )
+
+            # CSVパスを統計分析欄に自動入力
+            if csv_path:
+                self.stats_csv_path.set(csv_path)
+
+            messagebox.showinfo(
+                "完了",
+                f"バッチ処理が完了しました。\n\n"
+                f"CSV: {csv_path}\n\n"
+                f"統計分析を実行して23種類のプロットを生成できます。"
+            )
+        else:
+            self.batch_status_label.configure(
+                text="❌ バッチ処理エラー",
+                text_color="#ff4444"
+            )
+            messagebox.showerror("エラー", f"バッチ処理中にエラーが発生しました:\n{output}")
+
+    def start_stats_analysis(self):
+        """統計分析開始"""
+        csv_path = self.stats_csv_path.get()
+
+        if not csv_path:
+            messagebox.showerror("エラー", "CSVファイルを選択してください")
+            return
+
+        if not os.path.exists(csv_path):
+            messagebox.showerror("エラー", f"CSVファイルが見つかりません:\n{csv_path}")
+            return
+
+        # UIを無効化
+        self.stats_analyze_btn.configure(state='disabled')
+        self.batch_status_label.configure(text="統計分析を実行中...", text_color="#ffa500")
+
+        # 別スレッドで実行
+        thread = threading.Thread(target=self.run_stats_analysis, args=(csv_path,))
+        thread.daemon = True
+        thread.start()
+
+    def run_stats_analysis(self, csv_path):
+        """統計分析実行"""
+        try:
+            import sys
+            from io import StringIO
+            from analyze_results import analyze_batch_results
+
+            # 標準出力をキャプチャ
+            old_stdout = sys.stdout
+            sys.stdout = captured_output = StringIO()
+
+            # 統計分析実行
+            analyze_batch_results(csv_path)
+
+            sys.stdout = old_stdout
+            output = captured_output.getvalue()
+
+            self.root.after(0, self.display_stats_results, output, True)
+
+        except Exception as e:
+            sys.stdout = old_stdout
+            self.root.after(0, self.display_stats_results, str(e), False)
+
+    def display_stats_results(self, output, success):
+        """統計分析結果表示"""
+        self.stats_analyze_btn.configure(state='normal')
+
+        self.batch_result_text.delete("1.0", tk.END)
+        self.batch_result_text.insert("1.0", output)
+
+        if success:
+            self.batch_status_label.configure(
+                text="✅ 統計分析完了！23種類のプロットが analysis_output/ に保存されました",
+                text_color="#00ff88"
+            )
+
+            messagebox.showinfo(
+                "完了",
+                "統計分析が完了しました。\n\n"
+                "23種類の研究用プロット（300dpi）が\n"
+                "analysis_output/ フォルダに保存されました。\n\n"
+                "・ハルシネーション検出（4種類）\n"
+                "・品質トレードオフ（5種類）\n"
+                "・医療画像特化（4種類）\n"
+                "・分布・PCA分析（4種類）\n"
+                "・その他（6種類）"
+            )
+
+            # フォルダを開くか確認
+            result = messagebox.askyesno(
+                "フォルダを開く",
+                "analysis_output フォルダを開きますか？"
+            )
+            if result:
+                output_dir = "analysis_output"
+                if os.path.exists(output_dir):
+                    os.startfile(output_dir)
+        else:
+            self.batch_status_label.configure(
+                text="❌ 統計分析エラー",
+                text_color="#ff4444"
+            )
+            messagebox.showerror("エラー", f"統計分析中にエラーが発生しました:\n{output}")
 
     def draw_circular_meter(self, canvas, percentage, color):
         """円形メーターを描画"""
