@@ -556,8 +556,394 @@ def generate_research_plots(df, output_dir):
     plt.close()
     print(f"✅ 17項目バイオリンプロット: {plot6_path}")
 
+    # ===== ハルシネーション検出系プロット =====
+
+    # 7. SSIM高 × PSNR低 のハルシネーション疑い可視化
+    plt.figure(figsize=(12, 8))
+
+    for model in df['model'].unique():
+        model_data = df[df['model'] == model]
+        plt.scatter(model_data['ssim'], model_data['psnr'],
+                   label=model, alpha=0.6, s=50)
+
+    # ハルシネーション疑い領域を赤で強調
+    ssim_high = df['ssim'].quantile(0.75)
+    psnr_low = df['psnr'].quantile(0.25)
+    hallucination_candidates = df[(df['ssim'] >= ssim_high) & (df['psnr'] <= psnr_low)]
+
+    if len(hallucination_candidates) > 0:
+        plt.scatter(hallucination_candidates['ssim'], hallucination_candidates['psnr'],
+                   color='red', s=200, marker='x', linewidths=3,
+                   label=f'ハルシネーション疑い ({len(hallucination_candidates)}件)', zorder=10)
+
+    plt.axhline(y=psnr_low, color='orange', linestyle='--', alpha=0.5, label=f'PSNR閾値 ({psnr_low:.1f})')
+    plt.axvline(x=ssim_high, color='orange', linestyle='--', alpha=0.5, label=f'SSIM閾値 ({ssim_high:.3f})')
+
+    plt.xlabel('SSIM（構造類似性）', fontsize=14, fontweight='bold')
+    plt.ylabel('PSNR [dB]', fontsize=14, fontweight='bold')
+    plt.title('ハルシネーション検出：SSIM高 & PSNR低\n右下領域 = 構造を模倣したが忠実性が低い',
+              fontsize=16, fontweight='bold')
+    plt.legend(fontsize=10)
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(output_dir / 'hallucination_ssim_high_psnr_low.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"✅ ハルシネーション検出①（SSIM×PSNR）")
+
+
+    # 8. シャープネス × ノイズ（過剰処理検出）
+    plt.figure(figsize=(12, 8))
+
+    for model in df['model'].unique():
+        model_data = df[df['model'] == model]
+        plt.scatter(model_data['sharpness'], model_data['noise'],
+                   label=model, alpha=0.6, s=50)
+
+    sharp_high = df['sharpness'].quantile(0.75)
+    noise_high = df['noise'].quantile(0.75)
+    over_processed = df[(df['sharpness'] >= sharp_high) & (df['noise'] >= noise_high)]
+
+    if len(over_processed) > 0:
+        plt.scatter(over_processed['sharpness'], over_processed['noise'],
+                   color='red', s=200, marker='x', linewidths=3,
+                   label=f'過剰処理疑い ({len(over_processed)}件)', zorder=10)
+
+    plt.axhline(y=noise_high, color='orange', linestyle='--', alpha=0.5)
+    plt.axvline(x=sharp_high, color='orange', linestyle='--', alpha=0.5)
+
+    plt.xlabel('シャープネス', fontsize=14, fontweight='bold')
+    plt.ylabel('ノイズレベル', fontsize=14, fontweight='bold')
+    plt.title('過剰処理検出：高シャープネス & 高ノイズ\n右上領域 = シャープ化でノイズ増幅',
+              fontsize=16, fontweight='bold')
+    plt.legend(fontsize=10)
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(output_dir / 'hallucination_sharpness_vs_noise.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"✅ ハルシネーション検出②（シャープネス×ノイズ）")
+
+
+    # 9. エッジ密度 × 局所品質標準偏差
+    plt.figure(figsize=(12, 8))
+
+    for model in df['model'].unique():
+        model_data = df[df['model'] == model]
+        plt.scatter(model_data['edge_density'], model_data['local_quality_std'],
+                   label=model, alpha=0.6, s=50)
+
+    edge_high = df['edge_density'].quantile(0.75)
+    local_std_high = df['local_quality_std'].quantile(0.75)
+    unnatural_edges = df[(df['edge_density'] >= edge_high) & (df['local_quality_std'] >= local_std_high)]
+
+    if len(unnatural_edges) > 0:
+        plt.scatter(unnatural_edges['edge_density'], unnatural_edges['local_quality_std'],
+                   color='red', s=200, marker='x', linewidths=3,
+                   label=f'不自然なエッジ疑い ({len(unnatural_edges)}件)', zorder=10)
+
+    plt.xlabel('エッジ密度', fontsize=14, fontweight='bold')
+    plt.ylabel('局所品質標準偏差', fontsize=14, fontweight='bold')
+    plt.title('不自然なエッジ検出：エッジ増加 & 局所品質ばらつき大\n右上領域 = エッジ追加が不均一',
+              fontsize=16, fontweight='bold')
+    plt.legend(fontsize=10)
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(output_dir / 'hallucination_edge_vs_local_std.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"✅ ハルシネーション検出③（エッジ×局所品質）")
+
+
+    # 10. 高周波成分 × エントロピー
+    plt.figure(figsize=(12, 8))
+
+    for model in df['model'].unique():
+        model_data = df[df['model'] == model]
+        plt.scatter(model_data['high_freq_ratio'], model_data['entropy'],
+                   label=model, alpha=0.6, s=50)
+
+    # 回帰直線
+    from scipy import stats
+    slope, intercept, r_value, p_value, std_err = stats.linregress(df['high_freq_ratio'], df['entropy'])
+    x_line = np.array([df['high_freq_ratio'].min(), df['high_freq_ratio'].max()])
+    y_line = slope * x_line + intercept
+    plt.plot(x_line, y_line, 'r--', label=f'回帰直線 (R²={r_value**2:.3f})', linewidth=2)
+
+    plt.xlabel('高周波成分比率', fontsize=14, fontweight='bold')
+    plt.ylabel('エントロピー（情報量）', fontsize=14, fontweight='bold')
+    plt.title('人工パターン検出：高周波 vs エントロピー\n相関から外れる = 反復パターン疑い',
+              fontsize=16, fontweight='bold')
+    plt.legend(fontsize=10)
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(output_dir / 'hallucination_highfreq_vs_entropy.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"✅ ハルシネーション検出④（高周波×エントロピー）")
+
+
+    # ===== 品質トレードオフ系プロット =====
+
+    # 11. SSIM × ノイズ
+    plt.figure(figsize=(12, 8))
+    for model in df['model'].unique():
+        model_data = df[df['model'] == model]
+        plt.scatter(model_data['ssim'], model_data['noise'],
+                   label=model, alpha=0.6, s=50)
+    plt.xlabel('SSIM（構造類似性）', fontsize=14, fontweight='bold')
+    plt.ylabel('ノイズレベル', fontsize=14, fontweight='bold')
+    plt.title('品質トレードオフ：構造類似性 vs ノイズ', fontsize=16, fontweight='bold')
+    plt.legend(fontsize=10)
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(output_dir / 'tradeoff_ssim_vs_noise.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"✅ トレードオフ①（SSIM×ノイズ）")
+
+
+    # 12. PSNR × コントラスト
+    plt.figure(figsize=(12, 8))
+    for model in df['model'].unique():
+        model_data = df[df['model'] == model]
+        plt.scatter(model_data['psnr'], model_data['contrast'],
+                   label=model, alpha=0.6, s=50)
+    plt.xlabel('PSNR [dB]', fontsize=14, fontweight='bold')
+    plt.ylabel('コントラスト', fontsize=14, fontweight='bold')
+    plt.title('品質トレードオフ：忠実度 vs コントラスト強調', fontsize=16, fontweight='bold')
+    plt.legend(fontsize=10)
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(output_dir / 'tradeoff_psnr_vs_contrast.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"✅ トレードオフ②（PSNR×コントラスト）")
+
+
+    # 13. シャープネス × アーティファクト
+    plt.figure(figsize=(12, 8))
+    for model in df['model'].unique():
+        model_data = df[df['model'] == model]
+        plt.scatter(model_data['sharpness'], model_data['artifact_total'],
+                   label=model, alpha=0.6, s=50)
+    plt.xlabel('シャープネス', fontsize=14, fontweight='bold')
+    plt.ylabel('アーティファクト（ブロック+リンギング）', fontsize=14, fontweight='bold')
+    plt.title('品質トレードオフ：鮮明化 vs 歪み', fontsize=16, fontweight='bold')
+    plt.legend(fontsize=10)
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(output_dir / 'tradeoff_sharpness_vs_artifact.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"✅ トレードオフ③（シャープネス×アーティファクト）")
+
+
+    # 14. LPIPS × MS-SSIM
+    plt.figure(figsize=(12, 8))
+    for model in df['model'].unique():
+        model_data = df[df['model'] == model]
+        plt.scatter(model_data['lpips'], model_data['ms_ssim'],
+                   label=model, alpha=0.6, s=50)
+    plt.xlabel('LPIPS（知覚的類似度）', fontsize=14, fontweight='bold')
+    plt.ylabel('MS-SSIM', fontsize=14, fontweight='bold')
+    plt.title('知覚 vs 構造：LPIPS vs MS-SSIM\n負の相関が期待される', fontsize=16, fontweight='bold')
+    plt.legend(fontsize=10)
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(output_dir / 'tradeoff_lpips_vs_msssim.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"✅ トレードオフ④（LPIPS×MS-SSIM）")
+
+
+    # 15. テクスチャ × 高周波成分
+    plt.figure(figsize=(12, 8))
+    for model in df['model'].unique():
+        model_data = df[df['model'] == model]
+        plt.scatter(model_data['texture_complexity'], model_data['high_freq_ratio'],
+                   label=model, alpha=0.6, s=50)
+    plt.xlabel('テクスチャ複雑度', fontsize=14, fontweight='bold')
+    plt.ylabel('高周波成分比率', fontsize=14, fontweight='bold')
+    plt.title('テクスチャ vs 周波数成分の一貫性', fontsize=16, fontweight='bold')
+    plt.legend(fontsize=10)
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(output_dir / 'tradeoff_texture_vs_highfreq.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"✅ トレードオフ⑤（テクスチャ×高周波）")
+
+
+    # ===== 医療画像特化系プロット =====
+
+    # 16. コントラスト × ヒストグラム相関
+    plt.figure(figsize=(12, 8))
+    for model in df['model'].unique():
+        model_data = df[df['model'] == model]
+        plt.scatter(model_data['contrast'], model_data['histogram_corr'],
+                   label=model, alpha=0.6, s=50)
+    plt.xlabel('コントラスト', fontsize=14, fontweight='bold')
+    plt.ylabel('ヒストグラム相関', fontsize=14, fontweight='bold')
+    plt.title('医療画像品質：コントラスト強調が濃度分布を崩していないか', fontsize=16, fontweight='bold')
+    plt.legend(fontsize=10)
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(output_dir / 'medical_contrast_vs_histogram.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"✅ 医療特化①（コントラスト×ヒストグラム）")
+
+
+    # 17. エッジ密度 × 局所品質平均
+    plt.figure(figsize=(12, 8))
+    for model in df['model'].unique():
+        model_data = df[df['model'] == model]
+        plt.scatter(model_data['edge_density'], model_data['local_quality_mean'],
+                   label=model, alpha=0.6, s=50)
+    plt.xlabel('エッジ密度', fontsize=14, fontweight='bold')
+    plt.ylabel('局所品質平均', fontsize=14, fontweight='bold')
+    plt.title('医療画像品質：エッジ保持と局所品質の関係', fontsize=16, fontweight='bold')
+    plt.legend(fontsize=10)
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(output_dir / 'medical_edge_vs_local_quality.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"✅ 医療特化②（エッジ×局所品質）")
+
+
+    # 18. ノイズ × 局所品質標準偏差
+    plt.figure(figsize=(12, 8))
+    for model in df['model'].unique():
+        model_data = df[df['model'] == model]
+        plt.scatter(model_data['noise'], model_data['local_quality_std'],
+                   label=model, alpha=0.6, s=50)
+    plt.xlabel('ノイズレベル', fontsize=14, fontweight='bold')
+    plt.ylabel('局所品質標準偏差', fontsize=14, fontweight='bold')
+    plt.title('医療画像品質：ノイズの局所的偏在性', fontsize=16, fontweight='bold')
+    plt.legend(fontsize=10)
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(output_dir / 'medical_noise_vs_local_std.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"✅ 医療特化③（ノイズ×局所品質SD）")
+
+
+    # 19. 色差ΔE × LAB明度
+    plt.figure(figsize=(12, 8))
+    for model in df['model'].unique():
+        model_data = df[df['model'] == model]
+        plt.scatter(model_data['delta_e'], model_data['lab_L_mean'],
+                   label=model, alpha=0.6, s=50)
+    plt.xlabel('色差 ΔE', fontsize=14, fontweight='bold')
+    plt.ylabel('LAB明度', fontsize=14, fontweight='bold')
+    plt.title('医療画像品質：色変化と明度の関係（病理画像で重要）', fontsize=16, fontweight='bold')
+    plt.legend(fontsize=10)
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(output_dir / 'medical_deltae_vs_lab.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"✅ 医療特化④（色差×LAB明度）")
+
+
+    # ===== 分布・PCA系プロット =====
+
+    # 20. 総合スコアのヒストグラム（モデル別）
+    plt.figure(figsize=(12, 6))
+    for model in df['model'].unique():
+        model_data = df[df['model'] == model]['total_score']
+        plt.hist(model_data, bins=20, alpha=0.5, label=model, edgecolor='black')
+    plt.xlabel('総合スコア', fontsize=14, fontweight='bold')
+    plt.ylabel('頻度', fontsize=14, fontweight='bold')
+    plt.title('総合スコア分布（モデル別）', fontsize=16, fontweight='bold')
+    plt.legend(fontsize=12)
+    plt.grid(axis='y', alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(output_dir / 'distribution_total_score_histogram.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"✅ 分布①（総合スコアヒストグラム）")
+
+
+    # 21. 主成分分析（PCA）プロット
+    from sklearn.decomposition import PCA
+    from sklearn.preprocessing import StandardScaler
+
+    # 17項目を標準化
+    metrics_for_pca = ['ssim', 'ms_ssim', 'psnr', 'lpips', 'sharpness', 'contrast',
+                       'entropy', 'noise', 'edge_density', 'artifact_total', 'delta_e',
+                       'high_freq_ratio', 'texture_complexity', 'local_quality_mean',
+                       'histogram_corr', 'lab_L_mean', 'total_score']
+
+    X = df[metrics_for_pca].fillna(0)
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+
+    # PCA実行
+    pca = PCA(n_components=2)
+    X_pca = pca.fit_transform(X_scaled)
+
+    plt.figure(figsize=(12, 8))
+    for model in df['model'].unique():
+        mask = df['model'] == model
+        plt.scatter(X_pca[mask, 0], X_pca[mask, 1],
+                   label=model, alpha=0.6, s=50)
+
+    plt.xlabel(f'第1主成分 ({pca.explained_variance_ratio_[0]*100:.1f}%)', fontsize=14, fontweight='bold')
+    plt.ylabel(f'第2主成分 ({pca.explained_variance_ratio_[1]*100:.1f}%)', fontsize=14, fontweight='bold')
+    plt.title(f'主成分分析（PCA）：17項目を2次元に圧縮\n累積寄与率: {sum(pca.explained_variance_ratio_)*100:.1f}%',
+              fontsize=16, fontweight='bold')
+    plt.legend(fontsize=12)
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.savefig(output_dir / 'pca_2d_projection.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"✅ 分布②（PCA 2次元プロット）")
+
+
+    # 22. パーセンタイルバンドプロット（主要指標）
+    fig, axes = plt.subplots(2, 3, figsize=(18, 10))
+    fig.suptitle('パーセンタイルバンド（25%-75%）プロット', fontsize=18, fontweight='bold')
+
+    key_metrics = ['ssim', 'psnr', 'sharpness', 'noise', 'edge_density', 'total_score']
+    metric_names = ['SSIM', 'PSNR [dB]', 'シャープネス', 'ノイズ', 'エッジ密度', '総合スコア']
+
+    for idx, (metric, name) in enumerate(zip(key_metrics, metric_names)):
+        ax = axes[idx // 3, idx % 3]
+
+        models = df['model'].unique()
+        positions = range(len(models))
+
+        for i, model in enumerate(models):
+            model_data = df[df['model'] == model][metric]
+            q25 = model_data.quantile(0.25)
+            q50 = model_data.quantile(0.50)
+            q75 = model_data.quantile(0.75)
+
+            ax.plot([i, i], [q25, q75], 'b-', linewidth=8, alpha=0.3)
+            ax.plot(i, q50, 'ro', markersize=10)
+
+        ax.set_xticks(positions)
+        ax.set_xticklabels(models, rotation=45, ha='right', fontsize=9)
+        ax.set_ylabel(name, fontsize=11, fontweight='bold')
+        ax.grid(axis='y', alpha=0.3)
+        ax.set_title(f'{name}の分布', fontsize=12)
+
+    plt.tight_layout()
+    plt.savefig(output_dir / 'percentile_bands.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"✅ 分布③（パーセンタイルバンド）")
+
+
+    # 23. 寄与率グラフ（PCA）
+    pca_full = PCA()
+    pca_full.fit(X_scaled)
+
+    plt.figure(figsize=(12, 6))
+    cumsum = np.cumsum(pca_full.explained_variance_ratio_)
+    plt.plot(range(1, len(cumsum)+1), cumsum, 'bo-', linewidth=2, markersize=8)
+    plt.axhline(y=0.95, color='r', linestyle='--', label='95%ライン')
+    plt.xlabel('主成分数', fontsize=14, fontweight='bold')
+    plt.ylabel('累積寄与率', fontsize=14, fontweight='bold')
+    plt.title('PCA累積寄与率：何次元で95%説明できるか', fontsize=16, fontweight='bold')
+    plt.grid(True, alpha=0.3)
+    plt.legend(fontsize=12)
+    plt.tight_layout()
+    plt.savefig(output_dir / 'pca_cumulative_variance.png', dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"✅ 分布④（PCA寄与率）")
+
     print(f"{'='*80}")
-    print(f"✅ 全6種類の研究用プロット生成完了")
+    print(f"✅ 全23種類の研究用プロット生成完了")
     print(f"   論文・発表資料にそのまま使用できます（300dpi高解像度）\n")
 
 
