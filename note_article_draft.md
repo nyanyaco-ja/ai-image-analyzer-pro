@@ -388,9 +388,26 @@ image_compare/
 
 **ご意見・ご質問はX (Twitter) またはNoteコメントでお気軽にどうぞ！**
 
+📧 Contact: s.shiny.n.works@gmail.com
+
+---
+
+## GitHub リポジトリ
+
+**AI Image Analyzer Pro** のソースコードとデータを公開中：
+
+🔗 https://github.com/nyanyaco-ja/ai-image-analyzer-pro
+
+- ✅ 全ソースコード公開（MIT License）
+- ✅ 100枚分析の全データ（CSV + 23種類のプロット）
+- ✅ インストール・使用方法の詳細ドキュメント
+- ✅ バッチ処理ガイド
+
+**自分でも試したい方は、GitHubからダウンロードしてお使いください！**
+
 ---
 
 ### 更新履歴
 
-- **2025-10-07**: 初版公開（100枚分析結果）
+- **2025-10-07**: 初版公開（100枚分析結果）+ GitHub公開
 - *（今後300枚以上に拡大予定）*
