@@ -598,7 +598,19 @@ class ModernImageAnalyzerGUI:
             height=30,
             font=("Arial", 10)
         )
-        csv_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        csv_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
+
+        csv_browse_btn = ctk.CTkButton(
+            csv_frame,
+            text="📁",
+            command=self.browse_batch_csv_output,
+            width=40,
+            height=30,
+            fg_color="#00ffff",
+            text_color="#000000",
+            hover_color="#00cccc"
+        )
+        csv_browse_btn.pack(side=tk.RIGHT)
 
         detail_frame = ctk.CTkFrame(config_frame, fg_color="transparent")
         detail_frame.pack(fill=tk.X, padx=15, pady=(5, 15))
@@ -612,7 +624,19 @@ class ModernImageAnalyzerGUI:
             height=30,
             font=("Arial", 10)
         )
-        detail_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        detail_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
+
+        detail_browse_btn = ctk.CTkButton(
+            detail_frame,
+            text="📁",
+            command=self.browse_batch_detail_output,
+            width=40,
+            height=30,
+            fg_color="#00ffff",
+            text_color="#000000",
+            hover_color="#00cccc"
+        )
+        detail_browse_btn.pack(side=tk.RIGHT)
 
         # 分割実行設定
         limit_label = ctk.CTkLabel(
@@ -838,6 +862,23 @@ class ModernImageAnalyzerGUI:
         dirname = filedialog.askdirectory(title=f"モデル{index+1}のフォルダを選択")
         if dirname:
             self.batch_model_vars[index].set(dirname)
+
+    def browse_batch_csv_output(self):
+        """CSV出力先選択"""
+        filename = filedialog.asksaveasfilename(
+            title="CSV出力先を選択",
+            defaultextension=".csv",
+            filetypes=[("CSV", "*.csv"), ("すべてのファイル", "*.*")],
+            initialfile="batch_analysis.csv"
+        )
+        if filename:
+            self.batch_output_csv.set(filename)
+
+    def browse_batch_detail_output(self):
+        """詳細レポート出力先フォルダ選択"""
+        dirname = filedialog.askdirectory(title="詳細レポート出力先フォルダを選択")
+        if dirname:
+            self.batch_output_detail.set(dirname)
 
     def browse_stats_csv(self):
         filename = filedialog.askopenfilename(
