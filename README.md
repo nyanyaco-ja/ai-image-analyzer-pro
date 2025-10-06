@@ -1,26 +1,66 @@
-# AI高解像度画像比較分析ツール v1.1
+# AI Image Analyzer Pro
 
-AI超解像処理された画像を17項目の指標で詳細比較・評価するツールです。GPU対応でLPIPS（深層学習ベース）を含む高度な画質評価を実行できます。
+> Professional AI super-resolution quality evaluation tool with 17 metrics. Batch processing, hallucination detection, and medical image analysis support. GPU-accelerated with detailed statistical reports.
+
+**日本語:** AI超解像処理された医療画像を**17項目の指標**で詳細比較・評価するプロフェッショナルツールです。GPU対応でLPIPS（深層学習ベース）を含む高度な画質評価を実行できます。
+
+![アプリロゴ](images/maou.jpg)
+
+## 🔬 100枚分析プロジェクト公開中
+
+**NIH ChestX-ray14データセット**を使用した**Upscayl 3モデル × 100枚（計300データポイント）**の定量評価を実施しました。
+
+📊 **分析結果データ:**
+- `analysis_output/` フォルダ: 23種類の統計分析プロット
+- Note記事: [AI超解像ツールUpscaylの医療画像性能評価](note_article_draft.md)
+
+**主な発見:**
+- ✅ model3 (High Fidelity): 最高PSNR 41.5dB、最高構造保持
+- ⚠️ model1 (Standard): 9%のハルシネーション検出率
+- 🔍 「ノイズ」と「微細構造」の区別には専門家評価が必須
+
+---
 
 ## 特徴
 
-- **17項目の総合評価**: SSIM、MS-SSIM、PSNR、LPIPS、シャープネス、コントラスト、ノイズレベル、エッジ保持率、アーティファクト、色差、周波数分析、エントロピー、テクスチャ、局所品質、ヒストグラム、LAB明度、総合スコア
-- **GPU対応**: NVIDIA CUDA対応GPUで高速処理（RTX 4050など）
-- **元画像比較**: 低解像度の元画像を登録して、AI超解像の精度を評価
-- **モダンGUI**: CustomTkinterによる見やすいインターフェース
-- **詳細レポート**: グラフ・ヒートマップ・エッジ検出などの可視化画像を自動生成
+### 📊 17項目の総合評価
+- **構造・知覚**: SSIM、MS-SSIM、PSNR、LPIPS
+- **鮮明度**: シャープネス、コントラスト、エントロピー
+- **ノイズ**: ノイズレベル、エッジ密度、アーティファクト検出
+- **色・テクスチャ**: ΔE、高周波比率、テクスチャ複雑度、ヒストグラム相関
+- **局所品質**: 局所品質平均、LAB明度
+- **総合**: 総合スコア（0-100点）
+
+### 🚀 バッチ処理モード
+- 大量画像の自動分析（100枚以上推奨）
+- CSV出力で全データ記録
+- 統計分析スクリプトで閾値自動決定
+- ハルシネーション検出ロジック搭載
+
+### 💻 GPU対応
+- NVIDIA CUDA対応GPUで高速処理
+- Kornia統合で主要計算をGPUアクセラレーション
+- CPU版も完全サポート
+
+### 🎨 モダンGUI
+- CustomTkinterによる見やすいインターフェース
+- リアルタイム進捗表示
+- バッチ処理設定をGUIで変更可能
+
+---
 
 ## 動作環境
 
 - **OS**: Windows / Linux / macOS
 - **Python**: 3.8以上
 - **GPU（オプション）**: NVIDIA CUDA対応GPU（推奨）
+- **推奨GPU**: RTX 4000シリーズ以上（16GB VRAM）
+
+---
 
 ## インストール
 
 ### 1. 仮想環境の作成（推奨）
-
-プロジェクトディレクトリで仮想環境を作成します：
 
 ```bash
 # Windowsの場合
@@ -31,8 +71,6 @@ venv\Scripts\activate
 python -m venv venv
 source venv/bin/activate
 ```
-
-仮想環境をアクティベートすると、プロンプトに `(venv)` が表示されます。
 
 ### 2. 必要なライブラリのインストール
 
@@ -51,11 +89,8 @@ pip install -r requirements.txt
 GPUがない場合：
 
 ```bash
-# requirements.txtから全てインストール（CPU版PyTorchが入ります）
 pip install -r requirements.txt
 ```
-
-**注意**: GPU版を使う場合は、先にCUDA対応PyTorchをインストールしてから、requirements.txtでその他のライブラリをインストールしてください。requirements.txtにはCPU版PyTorchが指定されているため、GPU版を上書きしないように注意が必要です。
 
 ### 3. GPUの動作確認（GPU版の場合）
 
@@ -67,30 +102,28 @@ python test_gpu.py
 ```
 PyTorchバージョン: 2.5.1+cu121
 CUDA利用可能: True
-GPU名: NVIDIA GeForce RTX 4050 Laptop GPU
+GPU名: NVIDIA GeForce RTX 4070 Ti SUPER
 ```
 
-## 起動方法
+---
 
-### 仮想環境のアクティベート
+## 使い方
 
-毎回使用する前に、仮想環境をアクティベートしてください：
+### 🖼️ 単一画像比較モード
 
-```bash
-# Windowsの場合
-venv\Scripts\activate
-
-# Linux/macOSの場合
-source venv/bin/activate
-```
-
-### GUIモードで起動（推奨）
+#### GUIで起動（推奨）
 
 ```bash
 python modern_gui.py
 ```
 
-### コマンドラインから直接実行
+1. 「📁 画像1を選択」で比較したい画像1を選択
+2. 「📁 画像2を選択」で比較したい画像2を選択
+3. （オプション）「🎯 元画像」で低解像度の元画像を選択
+4. 「🚀 分析開始」をクリック
+5. 「📂 結果フォルダを開く」で結果確認
+
+#### コマンドライン実行
 
 ```bash
 python advanced_image_analyzer.py 画像1.png 画像2.png
@@ -106,29 +139,87 @@ python advanced_image_analyzer.py 画像1.png 画像2.png --original 元画像.p
 python advanced_image_analyzer.py 画像1.png 画像2.png --output ./results
 ```
 
-## 使い方
+---
 
-### 1. GUIでの操作手順
+### 📊 バッチ処理モード（大量画像の自動分析）
 
-1. **modern_gui.py** を起動
-2. 「📁 画像1を選択」ボタンで比較したい画像1を選択
-3. 「📁 画像2を選択」ボタンで比較したい画像2を選択
-4. （オプション）「🎯 元画像（オプション）」で低解像度の元画像を選択
-5. 「🚀 分析開始」ボタンをクリック
-6. リアルタイムで分析の進行状況が表示されます
-7. 完了後、「📂 結果フォルダを開く」で結果を確認できます
+**医療画像データセットでの統計的評価に最適**
 
-### 2. 元画像機能について
+#### Step 1: 設定ファイル作成
 
-元画像（低解像度画像）を登録すると、以下の指標がより正確に評価されます：
+```bash
+python batch_analyzer.py --create-config
+```
 
-- **SSIM**: 各画像が元画像とどれだけ構造的に似ているか
-- **PSNR**: 各画像が元画像とどれだけ信号品質が近いか
-- **色差（ΔE）**: 各画像が元画像の色をどれだけ正確に再現しているか
+`batch_config.json` が生成されます。
 
-元画像がない場合は、画像1 vs 画像2 の類似度評価になります。
+#### Step 2: 設定ファイル編集
+
+```json
+{
+  "original_dir": "dataset/original/",
+  "upscaled_dirs": {
+    "model1": "dataset/upscayl_standard/",
+    "model2": "dataset/upscayl_digital_art/",
+    "model3": "dataset/upscayl_high_fidelity/"
+  },
+  "output_csv": "batch_analysis.csv",
+  "output_detail_dir": "",
+  "sample_size": 100
+}
+```
+
+**推奨設定:**
+- `output_detail_dir`: 空文字 `""` （詳細プロット無効で高速化）
+- `sample_size`: 100以上（統計的信頼性のため）
+
+#### Step 3: バッチ処理実行（GUIまたはCLI）
+
+**GUIで実行（推奨）:**
+```bash
+python modern_gui.py
+```
+- 「バッチ処理」タブを選択
+- 処理枚数を選択（10/50/100/全て）
+- 「バッチ処理を開始」をクリック
+
+**コマンドラインで実行:**
+```bash
+python batch_analyzer.py batch_config.json
+```
+
+**処理時間目安（RTX 4070 Ti SUPER）:**
+- 100枚 × 3モデル（詳細プロット無効）: 約6-7分
+- 100枚 × 3モデル（詳細プロット有効）: 約30分
+
+#### Step 4: 統計分析で閾値決定
+
+```bash
+python analyze_results.py batch_analysis.csv
+```
+
+**出力結果（`analysis_output/` フォルダ）:**
+
+| ファイル | 内容 |
+|---------|------|
+| `model_comparison.csv` | モデル別平均スコア比較 |
+| `recommended_thresholds.json` | 推奨閾値（25/75パーセンタイル） |
+| `results_with_risk_score.csv` | リスクスコア付きデータ |
+| `hallucination_*.png` | ハルシネーション検出プロット（2種類） |
+| `strategy_map_*.png` | 戦略マップ（5種類） |
+| `pca_*.png` | 主成分分析（2種類） |
+| `radar_chart_*.png` | レーダーチャート（3種類） |
+| `violin_*.png` | バイオリンプロット（6種類） |
+| `medical_*.png` | 医療画像特化プロット（2種類） |
+| `tradeoff_*.png` | トレードオフ分析（2種類） |
+
+**合計23種類**の統計分析プロットが自動生成されます。
+
+---
 
 ## 出力ファイル
+
+### 単一画像比較モードの出力
 
 分析結果は `analysis_results/` ディレクトリに保存されます：
 
@@ -143,30 +234,59 @@ python advanced_image_analyzer.py 画像1.png 画像2.png --output ./results
 | `edges_img2.png` | 画像2のエッジ検出結果 |
 | `analysis_results.json` | 分析結果データ（JSON形式） |
 
+### バッチ処理モードの出力
+
+| ファイル名 | 内容 |
+|-----------|------|
+| `batch_analysis.csv` | 全画像の17項目スコア（1行1データポイント） |
+| `analysis_output/` | 23種類の統計分析プロット |
+
+---
+
 ## 評価項目の詳細
 
-### 勝者判定がある項目（11項目）
-1. **SSIM（構造類似性）**: 画像の構造的な類似度
-2. **PSNR（信号対雑音比）**: 信号品質の近さ
-3. **シャープネス**: エッジの鮮明さ
-4. **コントラスト**: 明暗の差
-5. **ノイズレベル**: ノイズの少なさ
-6. **エッジ保持率**: 細部・輪郭の保持度
-7. **アーティファクト**: 圧縮歪み・ブロックノイズの少なさ
-8. **色差（ΔE）**: 色の正確さ
-9. **高周波成分**: 細かい模様・テクスチャの量
-10. **エントロピー**: 画像の情報量・複雑さ
-11. **テクスチャ複雑度**: テクスチャの豊富さ
+### 構造類似性・知覚品質（4指標）
+1. **SSIM** (0-1、高いほど良い): 構造類似度
+2. **MS-SSIM** (0-1、高いほど良い): マルチスケール構造類似度
+3. **PSNR** (dB、高いほど良い): ピーク信号対雑音比
+4. **LPIPS** (0-1、低いほど良い): 知覚的類似度（深層学習ベース）
 
-### 参考指標（同等判定）
-12. **MS-SSIM**: マルチスケールでの構造類似度
-13. **LPIPS**: AI深層学習ベースの知覚的類似度
-14. **局所品質**: パッチ単位での品質均一性
-15. **ヒストグラム相関**: 輝度分布の類似度
-16. **LAB明度**: 知覚的な明るさ
+### 鮮明度・コントラスト（3指標）
+5. **Sharpness** (高いほど良い): エッジ鮮明度（Laplacian分散）
+6. **Contrast** (高いほど良い): コントラスト（標準偏差）
+7. **Entropy** (高いほど良い): エントロピー（情報量）
+
+### ノイズ・アーティファクト（3指標）
+8. **Noise Level** (低いほど良い): ノイズレベル（局所標準偏差）
+9. **Edge Density** (%): エッジ密度
+10. **Artifacts** (低いほど良い): アーティファクト検出（高周波異常）
+
+### 色・テクスチャ（4指標）
+11. **ΔE (Color Difference)** (低いほど良い): LAB色空間での色差
+12. **High-Freq Ratio** (%): 高周波成分比率
+13. **Texture Complexity**: テクスチャ複雑度
+14. **Histogram Correlation** (0-1、高いほど良い): ヒストグラム相関
+
+### 局所品質（2指標）
+15. **Local Quality (Mean)** (0-1、高いほど良い): 局所品質平均
+16. **LAB Brightness**: LAB色空間での明度
 
 ### 総合評価
-17. **総合スコア**: 7項目（シャープネス、コントラスト、エントロピー、ノイズ、エッジ、アーティファクト、テクスチャ）の総合評価
+17. **Total Score** (0-100、高いほど良い): 総合スコア
+
+---
+
+## ハルシネーション検出ロジック
+
+以下の矛盾パターンを検出：
+
+1. **SSIM高 × PSNR低**: 構造は似ているのにノイズが多い（疑わしい）
+2. **シャープネス高 × ノイズ高**: 鮮明なのにノイズが多い（疑わしい）
+3. **エッジ密度異常 × 低品質**: エッジが過剰なのに品質が低い（疑わしい）
+
+これらのパターンは、AIが「存在しない構造を追加」した可能性を示唆します。
+
+---
 
 ## トラブルシューティング
 
@@ -190,74 +310,30 @@ pip install lpips
 pip install customtkinter
 ```
 
+### エラー: "No module named 'kornia'"
+```bash
+pip install kornia
+```
+
 ### 日本語ファイル名で文字化け
 このツールは日本語パスに対応していますが、一部の環境では問題が発生する場合があります。その場合は英数字のみのパスを使用してください。
-
-## バッチ処理モード（大量画像の自動分析）
-
-### **医療画像データセットでの実験用**
-
-300枚以上の画像を自動で分析して、統計的に根拠のある閾値を決定できます。
-
-#### **Step 1: 設定ファイル作成**
-
-```bash
-python batch_analyzer.py --create-config
-```
-
-`batch_config.json` が生成されます。
-
-#### **Step 2: 設定ファイル編集**
-
-```json
-{
-  "original_dir": "dataset/original/",
-  "upscaled_dirs": {
-    "upscayl_model1": "dataset/upscayl_model1/",
-    "upscayl_model2": "dataset/upscayl_model2/",
-    "upscayl_model3": "dataset/upscayl_model3/"
-  },
-  "output_csv": "results/batch_analysis.csv",
-  "output_detail_dir": "results/detailed/"
-}
-```
-
-#### **Step 3: バッチ処理実行**
-
-```bash
-python batch_analyzer.py batch_config.json
-```
-
-300枚の画像が自動で分析され、17項目スコアがCSVに記録されます。
-
-#### **Step 4: 統計分析で閾値決定**
-
-```bash
-python analyze_results.py results/batch_analysis.csv
-```
-
-**出力結果：**
-- モデル別ランキング
-- 17項目の相関マトリックス
-- 推奨閾値（25/75パーセンタイル基準）
-- ハルシネーション検出ロジック
-- リスクスコア付きCSV
-
-**分析結果から得られる情報：**
-- 各指標の統計的に妥当な閾値
-- モデル別の性能比較
-- ハルシネーション発生パターン
-- 医療画像用の品質基準
 
 ---
 
 ## 更新履歴
 
-### v1.2（現在）
+### v1.3（現在）
+- ✅ 100枚分析プロジェクト公開（Upscayl 3モデル評価）
+- ✅ Kornia統合でGPU最適化強化
+- ✅ バッチ処理GUIに進捗表示追加
+- ✅ 23種類の統計分析プロット自動生成
+- ✅ ハルシネーション検出ロジック実装
+- ✅ Note記事ドラフト同梱
+
+### v1.2
 - ✅ バッチ処理モード追加（大量画像の自動分析）
 - ✅ CSV出力機能（17項目スコア記録）
 - ✅ 統計分析スクリプト（閾値決定）
-- ✅ ハルシネーション検出ロジック提案
 - ✅ 医療画像データセット対応
 
 ### v1.1
@@ -265,28 +341,58 @@ python analyze_results.py results/batch_analysis.csv
 - ✅ 元画像比較機能追加
 - ✅ 17項目評価システム
 - ✅ モダンGUI実装
-- ✅ スクロール対応UI
-- ✅ 勝者カウント修正（全17項目を正確にカウント）
 
 ### v1.0
 - 初回リリース
 - 15項目評価
 - 基本的な画像比較機能
 
+---
+
 ## ライセンス
 
 MIT License
 
+---
+
 ## 開発者
 
-mohumohu neco
+**mohumohu neco**
 
-AI アシスタント: Claude Code
+📧 Contact: s.shiny.n.works@gmail.com
+
+---
+
+## 参考情報
+
+### 使用データセット
+- **NIH ChestX-ray14**: https://www.nih.gov/news-events/news-releases/nih-clinical-center-provides-one-largest-publicly-available-chest-x-ray-datasets-scientific-community
+- Wang et al. (2017) "ChestX-ray8: Hospital-scale Chest X-ray Database and Benchmarks"
+
+### 評価対象ツール
+- **Upscayl**: https://upscayl.org/
+- GitHub: https://github.com/upscayl/upscayl
+- ライセンス: AGPL-3.0
+
+### 評価手法の参考文献
+- SSIM: Wang et al. (2004) "Image Quality Assessment: From Error Visibility to Structural Similarity"
+- LPIPS: Zhang et al. (2018) "The Unreasonable Effectiveness of Deep Features as a Perceptual Metric"
+- MS-SSIM: Wang et al. (2003) "Multi-scale Structural Similarity for Image Quality Assessment"
 
 ---
 
 **🎯 推奨ワークフロー:**
-1. AI超解像ツール（waifu2x、Real-ESRGANなど）で複数の設定を試す
+
+### 個別評価モード
+1. AI超解像ツール（Upscayl、waifu2x、Real-ESRGANなど）で複数の設定を試す
 2. 元画像と超解像画像2枚をこのツールで比較
-3. comparison_report.pngで総合評価を確認
+3. `comparison_report.png`で総合評価を確認
 4. 最も優れた設定を選択
+
+### バッチ評価モード（100枚以上推奨）
+1. 複数モデルで大量画像を超解像処理
+2. バッチ処理で全データを自動分析
+3. `analyze_results.py`で統計分析
+4. `analysis_output/`の23種類のプロットで傾向把握
+5. ハルシネーション検出結果を確認
+6. 推奨閾値を参考にモデル選定

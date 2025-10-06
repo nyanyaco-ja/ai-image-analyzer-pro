@@ -1,0 +1,6 @@
+﻿,ssim,ssim,psnr,psnr,lpips,lpips,total_score,total_score,noise,noise,artifact_total,artifact_total,sharpness,sharpness,edge_density,edge_density
+,mean,std,mean,std,mean,std,mean,std,mean,std,mean,std,mean,std,mean,std
+model,,,,,,,,,,,,,,,,
+model2,0.9323,0.0306,36.5812,2.1146,0.2494,0.0506,56.019,3.1598,2.7672,0.8778,344.6231,98.7967,4.5519,3.2233,0.5911,0.3745
+model1,0.966,0.02,39.8082,2.104,0.1487,0.0523,55.902,3.136,3.0373,0.7326,386.2835,83.9018,3.781,2.8004,0.4874,0.3089
+model3,0.964,0.018,40.3289,1.7004,0.105,0.0252,54.49,2.9563,7.0605,1.696,762.4043,177.0751,4.4304,1.9657,0.4146,0.2745

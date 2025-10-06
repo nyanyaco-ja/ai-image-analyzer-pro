@@ -12,9 +12,9 @@ env/
 analysis_results/
 results/
 output/
-analysis_output/
+# analysis_output/  ← 100枚分析結果を公開するため除外しない
 
-# テスト画像
+# テスト画像（analysis_output/とimages/は除外しない）
 *.png
 *.jpg
 *.jpeg
@@ -22,6 +22,9 @@ analysis_output/
 *.tiff
 *.webp
 !icon.ico
+!images/maou.jpg
+!analysis_output/*.png
+!analysis_output/*.jpg
 
 # IDE
 .vscode/
