@@ -53,6 +53,9 @@ def analyze_batch_results(csv_file):
     # 5. ハルシネーション検出ロジック提案
     suggest_hallucination_logic(df, output_dir)
 
+    # 6. 研究用プロット生成
+    generate_research_plots(df, output_dir)
+
     print(f"\n✅ 分析完了！")
     print(f"📁 結果保存先: {output_dir}/")
 
@@ -339,6 +342,223 @@ def suggest_hallucination_logic(df, output_dir):
     print(f"\n💾 リスクスコア付き結果保存: {output_csv}")
 
     print(f"{'='*80}\n")
+
+
+def generate_research_plots(df, output_dir):
+    """
+    研究用プロット画像を生成（論文・発表用）
+    """
+
+    print(f"\n📊 研究用プロット生成中:")
+    print(f"{'='*80}")
+
+    # 1. シャープネス vs PSNR 散布図（AIモデルの戦略を示す）
+    plt.figure(figsize=(12, 8))
+
+    for model in df['model'].unique():
+        model_data = df[df['model'] == model]
+        plt.scatter(model_data['psnr'], model_data['sharpness'],
+                   label=model, alpha=0.6, s=50)
+
+    plt.xlabel('PSNR（忠実度）[dB]', fontsize=14, fontweight='bold')
+    plt.ylabel('シャープネス（鮮明度）', fontsize=14, fontweight='bold')
+    plt.title('AIモデルの戦略マップ：忠実度 vs 鮮明度', fontsize=16, fontweight='bold')
+    plt.legend(fontsize=12)
+    plt.grid(True, alpha=0.3)
+
+    # 戦略領域の注釈
+    plt.axhline(y=df['sharpness'].median(), color='red', linestyle='--', alpha=0.3, label='中央値')
+    plt.axvline(x=df['psnr'].median(), color='red', linestyle='--', alpha=0.3)
+
+    # 領域ラベル
+    max_psnr = df['psnr'].max()
+    max_sharp = df['sharpness'].max()
+    plt.text(max_psnr * 0.95, max_sharp * 0.95, '理想領域\n（高忠実・高鮮明）',
+             fontsize=10, ha='right', va='top', bbox=dict(boxstyle='round', facecolor='lightgreen', alpha=0.5))
+    plt.text(df['psnr'].min() * 1.05, max_sharp * 0.95, '過剰処理領域\n（低忠実・高鮮明）\nハルシネーション疑い',
+             fontsize=10, ha='left', va='top', bbox=dict(boxstyle='round', facecolor='lightcoral', alpha=0.5))
+
+    plt.tight_layout()
+    plot1_path = output_dir / 'strategy_map_sharpness_vs_psnr.png'
+    plt.savefig(plot1_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"✅ シャープネス vs PSNR 散布図: {plot1_path}")
+
+
+    # 2. LPIPS 箱ひげ図（安定性を示す）
+    plt.figure(figsize=(10, 6))
+
+    lpips_data = [df[df['model'] == model]['lpips'].values for model in df['model'].unique()]
+    models = df['model'].unique()
+
+    bp = plt.boxplot(lpips_data, labels=models, patch_artist=True,
+                     showmeans=True, meanline=True)
+
+    # カラーリング
+    colors = ['lightblue', 'lightgreen', 'lightcoral', 'lightyellow', 'lightpink']
+    for patch, color in zip(bp['boxes'], colors):
+        patch.set_facecolor(color)
+
+    plt.ylabel('LPIPS（知覚的類似度）', fontsize=14, fontweight='bold')
+    plt.xlabel('AIモデル', fontsize=14, fontweight='bold')
+    plt.title('モデル別 LPIPS 分布（安定性評価）\n箱が小さい = 安定', fontsize=16, fontweight='bold')
+    plt.grid(axis='y', alpha=0.3)
+    plt.xticks(rotation=45, ha='right')
+
+    plt.tight_layout()
+    plot2_path = output_dir / 'stability_lpips_boxplot.png'
+    plt.savefig(plot2_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"✅ LPIPS 箱ひげ図: {plot2_path}")
+
+
+    # 3. SSIM vs PSNR 散布図（相関確認・異常検出）
+    plt.figure(figsize=(12, 8))
+
+    for model in df['model'].unique():
+        model_data = df[df['model'] == model]
+        plt.scatter(model_data['ssim'], model_data['psnr'],
+                   label=model, alpha=0.6, s=50)
+
+    plt.xlabel('SSIM（構造類似性）', fontsize=14, fontweight='bold')
+    plt.ylabel('PSNR（信号対雑音比）[dB]', fontsize=14, fontweight='bold')
+    plt.title('SSIM vs PSNR 相関分析\n相関から外れる点 = ハルシネーション候補', fontsize=16, fontweight='bold')
+    plt.legend(fontsize=12)
+    plt.grid(True, alpha=0.3)
+
+    # 近似直線
+    from scipy import stats
+    slope, intercept, r_value, p_value, std_err = stats.linregress(df['ssim'], df['psnr'])
+    x_line = np.array([df['ssim'].min(), df['ssim'].max()])
+    y_line = slope * x_line + intercept
+    plt.plot(x_line, y_line, 'r--', label=f'回帰直線 (R²={r_value**2:.3f})', linewidth=2)
+    plt.legend(fontsize=12)
+
+    plt.tight_layout()
+    plot3_path = output_dir / 'correlation_ssim_vs_psnr.png'
+    plt.savefig(plot3_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"✅ SSIM vs PSNR 散布図: {plot3_path}")
+
+
+    # 4. ノイズ vs アーティファクト 散布図
+    plt.figure(figsize=(12, 8))
+
+    for model in df['model'].unique():
+        model_data = df[df['model'] == model]
+        plt.scatter(model_data['noise'], model_data['artifact_total'],
+                   label=model, alpha=0.6, s=50)
+
+    plt.xlabel('ノイズレベル', fontsize=14, fontweight='bold')
+    plt.ylabel('アーティファクト（ブロック+リンギング）', fontsize=14, fontweight='bold')
+    plt.title('ノイズ vs アーティファクト\n左下が理想（両方少ない）', fontsize=16, fontweight='bold')
+    plt.legend(fontsize=12)
+    plt.grid(True, alpha=0.3)
+
+    # 理想領域の表示
+    low_noise = df['noise'].quantile(0.25)
+    low_artifact = df['artifact_total'].quantile(0.25)
+    plt.axvline(x=low_noise, color='green', linestyle='--', alpha=0.3)
+    plt.axhline(y=low_artifact, color='green', linestyle='--', alpha=0.3)
+    plt.fill_between([0, low_noise], 0, low_artifact, alpha=0.1, color='green', label='理想領域')
+    plt.legend(fontsize=12)
+
+    plt.tight_layout()
+    plot4_path = output_dir / 'quality_noise_vs_artifact.png'
+    plt.savefig(plot4_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"✅ ノイズ vs アーティファクト: {plot4_path}")
+
+
+    # 5. モデル別レーダーチャート（主要6指標）
+    fig = plt.figure(figsize=(14, 10))
+
+    categories = ['SSIM', 'PSNR', 'シャープネス', 'エッジ密度', 'ノイズ\n（反転）', 'アーティファクト\n（反転）']
+    num_vars = len(categories)
+
+    # 正規化（0-1スケール）
+    df_norm = df.copy()
+    df_norm['ssim_norm'] = df['ssim']
+    df_norm['psnr_norm'] = df['psnr'] / df['psnr'].max()
+    df_norm['sharpness_norm'] = df['sharpness'] / df['sharpness'].max()
+    df_norm['edge_norm'] = df['edge_density'] / df['edge_density'].max()
+    df_norm['noise_norm'] = 1 - (df['noise'] / df['noise'].max())  # 反転（少ない方が良い）
+    df_norm['artifact_norm'] = 1 - (df['artifact_total'] / df['artifact_total'].max())  # 反転
+
+    angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
+    angles += angles[:1]
+
+    ax = fig.add_subplot(111, polar=True)
+
+    for model in df['model'].unique():
+        model_data = df_norm[df_norm['model'] == model]
+        values = [
+            model_data['ssim_norm'].mean(),
+            model_data['psnr_norm'].mean(),
+            model_data['sharpness_norm'].mean(),
+            model_data['edge_norm'].mean(),
+            model_data['noise_norm'].mean(),
+            model_data['artifact_norm'].mean()
+        ]
+        values += values[:1]
+
+        ax.plot(angles, values, 'o-', linewidth=2, label=model)
+        ax.fill(angles, values, alpha=0.1)
+
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(categories, fontsize=12)
+    ax.set_ylim(0, 1)
+    ax.set_title('モデル別性能プロファイル（レーダーチャート）\n外側ほど高性能', fontsize=16, fontweight='bold', pad=20)
+    ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1.1), fontsize=12)
+    ax.grid(True)
+
+    plt.tight_layout()
+    plot5_path = output_dir / 'radar_chart_model_comparison.png'
+    plt.savefig(plot5_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"✅ モデル別レーダーチャート: {plot5_path}")
+
+
+    # 6. 17項目のバイオリンプロット（分布の可視化）
+    fig, axes = plt.subplots(3, 6, figsize=(24, 12))
+    fig.suptitle('17項目の分布（バイオリンプロット）', fontsize=20, fontweight='bold')
+
+    metrics_for_violin = [
+        'ssim', 'ms_ssim', 'psnr', 'lpips', 'sharpness', 'contrast',
+        'entropy', 'noise', 'edge_density', 'artifact_total', 'delta_e',
+        'high_freq_ratio', 'texture_complexity', 'local_quality_mean',
+        'histogram_corr', 'lab_L_mean', 'total_score'
+    ]
+
+    for i, metric in enumerate(metrics_for_violin):
+        ax = axes[i // 6, i % 6]
+
+        violin_data = [df[df['model'] == model][metric].values for model in df['model'].unique()]
+        parts = ax.violinplot(violin_data, showmeans=True, showmedians=True)
+
+        # カラーリング
+        for pc in parts['bodies']:
+            pc.set_facecolor('lightblue')
+            pc.set_alpha(0.7)
+
+        ax.set_xticks(range(1, len(df['model'].unique()) + 1))
+        ax.set_xticklabels(df['model'].unique(), rotation=45, ha='right', fontsize=8)
+        ax.set_title(metric, fontsize=10, fontweight='bold')
+        ax.grid(axis='y', alpha=0.3)
+
+    # 余った軸を非表示
+    for i in range(len(metrics_for_violin), 18):
+        axes[i // 6, i % 6].axis('off')
+
+    plt.tight_layout()
+    plot6_path = output_dir / 'violin_plots_all_metrics.png'
+    plt.savefig(plot6_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"✅ 17項目バイオリンプロット: {plot6_path}")
+
+    print(f"{'='*80}")
+    print(f"✅ 全6種類の研究用プロット生成完了")
+    print(f"   論文・発表資料にそのまま使用できます（300dpi高解像度）\n")
 
 
 if __name__ == '__main__':
