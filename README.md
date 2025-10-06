@@ -193,9 +193,74 @@ pip install customtkinter
 ### 日本語ファイル名で文字化け
 このツールは日本語パスに対応していますが、一部の環境では問題が発生する場合があります。その場合は英数字のみのパスを使用してください。
 
+## バッチ処理モード（大量画像の自動分析）
+
+### **医療画像データセットでの実験用**
+
+300枚以上の画像を自動で分析して、統計的に根拠のある閾値を決定できます。
+
+#### **Step 1: 設定ファイル作成**
+
+```bash
+python batch_analyzer.py --create-config
+```
+
+`batch_config.json` が生成されます。
+
+#### **Step 2: 設定ファイル編集**
+
+```json
+{
+  "original_dir": "dataset/original/",
+  "upscaled_dirs": {
+    "upscayl_model1": "dataset/upscayl_model1/",
+    "upscayl_model2": "dataset/upscayl_model2/",
+    "upscayl_model3": "dataset/upscayl_model3/"
+  },
+  "output_csv": "results/batch_analysis.csv",
+  "output_detail_dir": "results/detailed/"
+}
+```
+
+#### **Step 3: バッチ処理実行**
+
+```bash
+python batch_analyzer.py batch_config.json
+```
+
+300枚の画像が自動で分析され、17項目スコアがCSVに記録されます。
+
+#### **Step 4: 統計分析で閾値決定**
+
+```bash
+python analyze_results.py results/batch_analysis.csv
+```
+
+**出力結果：**
+- モデル別ランキング
+- 17項目の相関マトリックス
+- 推奨閾値（25/75パーセンタイル基準）
+- ハルシネーション検出ロジック
+- リスクスコア付きCSV
+
+**分析結果から得られる情報：**
+- 各指標の統計的に妥当な閾値
+- モデル別の性能比較
+- ハルシネーション発生パターン
+- 医療画像用の品質基準
+
+---
+
 ## 更新履歴
 
-### v1.1（現在）
+### v1.2（現在）
+- ✅ バッチ処理モード追加（大量画像の自動分析）
+- ✅ CSV出力機能（17項目スコア記録）
+- ✅ 統計分析スクリプト（閾値決定）
+- ✅ ハルシネーション検出ロジック提案
+- ✅ 医療画像データセット対応
+
+### v1.1
 - ✅ GPU対応（CUDA）
 - ✅ 元画像比較機能追加
 - ✅ 17項目評価システム
