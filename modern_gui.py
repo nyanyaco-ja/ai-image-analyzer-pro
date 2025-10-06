@@ -584,6 +584,7 @@ class ModernImageAnalyzerGUI:
 
         self.batch_output_csv = tk.StringVar(value="results/batch_analysis.csv")
         self.batch_output_detail = tk.StringVar(value="results/detailed/")
+        self.batch_limit = tk.IntVar(value=0)  # 0 = 全て
 
         csv_frame = ctk.CTkFrame(config_frame, fg_color="transparent")
         csv_frame.pack(fill=tk.X, padx=15, pady=5)
@@ -612,6 +613,114 @@ class ModernImageAnalyzerGUI:
             font=("Arial", 10)
         )
         detail_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        # 分割実行設定
+        limit_label = ctk.CTkLabel(
+            config_frame,
+            text="🔢 分割実行（テスト用）",
+            font=("Arial", 12, "bold"),
+            text_color="#ffffff"
+        )
+        limit_label.pack(anchor="w", padx=15, pady=(15, 5))
+
+        limit_info = ctk.CTkLabel(
+            config_frame,
+            text="※ 0 = 全画像処理、10 = 最初の10枚のみ処理（テスト用）",
+            font=("Arial", 9),
+            text_color="#888888",
+            justify="left"
+        )
+        limit_info.pack(anchor="w", padx=15, pady=(0, 5))
+
+        limit_frame = ctk.CTkFrame(config_frame, fg_color="transparent")
+        limit_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
+
+        limit_slider_label = ctk.CTkLabel(
+            limit_frame,
+            text="処理枚数:",
+            width=80,
+            anchor="w",
+            font=("Arial", 10)
+        )
+        limit_slider_label.pack(side=tk.LEFT, padx=(0, 10))
+
+        # プリセットボタン
+        preset_frame = ctk.CTkFrame(limit_frame, fg_color="transparent")
+        preset_frame.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        btn_10 = ctk.CTkButton(
+            preset_frame,
+            text="10枚",
+            command=lambda: self.batch_limit.set(10),
+            width=60,
+            height=25,
+            font=("Arial", 9),
+            fg_color="#555555",
+            hover_color="#777777"
+        )
+        btn_10.pack(side=tk.LEFT, padx=2)
+
+        btn_30 = ctk.CTkButton(
+            preset_frame,
+            text="30枚",
+            command=lambda: self.batch_limit.set(30),
+            width=60,
+            height=25,
+            font=("Arial", 9),
+            fg_color="#555555",
+            hover_color="#777777"
+        )
+        btn_30.pack(side=tk.LEFT, padx=2)
+
+        btn_50 = ctk.CTkButton(
+            preset_frame,
+            text="50枚",
+            command=lambda: self.batch_limit.set(50),
+            width=60,
+            height=25,
+            font=("Arial", 9),
+            fg_color="#555555",
+            hover_color="#777777"
+        )
+        btn_50.pack(side=tk.LEFT, padx=2)
+
+        btn_100 = ctk.CTkButton(
+            preset_frame,
+            text="100枚",
+            command=lambda: self.batch_limit.set(100),
+            width=60,
+            height=25,
+            font=("Arial", 9),
+            fg_color="#555555",
+            hover_color="#777777"
+        )
+        btn_100.pack(side=tk.LEFT, padx=2)
+
+        btn_all = ctk.CTkButton(
+            preset_frame,
+            text="全て",
+            command=lambda: self.batch_limit.set(0),
+            width=60,
+            height=25,
+            font=("Arial", 9),
+            fg_color="#00ff88",
+            text_color="#000000",
+            hover_color="#00dd77"
+        )
+        btn_all.pack(side=tk.LEFT, padx=2)
+
+        # 現在値表示
+        self.limit_value_label = ctk.CTkLabel(
+            limit_frame,
+            text="全て",
+            font=("Arial", 11, "bold"),
+            text_color="#00ffff",
+            width=80
+        )
+        self.limit_value_label.pack(side=tk.RIGHT, padx=(10, 0))
+
+        # 値変更時のコールバック
+        self.batch_limit.trace_add("write", self.update_limit_label)
 
         # 実行ボタン
         self.batch_analyze_btn = ctk.CTkButton(
@@ -738,6 +847,14 @@ class ModernImageAnalyzerGUI:
         if filename:
             self.stats_csv_path.set(filename)
 
+    def update_limit_label(self, *args):
+        """処理枚数ラベル更新"""
+        limit = self.batch_limit.get()
+        if limit == 0:
+            self.limit_value_label.configure(text="全て", text_color="#00ffff")
+        else:
+            self.limit_value_label.configure(text=f"{limit}枚", text_color="#ffa500")
+
     def start_batch_analysis(self):
         """バッチ処理開始"""
         # バリデーション
@@ -766,7 +883,8 @@ class ModernImageAnalyzerGUI:
             "original_dir": self.batch_original_dir.get(),
             "upscaled_dirs": valid_models,
             "output_csv": self.batch_output_csv.get(),
-            "output_detail_dir": self.batch_output_detail.get()
+            "output_detail_dir": self.batch_output_detail.get(),
+            "limit": self.batch_limit.get()  # 処理枚数制限
         }
 
         # UIを無効化

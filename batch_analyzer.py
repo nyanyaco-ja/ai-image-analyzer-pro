@@ -32,6 +32,7 @@ def batch_analyze(config_file):
     upscaled_dirs = {k: Path(v) for k, v in config['upscaled_dirs'].items()}
     output_csv = config['output_csv']
     output_detail_dir = Path(config.get('output_detail_dir', 'results/detailed/'))
+    limit = config.get('limit', 0)  # 0 = 全て処理
 
     # 出力ディレクトリ作成
     output_detail_dir.mkdir(parents=True, exist_ok=True)
@@ -39,6 +40,11 @@ def batch_analyze(config_file):
 
     # 元画像リスト取得（PNG, JPG対応）
     original_images = sorted(list(original_dir.glob('*.png')) + list(original_dir.glob('*.jpg')))
+
+    # 処理枚数制限
+    if limit > 0 and limit < len(original_images):
+        original_images = original_images[:limit]
+        print(f"⚠️  分割実行モード: 最初の{limit}枚のみ処理します")
 
     if len(original_images) == 0:
         print(f"❌ エラー: 元画像が見つかりません: {original_dir}")
