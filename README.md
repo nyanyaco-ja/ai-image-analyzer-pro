@@ -279,7 +279,9 @@ MIT License
 
 ## 開発者
 
-Claude Code による AI アシスタント開発
+mohumohu neco
+
+AI アシスタント: Claude Code
 
 ---
 
