@@ -6,6 +6,36 @@
 
 ![アプリロゴ](images/maou.jpg)
 
+---
+
+## ⚠️ Important Disclaimer
+
+**AI Image Analyzer Pro** is an academic prototype proposal for AI safety and evaluation methodologies. It is **NOT intended for clinical diagnosis, medical practice, or as product selection criteria** for companies or organizations.
+
+The calculation logic, results, and application **may contain computational errors or bugs**. The developer makes **no warranties or guarantees** regarding accuracy or validity and assumes **no liability** for any consequences arising from its use.
+
+---
+
+## 📊 Data Attribution
+
+This project uses the **NIH ChestX-ray14 Dataset (ChestX-ray8)** provided by the NIH Clinical Center. We sincerely thank the NIH Clinical Center for making this dataset publicly available.
+
+**Required Citation:**
+
+Wang, X., Peng, Y., Lu, L., Lu, Z., Bagheri, M., & Summers, R. M. (2017). ChestX-ray8: Hospital-scale Chest X-ray Database and Benchmarks on Weakly-Supervised Classification and Localization of Common Thorax Diseases. *Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)*, 3462-3471.
+
+**Dataset Download:** https://nihcc.app.box.com/v/ChestXray-NIHCC
+
+---
+
+## ⚠️ 重要な免責事項（日本語）
+
+本稿で公開する**『AI Image Analyzer Pro』は、AIの安全性と評価手法に関する学術的なプロトタイプの提案**を目的としており、臨床診断や医療行為、または企業・組織における製品の選定基準として利用することを想定していません。
+
+本ツールの計算ロジック、結果、およびアプリには、**計算誤差やバグが含まれている可能性**があり、その正確性や妥当性について、開発者は一切の保証と責任を負いません。
+
+---
+
 ## 🔬 100枚分析プロジェクト公開中
 
 **NIH ChestX-ray14データセット**を使用した**Upscayl 3モデル × 100枚（計300データポイント）**の定量評価を実施しました。
@@ -373,8 +403,20 @@ pip install kornia
 ## 参考情報
 
 ### 使用データセット
-- **NIH ChestX-ray14**: https://www.nih.gov/news-events/news-releases/nih-clinical-center-provides-one-largest-publicly-available-chest-x-ray-datasets-scientific-community
-- Wang et al. (2017) "ChestX-ray8: Hospital-scale Chest X-ray Database and Benchmarks"
+
+**NIH ChestX-ray14 Dataset (ChestX-ray8)**
+
+本分析で使用した胸部X線画像データセットは、NIH Clinical Centerから提供されている公的なデータセット（ChestX-ray14/CXR8）に基づいています。データの利用にあたり、NIH Clinical Centerへ深く感謝の意を表します。
+
+**データセットのダウンロード元:**
+- https://nihcc.app.box.com/v/ChestXray-NIHCC
+
+**必須引用（Required Citation）:**
+
+Wang, X., Peng, Y., Lu, L., Lu, Z., Bagheri, M., & Summers, R. M. (2017). ChestX-ray8: Hospital-scale Chest X-ray Database and Benchmarks on Weakly-Supervised Classification and Localization of Common Thorax Diseases. *Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)*, 3462-3471.
+
+**参考リンク:**
+- NIH公式発表: https://www.nih.gov/news-events/news-releases/nih-clinical-center-provides-one-largest-publicly-available-chest-x-ray-datasets-scientific-community
 
 ### 評価対象ツール
 - **Upscayl**: https://upscayl.org/
