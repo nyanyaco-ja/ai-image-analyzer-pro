@@ -1,5 +1,8 @@
 # AI Image Analyzer Pro
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17282715.svg)](https://doi.org/10.5281/zenodo.17282715)
+[![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
+
 > Professional AI super-resolution quality evaluation tool with 17 metrics. Batch processing, hallucination detection, and medical image analysis support. GPU-accelerated with detailed statistical reports.
 
 **日本語:** AI超解像処理された医療画像を**17項目の指標**で詳細比較・評価するプロフェッショナルツールです。GPU対応でLPIPS（深層学習ベース）を含む高度な画質評価を実行できます。
@@ -45,6 +48,8 @@ Wang, X., Peng, Y., Lu, L., Lu, Z., Bagheri, M., & Summers, R. M. (2017). ChestX
 📊 **分析結果データ:**
 - `data/batch_analysis_100images.csv`: 全300データポイント（100枚 × 3モデル）の生データ
 - `analysis_output/` フォルダ: 23種類の統計分析プロット + サマリCSV
+- **Zenodo (DOI: 10.5281/zenodo.17282715)**: 永久保存版データアーカイブ
+  - [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17282715.svg)](https://doi.org/10.5281/zenodo.17282715)
 
 **主な発見（Upscaylの場合）:**
 - ✅ model3 (High Fidelity): 最高PSNR 41.5dB、最高構造保持
@@ -58,13 +63,13 @@ Wang, X., Peng, Y., Lu, L., Lu, Z., Bagheri, M., & Summers, R. M. (2017). ChestX
 **主要用途:** 医療画像（X線、CT、MRI等）のAI超解像品質評価・ハルシネーション検出
 
 **他分野への応用:**
-- 🛰️ **衛星画像・リモートセンシング** - 地形解析、災害監視での高解像度化品質評価
-- 🏭 **製造業・品質管理** - 自動外観検査、欠陥検出システムでのAI超解像処理の品質評価
-- 🏗️ **インフラ・エネルギー** - ドローン点検、非破壊検査画像での微細構造の正確性評価
-- 🔬 **顕微鏡画像** - 生物学・材料科学での微細構造可視化の品質評価
-- 📸 **古写真・歴史資料の復元** - 劣化した写真の超解像品質評価
-- 🎨 **アニメ・イラスト** - デジタルアート作品のアップスケール品質評価
-- 🌌 **天体写真** - 望遠鏡画像の解像度向上品質評価
+- 🛰️ **衛星画像・リモートセンシング** - 地形解析、災害監視での高解像度化品質評価等
+- 🏭 **製造業・品質管理** - 自動外観検査、欠陥検出システムでのAI超解像処理の品質評価等
+- 🏗️ **インフラ・エネルギー** - ドローン点検、非破壊検査画像での微細構造の正確性評価等
+- 🔬 **顕微鏡画像** - 生物学・材料科学での微細構造可視化の品質評価等
+- 📸 **古写真・歴史資料の復元** - 劣化した写真の超解像品質評価等
+- 🎨 **アニメ・イラスト** - デジタルアート作品のアップスケール品質評価等
+- 🌌 **天体写真** - 望遠鏡画像の解像度向上品質評価等
 
 **※ 静止画像のみ対応（動画は非対応）**
 
