@@ -11,7 +11,8 @@
 **NIH ChestX-ray14データセット**を使用した**Upscayl 3モデル × 100枚（計300データポイント）**の定量評価を実施しました。
 
 📊 **分析結果データ:**
-- `analysis_output/` フォルダ: 23種類の統計分析プロット
+- `data/batch_analysis_100images.csv`: 全300データポイント（100枚 × 3モデル）の生データ
+- `analysis_output/` フォルダ: 23種類の統計分析プロット + サマリCSV
 - Note記事: [AI超解像ツールUpscaylの医療画像性能評価](note_article_draft.md)
 
 **主な発見:**
