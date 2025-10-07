@@ -351,7 +351,14 @@ pip install kornia
 
 ## ライセンス
 
-MIT License
+**CC BY-NC 4.0 (Creative Commons Attribution-NonCommercial 4.0 International)**
+
+- ✅ 非営利目的での使用・改変・再配布は自由
+- ✅ クレジット表記必須（"mohumohu neco"の名前を残すこと）
+- ⚠️ **営利目的での使用は事前許可が必要**
+- 📧 商用利用のお問い合わせ: s.shiny.n.works@gmail.com
+
+詳細: [LICENSE](LICENSE) ファイルを参照
 
 ---
 
