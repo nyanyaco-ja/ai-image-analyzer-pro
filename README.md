@@ -40,11 +40,13 @@ Wang, X., Peng, Y., Lu, L., Lu, Z., Bagheri, M., & Summers, R. M. (2017). ChestX
 
 **NIH ChestX-ray14データセット**を使用した**Upscayl 3モデル × 100枚（計300データポイント）**の定量評価を実施しました。
 
+**※ 本ツールはUpscayl以外のAI超解像ツール（waifu2x、Real-ESRGAN、ESRGAN等）にも対応しています。Upscaylは評価例として使用しました。**
+
 📊 **分析結果データ:**
 - `data/batch_analysis_100images.csv`: 全300データポイント（100枚 × 3モデル）の生データ
 - `analysis_output/` フォルダ: 23種類の統計分析プロット + サマリCSV
 
-**主な発見:**
+**主な発見（Upscaylの場合）:**
 - ✅ model3 (High Fidelity): 最高PSNR 41.5dB、最高構造保持
 - ⚠️ model1 (Standard): 9%のハルシネーション検出率
 - 🔍 「ノイズ」と「微細構造」の区別には専門家評価が必須
@@ -418,10 +420,21 @@ Wang, X., Peng, Y., Lu, L., Lu, Z., Bagheri, M., & Summers, R. M. (2017). ChestX
 **参考リンク:**
 - NIH公式発表: https://www.nih.gov/news-events/news-releases/nih-clinical-center-provides-one-largest-publicly-available-chest-x-ray-datasets-scientific-community
 
-### 評価対象ツール
-- **Upscayl**: https://upscayl.org/
-- GitHub: https://github.com/upscayl/upscayl
-- ライセンス: AGPL-3.0
+### 対応する超解像ツール（例）
+
+本ツールは**どのAI超解像ツールでも評価可能**です。以下は代表的な例です：
+
+**100枚分析で使用したツール:**
+- **Upscayl** - https://upscayl.org/
+  - GitHub: https://github.com/upscayl/upscayl
+  - ライセンス: AGPL-3.0
+  - GUI操作が簡単、複数モデル搭載
+
+**その他の対応ツール:**
+- **waifu2x** - イラスト・アニメ特化の超解像
+- **Real-ESRGAN** - 実写画像の超解像（NVIDIA公式）
+- **ESRGAN** - 汎用超解像モデル
+- **その他** - 画像ファイルを出力できるツールなら何でも評価可能
 
 ### 評価手法の参考文献
 - SSIM: Wang et al. (2004) "Image Quality Assessment: From Error Visibility to Structural Similarity"
