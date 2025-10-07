@@ -13,7 +13,6 @@
 📊 **分析結果データ:**
 - `data/batch_analysis_100images.csv`: 全300データポイント（100枚 × 3モデル）の生データ
 - `analysis_output/` フォルダ: 23種類の統計分析プロット + サマリCSV
-- Note記事: [AI超解像ツールUpscaylの医療画像性能評価](note_article_draft.md)
 
 **主な発見:**
 - ✅ model3 (High Fidelity): 最高PSNR 41.5dB、最高構造保持

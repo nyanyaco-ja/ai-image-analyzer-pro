@@ -40,3 +40,6 @@ desktop.ini
 
 # ログファイル
 *.log
+
+# Note記事下書き（非公開）
+note_article_draft.md
