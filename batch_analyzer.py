@@ -37,6 +37,7 @@ def batch_analyze(config_file, progress_callback=None):
     output_csv = config['output_csv']
     output_detail_dir = Path(config.get('output_detail_dir', 'results/detailed/'))
     limit = config.get('limit', 0)  # 0 = 全て処理
+    append_mode = config.get('append_mode', False)  # False = 上書き, True = 追加
 
     # 出力ディレクトリ作成
     output_detail_dir.mkdir(parents=True, exist_ok=True)
@@ -132,7 +133,7 @@ def batch_analyze(config_file, progress_callback=None):
 
     # 結果をCSV保存
     if len(all_results) > 0:
-        save_results_to_csv(all_results, output_csv)
+        save_results_to_csv(all_results, output_csv, append_mode)
 
         print(f"\n{'='*60}")
         print(f"✅ バッチ処理完了！")
@@ -242,22 +243,49 @@ def extract_metrics_for_csv(image_id, model_name, results, original_path, upscal
     return row
 
 
-def save_results_to_csv(all_results, output_csv):
+def save_results_to_csv(all_results, output_csv, append_mode=False):
     """
     結果をCSVファイルに保存
+
+    Args:
+        all_results: 分析結果のリスト
+        output_csv: 出力CSVファイルパス
+        append_mode: True = 追加モード, False = 上書きモード
     """
 
     # DataFrameに変換
-    df = pd.DataFrame(all_results)
+    df_new = pd.DataFrame(all_results)
 
-    # CSV保存（UTF-8 with BOM for Excel compatibility）
-    df.to_csv(output_csv, index=False, encoding='utf-8-sig')
+    if append_mode and Path(output_csv).exists():
+        # 追加モード: 既存CSVを読み込んで結合
+        print(f"\n📊 追加モードで保存中...")
+        df_existing = pd.read_csv(output_csv, encoding='utf-8-sig')
 
-    print(f"\n📊 CSV保存完了:")
-    print(f"   ファイル: {output_csv}")
-    print(f"   画像数: {df['image_id'].nunique()}")
-    print(f"   モデル数: {df['model'].nunique()}")
-    print(f"   総行数: {len(df)}")
+        # 重複チェック（同じimage_id + modelの場合は新データで上書き）
+        df_combined = pd.concat([df_existing, df_new], ignore_index=True)
+        df_combined = df_combined.drop_duplicates(subset=['image_id', 'model'], keep='last')
+
+        df_combined.to_csv(output_csv, index=False, encoding='utf-8-sig')
+
+        print(f"   既存データ: {len(df_existing)}行")
+        print(f"   新規データ: {len(df_new)}行")
+        print(f"   結合後: {len(df_combined)}行")
+        print(f"   ファイル: {output_csv}")
+        print(f"   画像数: {df_combined['image_id'].nunique()}")
+        print(f"   モデル数: {df_combined['model'].nunique()}")
+    else:
+        # 上書きモード
+        if append_mode:
+            print(f"\n📊 追加モードですが既存CSVがないため新規作成します")
+        else:
+            print(f"\n📊 上書きモードで保存中...")
+
+        df_new.to_csv(output_csv, index=False, encoding='utf-8-sig')
+
+        print(f"   ファイル: {output_csv}")
+        print(f"   画像数: {df_new['image_id'].nunique()}")
+        print(f"   モデル数: {df_new['model'].nunique()}")
+        print(f"   総行数: {len(df_new)}")
 
 
 def display_summary_statistics(all_results):

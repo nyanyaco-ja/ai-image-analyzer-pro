@@ -585,6 +585,7 @@ class ModernImageAnalyzerGUI:
         self.batch_output_csv = tk.StringVar(value="results/batch_analysis.csv")
         self.batch_output_detail = tk.StringVar(value="results/detailed/")
         self.batch_limit = tk.IntVar(value=0)  # 0 = 全て
+        self.batch_append_mode = tk.BooleanVar(value=True)  # True = 追加（デフォルト）, False = 上書き
 
         csv_frame = ctk.CTkFrame(config_frame, fg_color="transparent")
         csv_frame.pack(fill=tk.X, padx=15, pady=5)
@@ -637,6 +638,21 @@ class ModernImageAnalyzerGUI:
             hover_color="#00cccc"
         )
         detail_browse_btn.pack(side=tk.RIGHT)
+
+        # 追加モード選択チェックボックス
+        append_mode_frame = ctk.CTkFrame(config_frame, fg_color="transparent")
+        append_mode_frame.pack(fill=tk.X, padx=15, pady=(5, 15))
+
+        append_checkbox = ctk.CTkCheckBox(
+            append_mode_frame,
+            text="既存CSVにデータを追加（チェックなし = 上書きモード）",
+            variable=self.batch_append_mode,
+            font=("Arial", 11),
+            text_color="#00ffff",
+            fg_color="#00ffff",
+            hover_color="#00cccc"
+        )
+        append_checkbox.pack(anchor="w")
 
         # 分割実行設定
         limit_label = ctk.CTkLabel(
@@ -954,7 +970,8 @@ class ModernImageAnalyzerGUI:
             "upscaled_dirs": valid_models,
             "output_csv": self.batch_output_csv.get(),
             "output_detail_dir": self.batch_output_detail.get(),
-            "limit": self.batch_limit.get()  # 処理枚数制限
+            "limit": self.batch_limit.get(),  # 処理枚数制限
+            "append_mode": self.batch_append_mode.get()  # 追加モード
         }
 
         # UIを無効化
