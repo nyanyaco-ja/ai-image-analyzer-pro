@@ -395,10 +395,10 @@ clean_dataset_20251010_123357/
 
 **📦 データ公開:**
 - ✅ **300枚統合CSV**: `data/batch_analysis_300images.csv`（本リポジトリに含む）
-- 📊 **クリーンデータセット（1GB）**: Zenodoで公開予定（容量制約のため本リポジトリには含まず）
+- 📊 **クリーンデータセット（767MB）**: Zenodoで公開中 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17309563.svg)](https://doi.org/10.5281/zenodo.17309563)
   - 168枚の元画像 + 247枚の正常超解像画像
   - metadata.csv（AI学習用メタデータ）
-  - DOI取得後にリンク追加予定
+  - AI学習・転移学習・ベンチマーク用途に最適
 
 ---
 
