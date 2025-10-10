@@ -884,7 +884,21 @@ class ModernImageAnalyzerGUI:
             text_color="#ffffff",
             hover_color="#cc3333"
         )
-        self.hallucination_extract_btn.pack(fill=tk.X)
+        self.hallucination_extract_btn.pack(fill=tk.X, pady=(0, 5))
+
+        # クリーンデータセット抽出ボタン（NEW in v1.5）
+        self.clean_dataset_btn = ctk.CTkButton(
+            button_frame,
+            text="✨ 正常データ抽出（AI学習用）",
+            command=self.extract_clean_dataset,
+            height=40,
+            corner_radius=10,
+            font=("Arial", 12, "bold"),
+            fg_color="#44ff44",
+            text_color="#000000",
+            hover_color="#33cc33"
+        )
+        self.clean_dataset_btn.pack(fill=tk.X)
 
         # 結果表示エリア
         self.batch_result_text = ctk.CTkTextbox(
@@ -1568,6 +1582,239 @@ class ModernImageAnalyzerGUI:
 
         except Exception as e:
             messagebox.showerror("エラー", f"ハルシネーション抽出中にエラーが発生しました:\n{str(e)}")
+
+    def extract_clean_dataset(self):
+        """正常データ（検出0）を抽出してクリーンデータセットを作成"""
+        try:
+            csv_path = filedialog.askopenfilename(
+                title="バッチ分析CSVを選択",
+                filetypes=[("CSV files", "*.csv")]
+            )
+            if not csv_path:
+                return
+
+            from pathlib import Path
+            import pandas as pd
+            import shutil
+            from datetime import datetime
+
+            self.batch_status_label.configure(
+                text="⏳ 正常データ抽出中...",
+                text_color="#ffaa00"
+            )
+            self.root.update()
+
+            # CSVを読み込み
+            df = pd.read_csv(csv_path, encoding='utf-8-sig')
+
+            # ハルシネーション検出ロジック実行（detection_count計算）
+            detection_count = pd.Series(0, index=df.index)
+            detected_patterns = {idx: [] for idx in df.index}
+
+            # === 組み合わせパターン ===
+            # P1: SSIM高 × PSNR低
+            hallucination_1a_fixed = df[(df['ssim'] > 0.97) & (df['psnr'] < 25)]
+            ssim_high = df['ssim'].quantile(0.75)
+            psnr_low = df['psnr'].quantile(0.25)
+            hallucination_1b_quantile = df[(df['ssim'] >= ssim_high) & (df['psnr'] <= psnr_low)]
+            hallucination_1 = pd.concat([hallucination_1a_fixed, hallucination_1b_quantile]).drop_duplicates()
+            detection_count[hallucination_1.index] += 1
+            for idx in hallucination_1.index:
+                detected_patterns[idx].append('P1')
+
+            # P2: シャープネス高 × ノイズ高
+            sharpness_75 = df['sharpness'].quantile(0.75)
+            noise_75 = df['noise'].quantile(0.75)
+            hallucination_2 = df[(df['sharpness'] > sharpness_75) & (df['noise'] > noise_75)]
+            detection_count[hallucination_2.index] += 1
+            for idx in hallucination_2.index:
+                detected_patterns[idx].append('P2')
+
+            # P3: エッジ密度高 × 局所品質低
+            edge_90 = df['edge_density'].quantile(0.90)
+            quality_25 = df['local_quality_mean'].quantile(0.25)
+            hallucination_3 = df[(df['edge_density'] > edge_90) & (df['local_quality_mean'] < quality_25)]
+            detection_count[hallucination_3.index] += 1
+            for idx in hallucination_3.index:
+                detected_patterns[idx].append('P3')
+
+            # P4: Artifacts異常高
+            artifact_90 = df['artifact_total'].quantile(0.90)
+            hallucination_4 = df[df['artifact_total'] > artifact_90]
+            detection_count[hallucination_4.index] += 1
+            for idx in hallucination_4.index:
+                detected_patterns[idx].append('P4')
+
+            # P5: LPIPS高 × SSIM高
+            lpips_75 = df['lpips'].quantile(0.75)
+            ssim_75 = df['ssim'].quantile(0.75)
+            hallucination_5 = df[(df['lpips'] > lpips_75) & (df['ssim'] > ssim_75)]
+            detection_count[hallucination_5.index] += 1
+            for idx in hallucination_5.index:
+                detected_patterns[idx].append('P5')
+
+            # P6: 局所品質ばらつき大
+            if 'local_quality_std' in df.columns:
+                quality_std_75 = df['local_quality_std'].quantile(0.75)
+                hallucination_6 = df[df['local_quality_std'] > quality_std_75]
+                detection_count[hallucination_6.index] += 1
+                for idx in hallucination_6.index:
+                    detected_patterns[idx].append('P6')
+
+            # P7-P9省略（必要に応じて追加）
+
+            # === 単独パターン ===
+            for col, name in [
+                ('ssim', 'SSIM'), ('ms_ssim', 'MS-SSIM'), ('psnr', 'PSNR'),
+                ('sharpness', 'Sharpness'), ('contrast', 'Contrast'), ('entropy', 'Entropy'),
+                ('edge_density', 'EdgeDensity'), ('high_freq_ratio', 'HighFreq'),
+                ('texture_complexity', 'Texture'), ('local_quality_mean', 'LocalQuality'),
+                ('histogram_corr', 'HistCorr'), ('total_score', 'TotalScore')
+            ]:
+                threshold = df[col].quantile(0.10)
+                detected = df[df[col] < threshold]
+                detection_count[detected.index] += 1
+
+            for col, name in [
+                ('lpips', 'LPIPS'), ('noise', 'Noise'), ('artifact_total', 'Artifacts'),
+                ('delta_e', 'DeltaE')
+            ]:
+                threshold = df[col].quantile(0.90)
+                detected = df[df[col] > threshold]
+                detection_count[detected.index] += 1
+
+            # 正常データ抽出（detection_count == 0）
+            normal_df = df[detection_count == 0].copy()
+
+            # 出力ディレクトリ作成
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            output_dir = Path(csv_path).parent / f"clean_dataset_{timestamp}"
+            output_dir.mkdir(exist_ok=True)
+
+            # モデル別フォルダ作成
+            original_dir = output_dir / "original"
+            original_dir.mkdir(exist_ok=True)
+
+            model_dirs = {}
+            for model in df['model'].unique():
+                model_dir = output_dir / f"{model}_clean"
+                model_dir.mkdir(exist_ok=True)
+                model_dirs[model] = model_dir
+
+            # ファイルコピー
+            copied_files = []
+            metadata = []
+
+            for image_id in normal_df['image_id'].unique():
+                # 元画像をコピー（1回のみ）
+                image_rows = normal_df[normal_df['image_id'] == image_id]
+                if len(image_rows) > 0:
+                    first_row = image_rows.iloc[0]
+                    original_path = first_row['original_path']
+
+                    if os.path.exists(original_path):
+                        dest_orig = original_dir / Path(original_path).name
+                        if not dest_orig.exists():
+                            shutil.copy2(original_path, dest_orig)
+                            copied_files.append(str(dest_orig))
+
+                # モデル別超解像画像をコピー
+                model_status = {}
+                for model in df['model'].unique():
+                    model_row = image_rows[image_rows['model'] == model]
+                    if len(model_row) > 0:
+                        upscaled_path = model_row.iloc[0]['upscaled_path']
+                        if os.path.exists(upscaled_path):
+                            dest_upscaled = model_dirs[model] / Path(upscaled_path).name
+                            shutil.copy2(upscaled_path, dest_upscaled)
+                            copied_files.append(str(dest_upscaled))
+                            model_status[model] = 'clean'
+                        else:
+                            model_status[model] = 'missing'
+                    else:
+                        model_status[model] = 'hallucination'
+
+                # メタデータ作成
+                metadata_row = {
+                    'image_id': image_id,
+                    'original_path': str(dest_orig) if 'dest_orig' in locals() else '',
+                }
+                for model in sorted(df['model'].unique()):
+                    metadata_row[f'{model}_status'] = model_status.get(model, 'none')
+                    model_row = normal_df[(normal_df['image_id'] == image_id) & (normal_df['model'] == model)]
+                    if len(model_row) > 0:
+                        metadata_row[f'{model}_ssim'] = model_row.iloc[0]['ssim']
+                        metadata_row[f'{model}_psnr'] = model_row.iloc[0]['psnr']
+                        metadata_row[f'{model}_total_score'] = model_row.iloc[0]['total_score']
+
+                metadata.append(metadata_row)
+
+            # metadata.csv保存
+            metadata_df = pd.DataFrame(metadata)
+            metadata_path = output_dir / "metadata.csv"
+            metadata_df.to_csv(metadata_path, index=False, encoding='utf-8-sig')
+
+            # README作成
+            readme_path = output_dir / "README.txt"
+            with open(readme_path, 'w', encoding='utf-8') as f:
+                f.write("=" * 70 + "\n")
+                f.write("クリーンデータセット（正常画像のみ）\n")
+                f.write("=" * 70 + "\n\n")
+                f.write(f"作成日時: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                f.write(f"元データ: {csv_path}\n\n")
+                f.write(f"総画像数: {len(normal_df['image_id'].unique())}枚\n")
+                for model in sorted(df['model'].unique()):
+                    count = len(normal_df[normal_df['model'] == model])
+                    f.write(f"  {model}: {count}枚\n")
+                f.write("\n【フォルダ構成】\n")
+                f.write("  original/      : 元画像\n")
+                for model in sorted(df['model'].unique()):
+                    f.write(f"  {model}_clean/ : {model}で正常な超解像画像\n")
+                f.write("  metadata.csv   : 詳細情報（AI学習用）\n\n")
+                f.write("【使い方】\n")
+                f.write("1. AI学習データとして使用\n")
+                f.write("2. 品質フィルタリング済みデータセット\n")
+                f.write("3. ベンチマークデータ\n\n")
+                f.write("※ ハルシネーション検出で問題なしと判定された画像のみを含みます\n")
+
+            # 結果表示
+            result_text = f"=" * 70 + "\n"
+            result_text += "✅ クリーンデータセット作成完了\n"
+            result_text += "=" * 70 + "\n\n"
+            result_text += f"📁 出力先: {output_dir}\n\n"
+            result_text += f"📊 統計:\n"
+            result_text += f"  総データ数: {len(df)}件\n"
+            result_text += f"  正常データ: {len(normal_df)}件 ({len(normal_df)/len(df)*100:.1f}%)\n"
+            result_text += f"  正常画像数: {len(normal_df['image_id'].unique())}枚\n\n"
+            result_text += f"【モデル別正常データ】\n"
+            for model in sorted(df['model'].unique()):
+                count = len(normal_df[normal_df['model'] == model])
+                total = len(df[df['model'] == model])
+                result_text += f"  {model}: {count}/{total}件 ({count/total*100:.1f}%)\n"
+            result_text += f"\n📄 ファイル:\n"
+            result_text += f"  metadata.csv : メタデータ\n"
+            result_text += f"  README.txt   : 説明書\n"
+            result_text += f"  コピーファイル数: {len(copied_files)}個\n"
+
+            self.batch_result_text.delete("1.0", tk.END)
+            self.batch_result_text.insert("1.0", result_text)
+
+            self.batch_status_label.configure(
+                text=f"✅ クリーンデータセット作成完了（{len(normal_df['image_id'].unique())}枚）",
+                text_color="#44ff44"
+            )
+
+            messagebox.showinfo(
+                "作成完了",
+                f"クリーンデータセット（正常画像のみ）を作成しました。\n\n"
+                f"正常画像数: {len(normal_df['image_id'].unique())}枚\n"
+                f"出力先: {output_dir}\n\n"
+                f"AI学習データとして使用できます。"
+            )
+
+        except Exception as e:
+            import traceback
+            messagebox.showerror("エラー", f"クリーンデータセット作成中にエラーが発生しました:\n{str(e)}\n\n{traceback.format_exc()}")
 
     def draw_circular_meter(self, canvas, percentage, color):
         """円形メーターを描画"""
