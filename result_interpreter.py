@@ -18,7 +18,8 @@ def interpret_results(results):
         'items': [],
         'summary': {},
         'winner': None,
-        'winner_count': {'img1': 0, 'img2': 0, 'draw': 0}
+        'winner_count': {'img1': 0, 'img2': 0, 'draw': 0},
+        'evaluation_mode': evaluation_mode  # 評価モード情報を追加
     }
 
     # 1. SSIM（構造類似性）
@@ -875,6 +876,24 @@ def format_interpretation_text(interpretation):
     lines.append("=" * 80)
     lines.append("📊 分析結果の解釈（説明）")
     lines.append("=" * 80)
+
+    # 評価モード表示
+    evaluation_mode = interpretation.get('evaluation_mode', 'image')
+    mode_display = {
+        'academic': '📚 学術評価モード（Academic Evaluation - ×2 SR, Bicubic GT）',
+        'image': '📸 画像モード（医療画像・写真など）',
+        'document': '📄 文書モード（カルテ・契約書など）',
+        'developer': '🔧 開発者モード（デバッグ用）'
+    }
+    lines.append(f"\n評価モード: {mode_display.get(evaluation_mode, evaluation_mode)}")
+
+    if evaluation_mode == 'academic':
+        lines.append("  └─ 標準ベンチマーク方式: Bicubic縮小GT（DIV2K, Set5等と比較可能）")
+        lines.append("  └─ リサイズバイアスなし、既存論文との定量比較に最適")
+    elif evaluation_mode in ['image', 'document']:
+        lines.append("  └─ 実用評価方式: LANCZOS拡大GT（実際の医療現場を想定）")
+        lines.append("  └─ 低解像度データしかない場合の実用シナリオ")
+
     lines.append("")
 
     for i, item in enumerate(interpretation['items'], 1):

@@ -272,6 +272,27 @@ class ModernImageAnalyzerGUI:
         )
         mode_document_desc.pack(anchor="w", padx=30, pady=(0, 10))
 
+        # 学術評価モード
+        mode_academic = ctk.CTkRadioButton(
+            mode_frame,
+            text="学術評価モード（論文用・標準ベンチマーク互換）",
+            variable=self.evaluation_mode,
+            value="academic",
+            font=("Arial", 12),
+            text_color="#ffffff",
+            fg_color="#9b59b6",
+            hover_color="#7d3c98"
+        )
+        mode_academic.pack(anchor="w", padx=30, pady=(0, 8))
+
+        mode_academic_desc = ctk.CTkLabel(
+            mode_frame,
+            text="  └─ ×2スケール標準評価、Bicubic縮小、既存研究比較用",
+            font=("Arial", 10),
+            text_color="#888888"
+        )
+        mode_academic_desc.pack(anchor="w", padx=30, pady=(0, 10))
+
         # 開発者モード
         mode_developer = ctk.CTkRadioButton(
             mode_frame,
@@ -368,7 +389,7 @@ class ModernImageAnalyzerGUI:
 
         original_sublabel = ctk.CTkLabel(
             input_section,
-            text="※ AI超解像の精度評価用（低解像度画像）",
+            text="※ AI処理前の元画像（超解像、ノイズ除去、色調補正など）",
             font=("Arial", 10),
             text_color="#888888"
         )
@@ -414,6 +435,49 @@ class ModernImageAnalyzerGUI:
             hover_color="#777777"
         )
         clear_original_btn.pack(side=tk.LEFT)
+
+        # 学術評価モード専用機能
+        academic_section = ctk.CTkFrame(input_section, fg_color="#2d1b3d", corner_radius=10)
+        academic_section.pack(fill=tk.X, pady=(0, 20))
+
+        academic_title = ctk.CTkLabel(
+            academic_section,
+            text="📚 学術評価モード専用機能",
+            font=("Arial", 14, "bold"),
+            text_color="#9b59b6"
+        )
+        academic_title.pack(anchor="w", padx=15, pady=(15, 5))
+
+        academic_desc = ctk.CTkLabel(
+            academic_section,
+            text="高解像度GT画像から低解像度画像を生成（Bicubic縮小 ×0.5）",
+            font=("Arial", 10),
+            text_color="#888888"
+        )
+        academic_desc.pack(anchor="w", padx=15, pady=(0, 10))
+
+        academic_btn = ctk.CTkButton(
+            academic_section,
+            text="🔬 低解像度画像を生成（元画像 → 0.5倍 Bicubic）",
+            command=self.generate_lowres_academic,
+            height=40,
+            corner_radius=10,
+            font=("Arial", 12, "bold"),
+            fg_color="#9b59b6",
+            text_color="#ffffff",
+            hover_color="#7d3c98"
+        )
+        academic_btn.pack(fill=tk.X, padx=15, pady=(0, 10))
+
+        academic_note = ctk.CTkLabel(
+            academic_section,
+            text="※ 元画像が1000pxの場合、500pxのLR画像を生成します\n"
+                 "※ 生成後、外部でAI超解像を実行し、結果を画像1・2に指定してください",
+            font=("Arial", 9),
+            text_color="#888888",
+            justify="left"
+        )
+        academic_note.pack(anchor="w", padx=15, pady=(0, 15))
 
         # 出力フォルダ
         output_label = ctk.CTkLabel(
@@ -735,7 +799,7 @@ class ModernImageAnalyzerGUI:
         self.batch_original_dir = tk.StringVar()
         original_label = ctk.CTkLabel(
             config_frame,
-            text="📁 元画像フォルダ（低解像度）",
+            text="📁 元画像フォルダ（処理前）",
             font=("Arial", 12, "bold"),
             text_color="#ffffff"
         )
@@ -994,6 +1058,137 @@ class ModernImageAnalyzerGUI:
         # 値変更時のコールバック
         self.batch_limit.trace_add("write", self.update_limit_label)
 
+        # === 学術評価用：バッチBicubic縮小セクション ===
+        academic_batch_frame = ctk.CTkFrame(self.batch_mode_frame, fg_color="#2d1b3d", corner_radius=10)
+        academic_batch_frame.pack(fill=tk.X, pady=(15, 15))
+
+        academic_batch_title = ctk.CTkLabel(
+            academic_batch_frame,
+            text="📚 学術評価用：バッチBicubic縮小",
+            font=("Arial", 14, "bold"),
+            text_color="#9b59b6"
+        )
+        academic_batch_title.pack(anchor="w", padx=15, pady=(15, 5))
+
+        academic_batch_desc = ctk.CTkLabel(
+            academic_batch_frame,
+            text="高解像度GT画像フォルダから低解像度画像フォルダを一括生成（×2 SR評価用）",
+            font=("Arial", 10),
+            text_color="#888888"
+        )
+        academic_batch_desc.pack(anchor="w", padx=15, pady=(0, 10))
+
+        # 入力フォルダ
+        input_folder_label = ctk.CTkLabel(
+            academic_batch_frame,
+            text="入力フォルダ（高解像度GT、例: 1000px × 5000枚）:",
+            font=("Arial", 11),
+            text_color="#cccccc"
+        )
+        input_folder_label.pack(anchor="w", padx=15, pady=(5, 5))
+
+        input_folder_frame = ctk.CTkFrame(academic_batch_frame, fg_color="transparent")
+        input_folder_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
+
+        self.academic_input_dir = tk.StringVar()
+        input_entry = ctk.CTkEntry(
+            input_folder_frame,
+            textvariable=self.academic_input_dir,
+            placeholder_text="GT画像フォルダを選択...",
+            height=35,
+            font=("Arial", 11)
+        )
+        input_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+
+        input_btn = ctk.CTkButton(
+            input_folder_frame,
+            text="参照",
+            command=self.browse_academic_input,
+            width=80,
+            height=35,
+            fg_color="#9b59b6",
+            hover_color="#7d3c98"
+        )
+        input_btn.pack(side=tk.RIGHT)
+
+        # 出力フォルダ
+        output_folder_label = ctk.CTkLabel(
+            academic_batch_frame,
+            text="出力フォルダ（低解像度LR、例: 500px × 5000枚）:",
+            font=("Arial", 11),
+            text_color="#cccccc"
+        )
+        output_folder_label.pack(anchor="w", padx=15, pady=(5, 5))
+
+        output_folder_frame = ctk.CTkFrame(academic_batch_frame, fg_color="transparent")
+        output_folder_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
+
+        self.academic_output_dir = tk.StringVar()
+        output_entry = ctk.CTkEntry(
+            output_folder_frame,
+            textvariable=self.academic_output_dir,
+            placeholder_text="LR画像出力先フォルダを選択...",
+            height=35,
+            font=("Arial", 11)
+        )
+        output_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+
+        output_btn = ctk.CTkButton(
+            output_folder_frame,
+            text="参照",
+            command=self.browse_academic_output,
+            width=80,
+            height=35,
+            fg_color="#9b59b6",
+            hover_color="#7d3c98"
+        )
+        output_btn.pack(side=tk.RIGHT)
+
+        # 縮小倍率
+        scale_label = ctk.CTkLabel(
+            academic_batch_frame,
+            text="縮小倍率:",
+            font=("Arial", 11),
+            text_color="#cccccc"
+        )
+        scale_label.pack(anchor="w", padx=15, pady=(5, 5))
+
+        scale_frame = ctk.CTkFrame(academic_batch_frame, fg_color="transparent")
+        scale_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
+
+        self.academic_scale = tk.StringVar(value="0.5")
+        scale_entry = ctk.CTkEntry(
+            scale_frame,
+            textvariable=self.academic_scale,
+            width=100,
+            height=35,
+            font=("Arial", 11)
+        )
+        scale_entry.pack(side=tk.LEFT, padx=(0, 10))
+
+        scale_note = ctk.CTkLabel(
+            scale_frame,
+            text="（0.5 = ×2 SR用、0.25 = ×4 SR用）",
+            font=("Arial", 9),
+            text_color="#888888"
+        )
+        scale_note.pack(side=tk.LEFT)
+
+        # 実行ボタン
+        academic_batch_btn = ctk.CTkButton(
+            academic_batch_frame,
+            text="🔬 バッチBicubic縮小を実行",
+            command=self.run_batch_bicubic_downscale,
+            height=45,
+            corner_radius=10,
+            font=("Arial", 13, "bold"),
+            fg_color="#9b59b6",
+            text_color="#ffffff",
+            hover_color="#7d3c98"
+        )
+        academic_batch_btn.pack(fill=tk.X, padx=15, pady=(5, 15))
+
+        # === 通常のバッチ処理セクション ===
         # 実行ボタン
         self.batch_analyze_btn = ctk.CTkButton(
             self.batch_mode_frame,
@@ -1159,6 +1354,141 @@ class ModernImageAnalyzerGUI:
         dirname = filedialog.askdirectory(title="詳細レポート出力先フォルダを選択")
         if dirname:
             self.batch_output_detail.set(dirname)
+
+    def browse_academic_input(self):
+        """学術評価用：入力フォルダ選択"""
+        dirname = filedialog.askdirectory(title="高解像度GT画像フォルダを選択")
+        if dirname:
+            self.academic_input_dir.set(dirname)
+
+    def browse_academic_output(self):
+        """学術評価用：出力フォルダ選択"""
+        dirname = filedialog.askdirectory(title="低解像度LR画像出力先フォルダを選択")
+        if dirname:
+            self.academic_output_dir.set(dirname)
+
+    def run_batch_bicubic_downscale(self):
+        """バッチBicubic縮小を実行"""
+        import cv2
+        import os
+        from tkinter import messagebox
+        import glob
+
+        # 入力フォルダ確認
+        input_dir = self.academic_input_dir.get()
+        if not input_dir:
+            messagebox.showerror("エラー", "入力フォルダを選択してください")
+            return
+
+        if not os.path.exists(input_dir):
+            messagebox.showerror("エラー", f"入力フォルダが見つかりません:\n{input_dir}")
+            return
+
+        # 出力フォルダ確認
+        output_dir = self.academic_output_dir.get()
+        if not output_dir:
+            messagebox.showerror("エラー", "出力フォルダを選択してください")
+            return
+
+        # 出力フォルダ作成
+        os.makedirs(output_dir, exist_ok=True)
+
+        # 縮小倍率確認
+        try:
+            scale = float(self.academic_scale.get())
+            if scale <= 0 or scale >= 1:
+                messagebox.showerror("エラー", "縮小倍率は0より大きく1未満の値を指定してください")
+                return
+        except ValueError:
+            messagebox.showerror("エラー", "縮小倍率は数値で指定してください")
+            return
+
+        # 画像ファイル一覧を取得
+        image_extensions = ['*.png', '*.jpg', '*.jpeg', '*.bmp', '*.tiff', '*.webp']
+        image_files = []
+        for ext in image_extensions:
+            image_files.extend(glob.glob(os.path.join(input_dir, ext)))
+            image_files.extend(glob.glob(os.path.join(input_dir, ext.upper())))
+
+        if len(image_files) == 0:
+            messagebox.showerror("エラー", f"入力フォルダに画像ファイルが見つかりません:\n{input_dir}")
+            return
+
+        # 確認ダイアログ
+        result = messagebox.askyesno(
+            "確認",
+            f"以下の設定でバッチBicubic縮小を実行します:\n\n"
+            f"入力フォルダ: {input_dir}\n"
+            f"出力フォルダ: {output_dir}\n"
+            f"画像数: {len(image_files)}枚\n"
+            f"縮小倍率: ×{scale} (例: 1000px → {int(1000*scale)}px)\n\n"
+            f"実行しますか？"
+        )
+
+        if not result:
+            return
+
+        # バッチ処理実行
+        success_count = 0
+        error_count = 0
+        error_files = []
+
+        try:
+            for i, img_path in enumerate(image_files, 1):
+                try:
+                    # 画像読み込み
+                    img = cv2.imread(img_path)
+                    if img is None:
+                        error_count += 1
+                        error_files.append(os.path.basename(img_path))
+                        continue
+
+                    h, w = img.shape[:2]
+
+                    # Bicubic縮小
+                    new_w = int(w * scale)
+                    new_h = int(h * scale)
+                    img_lr = cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_CUBIC)
+
+                    # 出力パス生成
+                    base_name = os.path.basename(img_path)
+                    name, ext = os.path.splitext(base_name)
+                    output_path = os.path.join(output_dir, f"{name}_LR_bicubic_x{scale:.2f}.png")
+
+                    # 保存
+                    cv2.imwrite(output_path, img_lr)
+                    success_count += 1
+
+                    # 進捗表示（10枚ごと）
+                    if i % 10 == 0 or i == len(image_files):
+                        print(f"進捗: {i}/{len(image_files)} 枚完了")
+
+                except Exception as e:
+                    error_count += 1
+                    error_files.append(f"{os.path.basename(img_path)}: {str(e)}")
+                    continue
+
+            # 完了メッセージ
+            message = f"✅ バッチBicubic縮小が完了しました\n\n"
+            message += f"成功: {success_count}枚\n"
+            if error_count > 0:
+                message += f"エラー: {error_count}枚\n\n"
+                message += "エラーファイル:\n"
+                for err_file in error_files[:10]:  # 最大10件表示
+                    message += f"  - {err_file}\n"
+                if len(error_files) > 10:
+                    message += f"  ... 他{len(error_files)-10}件\n"
+
+            message += f"\n出力先:\n{output_dir}\n\n"
+            message += f"次のステップ:\n"
+            message += f"1. この低解像度画像を外部ツールでAI超解像\n"
+            message += f"2. 超解像結果をバッチ処理で評価\n"
+            message += f"3. 評価モードを「学術評価モード」に設定"
+
+            messagebox.showinfo("完了", message)
+
+        except Exception as e:
+            messagebox.showerror("エラー", f"バッチ処理中にエラーが発生しました:\n{str(e)}")
 
     def browse_stats_csv(self):
         filename = filedialog.askopenfilename(
@@ -2186,6 +2516,60 @@ class ModernImageAnalyzerGUI:
         if filename:
             self.original_path.set(filename)
             self.load_preview_image_before(filename)
+
+    def generate_lowres_academic(self):
+        """学術評価用の低解像度画像を生成（Bicubic縮小 ×0.5）"""
+        import cv2
+        import os
+        from tkinter import messagebox
+
+        # 元画像パスを確認
+        original_path = self.original_path.get()
+        if not original_path:
+            messagebox.showerror("エラー", "元画像を先に選択してください")
+            return
+
+        if not os.path.exists(original_path):
+            messagebox.showerror("エラー", f"元画像が見つかりません:\n{original_path}")
+            return
+
+        try:
+            # 画像読み込み
+            img = cv2.imread(original_path)
+            if img is None:
+                messagebox.showerror("エラー", "画像の読み込みに失敗しました")
+                return
+
+            h, w = img.shape[:2]
+
+            # Bicubic縮小（×0.5）
+            img_lr = cv2.resize(img, (w//2, h//2), interpolation=cv2.INTER_CUBIC)
+
+            # 出力パスを生成
+            base_dir = os.path.dirname(original_path)
+            base_name = os.path.splitext(os.path.basename(original_path))[0]
+            output_path = os.path.join(base_dir, f"{base_name}_LR_bicubic_x05.png")
+
+            # 保存
+            cv2.imwrite(output_path, img_lr)
+
+            # 成功メッセージ
+            messagebox.showinfo(
+                "生成完了",
+                f"✅ 低解像度画像を生成しました\n\n"
+                f"元画像: {w}×{h}px\n"
+                f"生成画像: {w//2}×{h//2}px (×0.5 Bicubic)\n\n"
+                f"保存先:\n{output_path}\n\n"
+                f"次のステップ:\n"
+                f"1. この低解像度画像を外部ツールでAI超解像\n"
+                f"2. 超解像結果を画像1・2に指定\n"
+                f"3. 元画像（GT）は現在選択中の画像を使用\n"
+                f"4. 評価モードを「学術評価モード」に設定\n"
+                f"5. 分析を実行"
+            )
+
+        except Exception as e:
+            messagebox.showerror("エラー", f"低解像度画像の生成に失敗しました:\n{str(e)}")
 
     def browse_output(self):
         dirname = filedialog.askdirectory(title="出力フォルダを選択")

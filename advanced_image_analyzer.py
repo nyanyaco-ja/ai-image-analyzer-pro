@@ -1037,10 +1037,23 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         target_size = (img1.shape[1], img1.shape[0])  # 画像1のサイズに合わせる
         original_size = (img_original.shape[1], img_original.shape[0])
 
-        # サイズが異なる場合のみリサイズ
-        if original_size != target_size:
-            print(f"\n🔄 元画像をリサイズ中...")
-            print(f"   {original_size[0]}x{original_size[1]} → {target_size[0]}x{target_size[1]}")
+        # 学術評価モード：リサイズなし（同サイズのはず）
+        if evaluation_mode == 'academic':
+            if original_size != target_size:
+                print(f"\n⚠️  警告: 学術評価モードですが、元画像と処理後画像のサイズが異なります")
+                print(f"   元画像: {original_size[0]}x{original_size[1]}")
+                print(f"   処理後: {target_size[0]}x{target_size[1]}")
+                print(f"   学術評価では同サイズが前提です（Bicubic縮小 → AI超解像）")
+                # 学術評価モードでもリサイズは実行（警告のみ）
+                img_original_resized = cv2.resize(img_original, target_size, interpolation=cv2.INTER_LANCZOS4)
+            else:
+                print(f"\n✅ 学術評価モード: 元画像サイズ一致（{original_size[0]}x{original_size[1]}）")
+                print(f"   Bicubic縮小 → AI超解像 → 元画像比較（標準ベンチマーク方式）")
+                img_original_resized = img_original
+        # 実用評価モード：LANCZOS拡大でリサイズ
+        elif original_size != target_size:
+            print(f"\n🔄 実用評価モード: 元画像をリサイズ中...")
+            print(f"   {original_size[0]}x{original_size[1]} → {target_size[0]}x{target_size[1]} (LANCZOS4)")
             img_original_resized = cv2.resize(img_original, target_size, interpolation=cv2.INTER_LANCZOS4)
             print(f"   ✅ リサイズ完了")
         else:
@@ -1049,6 +1062,32 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
 
         img_original_rgb = cv2.cvtColor(img_original_resized, cv2.COLOR_BGR2RGB)
         img_original_gray = cv2.cvtColor(img_original_resized, cv2.COLOR_BGR2GRAY)
+
+        # 分析パターンの検出と表示
+        if evaluation_mode == 'academic':
+            print("\n" + "=" * 80)
+            print("【分析パターン】学術評価モード（Academic Evaluation）")
+            print("=" * 80)
+            print("📚 標準ベンチマーク方式: ×2 Scale Super-Resolution")
+            print(f"   Ground Truth: {img_original.shape[1]}x{img_original.shape[0]}px")
+            print(f"   Bicubic LR → SR: {img1.shape[1]//2}x{img1.shape[0]//2} → {img1.shape[1]}x{img1.shape[0]}px")
+            print("   比較対象: DIV2K, Set5, Set14等との定量比較")
+            print("=" * 80)
+        elif img_original.shape == img1.shape:
+            print("\n" + "=" * 80)
+            print("【分析パターン】同解像度比較（実用評価）")
+            print("=" * 80)
+            print("📌 用途: ノイズ除去、色調補正、画質改善、AI復元など")
+            print("   処理前と処理後のサイズが同じ場合の分析モードです")
+            print("=" * 80)
+        else:
+            print("\n" + "=" * 80)
+            print("【分析パターン】異解像度比較（実用評価・超解像）")
+            print("=" * 80)
+            print("📌 用途: AI超解像、アップスケーリング、高精細化など")
+            print(f"   処理前: {img_original.shape[1]}x{img_original.shape[0]} → 処理後: {img1.shape[1]}x{img1.shape[0]}")
+            print("   ※ 元画像をLANCZOS拡大して比較（実用シナリオ）")
+            print("=" * 80)
 
     # RGB変換（OpenCVはBGRなので）
     img1_rgb = cv2.cvtColor(img1, cv2.COLOR_BGR2RGB)
