@@ -248,8 +248,13 @@ CLIP > 0.85 & LPIPS < 0.2 → ✅ 幻覚なし・高品質
 
 - **OS**: Windows / Linux / macOS
 - **Python**: 3.8以上
+- **PyTorch**: **2.6.0以上**（CLIP機能使用に必須）
 - **GPU（オプション）**: NVIDIA CUDA対応GPU（推奨）
-- **推奨GPU**: RTX 4000シリーズ以上（16GB VRAM）
+- **推奨GPU**: RTX 4000シリーズ以上（6GB VRAM以上）
+
+**⚠️ CLIP機能を使うには PyTorch 2.6.0+ が必須です**
+- セキュリティ脆弱性（CVE-2025-32434）対応のため
+- 詳細: [UPGRADE_GUIDE.md](UPGRADE_GUIDE.md)
 
 ---
 

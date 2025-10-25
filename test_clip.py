@@ -36,7 +36,8 @@ except ImportError as e:
 print("\n2. CLIPモデルのロードテスト...")
 try:
     print("  CLIPモデルをダウンロード中... (初回のみ時間がかかります)")
-    model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
+    # safetensors形式でロード（PyTorch 2.6未満でも動作）
+    model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32", use_safetensors=True)
     processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 
     # GPUに転送
@@ -58,13 +59,15 @@ try:
     from PIL import Image
     import numpy as np
 
-    # 2つの類似したダミー画像を作成（200x200、グレースケール）
+    # 2つの類似したダミー画像を作成（200x200、RGB）
     print("  ダミー画像を作成中...")
     img1_array = np.random.randint(100, 150, (200, 200, 3), dtype=np.uint8)
-    img2_array = img1_array + np.random.randint(-10, 10, (200, 200, 3), dtype=np.uint8)
+    # ノイズを追加（uint8の範囲内でクリップ）
+    noise = np.random.randint(-10, 11, (200, 200, 3), dtype=np.int16)
+    img2_array = np.clip(img1_array.astype(np.int16) + noise, 0, 255).astype(np.uint8)
 
-    img1 = Image.fromarray(img1_array.astype('uint8'))
-    img2 = Image.fromarray(img2_array.astype('uint8'))
+    img1 = Image.fromarray(img1_array)
+    img2 = Image.fromarray(img2_array)
 
     # 画像を前処理
     print("  画像を前処理中...")
