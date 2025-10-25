@@ -46,6 +46,17 @@ except ImportError:
     GPU_NAME = None
     torch = None
 
+# CLIP用インポート
+try:
+    from transformers import CLIPProcessor, CLIPModel
+    CLIP_AVAILABLE = True
+    CLIP_MODEL = None
+    CLIP_PROCESSOR = None
+except ImportError:
+    CLIP_AVAILABLE = False
+    CLIP_MODEL = None
+    CLIP_PROCESSOR = None
+
 # CPU/GPUモニタリング用
 try:
     import psutil
@@ -173,6 +184,67 @@ def calculate_lpips(img1_rgb, img2_rgb):
     except Exception as e:
         print(f"LPIPS計算エラー: {e}")
         return None, None
+
+def calculate_clip_similarity(img1_rgb, img2_rgb):
+    """
+    CLIP Embeddings を使用した意味的類似度計算
+
+    Returns:
+        float: コサイン類似度（1.0に近いほど意味的に類似、-1.0〜1.0の範囲）
+    """
+    global CLIP_MODEL, CLIP_PROCESSOR
+
+    if not CLIP_AVAILABLE:
+        return None
+
+    try:
+        # 初回のみモデルとプロセッサを読み込み
+        if CLIP_MODEL is None or CLIP_PROCESSOR is None:
+            print("CLIP モデルを読み込み中...")
+            CLIP_MODEL = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
+            CLIP_PROCESSOR = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+
+            # GPUが利用可能ならGPUに転送
+            if GPU_AVAILABLE and DEVICE:
+                CLIP_MODEL = CLIP_MODEL.to(DEVICE)
+
+            # 評価モードに設定
+            CLIP_MODEL.eval()
+            print(f"CLIP モデル読み込み完了 (デバイス: {DEVICE if DEVICE else 'CPU'})")
+
+        # RGB画像をPIL Imageに変換（CLIPProcessorが期待する形式）
+        from PIL import Image as PILImage
+        img1_pil = PILImage.fromarray(img1_rgb.astype('uint8'))
+        img2_pil = PILImage.fromarray(img2_rgb.astype('uint8'))
+
+        # 画像を前処理
+        inputs1 = CLIP_PROCESSOR(images=img1_pil, return_tensors="pt")
+        inputs2 = CLIP_PROCESSOR(images=img2_pil, return_tensors="pt")
+
+        # GPUが利用可能ならGPUに転送
+        if GPU_AVAILABLE and DEVICE:
+            inputs1 = {k: v.to(DEVICE) for k, v in inputs1.items()}
+            inputs2 = {k: v.to(DEVICE) for k, v in inputs2.items()}
+
+        # Embedding抽出
+        with torch.no_grad():
+            image_features1 = CLIP_MODEL.get_image_features(**inputs1)
+            image_features2 = CLIP_MODEL.get_image_features(**inputs2)
+
+        # L2正規化
+        image_features1 = image_features1 / image_features1.norm(p=2, dim=-1, keepdim=True)
+        image_features2 = image_features2 / image_features2.norm(p=2, dim=-1, keepdim=True)
+
+        # コサイン類似度を計算（内積）
+        cosine_similarity = (image_features1 @ image_features2.T).item()
+
+        return cosine_similarity
+
+    except Exception as e:
+        print(f"CLIP類似度計算エラー: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
 
 def calculate_ssim_gpu(img1_rgb, img2_rgb):
     """
@@ -1066,6 +1138,35 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
     else:
         print("  ※LPIPS計算をスキップしました（ライブラリ未インストール）")
         results['lpips'] = None
+
+    # 3.6. CLIP Embeddings（意味的類似度）
+    print("\n【3.6. CLIP Embeddings（意味的類似度）】")
+    print("OpenAI CLIP モデルによる意味的類似度（1.0に近いほど意味的に類似）")
+    print_usage_status("CLIP計算開始")
+    clip_similarity = calculate_clip_similarity(img1_rgb, img2_rgb)
+    print_usage_status("CLIP計算完了")
+
+    if clip_similarity is not None:
+        print(f"CLIP コサイン類似度: {clip_similarity:.4f}")
+        if GPU_AVAILABLE:
+            print(f"  GPU使用: はい")
+        else:
+            print(f"  GPU使用: いいえ（CPU処理）")
+
+        if clip_similarity > 0.95:
+            print("  評価: 意味的にほぼ同一の画像")
+        elif clip_similarity > 0.85:
+            print("  評価: 意味的に非常に類似")
+        elif clip_similarity > 0.70:
+            print("  評価: 意味的に類似")
+        elif clip_similarity > 0.50:
+            print("  評価: やや類似")
+        else:
+            print("  評価: 全く異なる画像（内容が違う）")
+        results['clip_similarity'] = round(clip_similarity, 4)
+    else:
+        print("  ※CLIP計算をスキップしました（ライブラリ未インストール）")
+        results['clip_similarity'] = None
 
     # 4. シャープネス（鮮鋭度）
     print("\n【4. シャープネス（鮮鋭度）】")

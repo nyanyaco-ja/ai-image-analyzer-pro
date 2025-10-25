@@ -3,9 +3,11 @@
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17282715.svg)](https://doi.org/10.5281/zenodo.17282715)
 [![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
 
-> Professional AI super-resolution quality evaluation tool with 17 metrics. Batch processing, hallucination detection, and medical image analysis support. GPU-accelerated with detailed statistical reports.
+> **Universal AI Super-Resolution Quality Evaluation Tool** with 18 metrics (CLIP, LPIPS, SSIM, PSNR...) for cross-domain hallucination detection. Medical, Satellite, Microscopy, Anime, and more. GPU-accelerated with detailed statistical reports.
 
-**日本語:** AI超解像処理された医療画像を**17項目の指標**で詳細比較・評価するプロフェッショナルツールです。GPU対応でLPIPS（深層学習ベース）を含む高度な画質評価を実行できます。
+**日本語:** AI超解像処理された画像を**18項目の指標（CLIP統合）**でドメイン横断的に詳細比較・評価する汎用ツールです。医療画像、衛星画像、顕微鏡、アニメ等あらゆる分野に対応。GPU対応でLPIPS・CLIP（深層学習ベース）を含む高度な画質評価・幻覚検出を実行できます。
+
+**Keywords**: AI Super-Resolution, Quality Assessment, CLIP, LPIPS, Hallucination Detection, Cross-Domain, Medical Imaging, Satellite Imagery, Microscopy, Computer Vision
 
 ![アプリロゴ](images/maou.jpg)
 
@@ -13,9 +15,54 @@
 
 ## ⚠️ Important Disclaimer
 
-**AI Image Analyzer Pro** is an academic prototype proposal for AI safety and evaluation methodologies. It is **NOT intended for clinical diagnosis, medical practice, or as product selection criteria** for companies or organizations.
+**AI Image Analyzer Pro** is an academic research tool for AI safety and quality evaluation methodologies. It is **NOT intended for clinical diagnosis, medical practice, critical infrastructure decision-making, or as final product selection criteria** for companies or organizations.
 
-The calculation logic, results, and application **may contain computational errors or bugs**. The developer makes **no warranties or guarantees** regarding accuracy or validity and assumes **no liability** for any consequences arising from its use.
+The calculation logic, results, and application **may contain computational errors or bugs**. The developer makes **no warranties or guarantees** regarding accuracy or validity and assumes **no liability** for any consequences arising from its use. **Always verify results with domain experts before making critical decisions.**
+
+---
+
+## 📜 License and Usage Terms
+
+[![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
+
+This project is licensed under **CC BY-NC 4.0 (Creative Commons Attribution-NonCommercial 4.0 International)** with the following clarifications:
+
+### ✅ **Free Use (研究・教育目的の無償利用)**
+
+**Permitted users:**
+- 🎓 **Academic institutions** (universities, research labs)
+- 👤 **Individual researchers** (personal research projects)
+- 🏫 **Educational purposes** (teaching, learning, coursework)
+
+**Permitted activities:**
+- Research and academic publications
+- Educational materials and teaching
+- Personal projects and experimentation
+- Open-source contributions
+
+### ❌ **Commercial Use Prohibited (企業利用は有償)**
+
+**Requires commercial license:**
+- 🏢 **Corporate/Enterprise use** (for-profit companies)
+- 🏭 **Manufacturing QA systems** (production line integration)
+- 💼 **Commercial services** (SaaS, consulting)
+- 📊 **Internal business operations** (quality control, workflow automation)
+
+**For commercial licensing inquiries, please contact the author.**
+
+### 🤝 **Special Exemptions (特例)**
+
+The following are **allowed without commercial license:**
+- ✅ Non-profit organizations (NPO, NGO)
+- ✅ Government research institutions
+- ✅ Open-source project contributions
+- ✅ Academic collaborations with industry partners (if results are publicly published)
+
+### 📞 **Commercial Licensing Contact**
+
+For commercial use inquiries:
+- **GitHub Issues**: [Create an issue with [COMMERCIAL LICENSE] tag]
+- **Email**: [Contact via GitHub profile]
 
 ---
 
@@ -33,9 +80,52 @@ Wang, X., Peng, Y., Lu, L., Lu, Z., Bagheri, M., & Summers, R. M. (2017). ChestX
 
 ## ⚠️ 重要な免責事項（日本語）
 
-本稿で公開する**『AI Image Analyzer Pro』は、AIの安全性と評価手法に関する学術的なプロトタイプの提案**を目的としており、臨床診断や医療行為、または企業・組織における製品の選定基準として利用することを想定していません。
+本稿で公開する**『AI Image Analyzer Pro』は、AIの安全性と品質評価手法に関する学術研究ツール**を目的としており、臨床診断、医療行為、重要インフラの意思決定、または企業・組織における最終的な製品選定基準として利用することを想定していません。
 
-本ツールの計算ロジック、結果、およびアプリには、**計算誤差やバグが含まれている可能性**があり、その正確性や妥当性について、開発者は一切の保証と責任を負いません。
+本ツールの計算ロジック、結果、およびアプリには、**計算誤差やバグが含まれている可能性**があり、その正確性や妥当性について、開発者は一切の保証と責任を負いません。**重要な判断を行う前に、必ず専門家による検証を実施してください。**
+
+---
+
+## 📜 ライセンスと利用規約（日本語）
+
+本プロジェクトは**CC BY-NC 4.0（クリエイティブ・コモンズ 表示-非営利 4.0 国際）**ライセンスの下で公開されています。
+
+### ✅ **無償利用が可能な対象**
+
+**利用可能なユーザー:**
+- 🎓 **教育機関**（大学、研究機関）
+- 👤 **個人研究者**（個人の研究プロジェクト）
+- 🏫 **教育目的**（授業、学習、課題）
+
+**許可される用途:**
+- 学術研究・論文執筆
+- 教育教材・授業での使用
+- 個人プロジェクト・実験
+- オープンソースへの貢献
+
+### ❌ **企業利用には商用ライセンスが必要**
+
+**商用ライセンスが必要な場合:**
+- 🏢 **営利企業での利用**（企業内での使用）
+- 🏭 **製造業QAシステム**（生産ラインへの組み込み）
+- 💼 **商業サービス**（SaaS、コンサルティング）
+- 📊 **社内業務での利用**（品質管理、ワークフロー自動化）
+
+**商用ライセンスに関するお問い合わせは、作者にご連絡ください。**
+
+### 🤝 **特例（商用ライセンス不要）**
+
+以下の場合は**商用ライセンス不要**で利用可能:
+- ✅ 非営利組織（NPO、NGO）
+- ✅ 政府研究機関
+- ✅ オープンソースプロジェクトへの貢献
+- ✅ 産学連携研究（結果を公開する場合）
+
+### 📞 **商用ライセンスのお問い合わせ**
+
+企業利用・商用ライセンスに関するお問い合わせ:
+- **GitHub Issues**: [[COMMERCIAL LICENSE] タグで Issue作成]
+- **Email**: [GitHub プロフィール経由でご連絡ください]
 
 ---
 
@@ -61,18 +151,65 @@ Wang, X., Peng, Y., Lu, L., Lu, Z., Bagheri, M., & Summers, R. M. (2017). ChestX
 
 ---
 
-## 🎯 応用可能な分野
+## 🎯 Cross-Domain Applications (CLIP-Enhanced)
 
-**主要用途:** 医療画像（X線、CT、MRI等）のAI超解像品質評価・ハルシネーション検出
+**CLIP統合により、あらゆる画像ドメインで高精度な幻覚検出が可能です。**
 
-**他分野への応用:**
-- 🛰️ **衛星画像・リモートセンシング** - 地形解析、災害監視での高解像度化品質評価等
-- 🏭 **製造業・品質管理** - 自動外観検査、欠陥検出システムでのAI超解像処理の品質評価等
-- 🏗️ **インフラ・エネルギー** - ドローン点検、非破壊検査画像での微細構造の正確性評価等
-- 🔬 **顕微鏡画像** - 生物学・材料科学での微細構造可視化の品質評価等
-- 📸 **古写真・歴史資料の復元** - 劣化した写真の超解像品質評価等
-- 🎨 **アニメ・イラスト** - デジタルアート作品のアップスケール品質評価等
-- 🌌 **天体写真** - 望遠鏡画像の解像度向上品質評価等
+### 主要応用分野
+
+#### 🏥 医療画像（Medical Imaging）
+- **X線、CT、MRI等**のAI超解像品質評価
+- 診断画像の内容一貫性評価、幻覚検出
+- **実績**: NIH ChestX-ray14データセット300枚分析完了
+
+#### 🛰️ 衛星画像・リモートセンシング（Satellite & Remote Sensing）
+- 地形解析、土地利用変化モニタリング
+- 災害前後比較での幻覚（存在しない建物等）検出
+- 植生・水域の正確性評価
+
+#### 🏭 製造業・品質管理（Manufacturing QA）
+- PCB（プリント基板）自動外観検査
+- 溶接部・欠陥検出システムの品質評価
+- AI超解像による誤検出防止
+
+#### 🔬 顕微鏡画像（Microscopy）
+- 細胞形態の一貫性評価（生物学）
+- 結晶構造・材料組織観察（材料科学）
+- 組織病理画像の超解像品質評価
+
+#### 📸 古写真・歴史資料の復元（Historical Photo Restoration）
+- 文化財デジタルアーカイブの品質管理
+- 劣化写真修復時の内容保持確認
+- 建築物・人物の特徴保存評価
+
+#### 🎨 アニメ・イラスト（Anime & Art）
+- キャラクター一貫性の保持確認
+- アートスタイルの維持評価
+- デジタルアート作品のアップスケール品質管理
+
+#### 🌌 天体写真（Astrophotography）
+- 深宇宙探査画像の高解像度化
+- 銀河・星雲構造の保持確認
+- 望遠鏡画像処理の品質評価
+
+#### 🏗️ インフラ点検（Infrastructure Inspection）
+- ドローン点検画像の品質評価
+- 橋梁・トンネルのひび割れ検出精度向上
+- 非破壊検査（NDT）画像の正確性確認
+
+### なぜCLIPで精度が向上するのか？
+
+| 従来メトリクス | 評価内容 | 限界 |
+|-------------|---------|------|
+| SSIM/PSNR | ピクセル・構造の一致 | 内容変化を検出できない |
+| LPIPS | 知覚的類似度 | 意味的変化に弱い |
+| **CLIP (新)** | **意味的内容の一致** | **物体・構造変化を検出** ✅ |
+
+**統合判定例**:
+```
+CLIP < 0.70 & LPIPS > 0.3 → 🚨 幻覚の可能性極めて高い
+CLIP > 0.85 & LPIPS < 0.2 → ✅ 幻覚なし・高品質
+```
 
 **※ 静止画像のみ対応（動画は非対応）**
 
@@ -80,13 +217,14 @@ Wang, X., Peng, Y., Lu, L., Lu, Z., Bagheri, M., & Summers, R. M. (2017). ChestX
 
 ## 特徴
 
-### 📊 17項目の総合評価
-- **構造・知覚**: SSIM、MS-SSIM、PSNR、LPIPS
+### 📊 18項目の総合評価
+- **構造・知覚**: SSIM、MS-SSIM、PSNR、LPIPS、**CLIP Embeddings（意味的類似度）**
 - **鮮明度**: シャープネス、コントラスト、エントロピー
 - **ノイズ**: ノイズレベル、エッジ密度、アーティファクト検出
 - **色・テクスチャ**: ΔE、高周波比率、テクスチャ複雑度、ヒストグラム相関
 - **局所品質**: 局所品質平均、LAB明度
 - **総合**: 総合スコア（0-100点）
+- **🔬 AI幻覚検出**: CLIP + LPIPS統合による高精度異常検出
 
 ### 🚀 バッチ処理モード
 - 大量画像の自動分析（100枚以上推奨）
@@ -170,6 +308,17 @@ GPU名: NVIDIA GeForce RTX 4070 Ti SUPER
 
 #### GUIで起動（推奨）
 
+**Windows:**
+```bash
+venv\Scripts\python.exe modern_gui.py
+```
+
+**Linux/Mac:**
+```bash
+./venv/bin/python modern_gui.py
+```
+
+**仮想環境を有効化している場合:**
 ```bash
 python modern_gui.py
 ```

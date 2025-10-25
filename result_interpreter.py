@@ -156,6 +156,29 @@ def interpret_results(results):
         })
         interpretation['winner_count']['draw'] += 1
 
+    # 2.6. CLIP Embeddings（意味的類似度）
+    if results.get('clip_similarity') is not None:
+        clip_val = results['clip_similarity']
+        if clip_val > 0.95:
+            clip_eval = "意味的にほぼ同一の画像"
+        elif clip_val > 0.85:
+            clip_eval = "意味的に非常に類似"
+        elif clip_val > 0.70:
+            clip_eval = "意味的に類似"
+        elif clip_val > 0.50:
+            clip_eval = "意味的にやや類似"
+        else:
+            clip_eval = "全く異なる画像（内容が異なる可能性）"
+
+        interpretation['items'].append({
+            'name': 'CLIP Similarity (意味的類似度)',
+            'value': f"{clip_val:.4f}",
+            'explanation': 'OpenAI CLIPモデルによる意味的類似度 (1.0=完全一致)',
+            'evaluation': clip_eval,
+            'winner': 'draw'
+        })
+        interpretation['winner_count']['draw'] += 1
+
     # 3. シャープネス（鮮鋭度）
     sharp1 = results['sharpness']['img1']
     sharp2 = results['sharpness']['img2']
@@ -483,20 +506,115 @@ def interpret_results(results):
     })
     interpretation['winner_count'][winner] += 1
 
+    # 元画像との類似度チェック（論文ベース閾値）
+    warnings = []
+    img1_valid = True
+    img2_valid = True
+
+    if has_original:
+        # SSIM基準チェック
+        if isinstance(ssim_data, dict):
+            ssim_img1 = ssim_data['img1_vs_original']
+            ssim_img2 = ssim_data['img2_vs_original']
+
+            # 画像1の検証
+            if ssim_img1 < 0.50:
+                warnings.append("⚠️ エラー【画像1】: 元画像と全く異なる画像です (SSIM < 0.50)")
+                img1_valid = False
+            elif ssim_img1 < 0.70:
+                warnings.append("⚠️ 警告【画像1】: 元画像との乖離が大きい (SSIM < 0.70) - ハルシネーションの可能性")
+            elif ssim_img1 < 0.85:
+                warnings.append("✅ 許容範囲【画像1】: 適度に高解像度化 (SSIM 0.70-0.85)")
+            else:
+                warnings.append("✅ 良好【画像1】: 高品質な超解像 (SSIM > 0.85)")
+
+            # 画像2の検証
+            if ssim_img2 < 0.50:
+                warnings.append("⚠️ エラー【画像2】: 元画像と全く異なる画像です (SSIM < 0.50)")
+                img2_valid = False
+            elif ssim_img2 < 0.70:
+                warnings.append("⚠️ 警告【画像2】: 元画像との乖離が大きい (SSIM < 0.70) - ハルシネーションの可能性")
+            elif ssim_img2 < 0.85:
+                warnings.append("✅ 許容範囲【画像2】: 適度に高解像度化 (SSIM 0.70-0.85)")
+            else:
+                warnings.append("✅ 良好【画像2】: 高品質な超解像 (SSIM > 0.85)")
+
+        # PSNR基準チェック
+        if isinstance(psnr_data, dict):
+            psnr_img1 = psnr_data['img1_vs_original']
+            psnr_img2 = psnr_data['img2_vs_original']
+
+            # 画像1のPSNR検証
+            if psnr_img1 < 20:
+                warnings.append("⚠️ エラー【画像1】: PSNR異常低値 (< 20 dB) - 元画像と全く異なる")
+                img1_valid = False
+            elif psnr_img1 < 27:
+                warnings.append("⚠️ 警告【画像1】: PSNR低値 (< 27 dB) - 品質低下の可能性")
+            elif psnr_img1 < 30:
+                warnings.append("✅ 許容範囲【画像1】: PSNR 27-30 dB")
+            else:
+                warnings.append("✅ 良好【画像1】: PSNR > 30 dB")
+
+            # 画像2のPSNR検証
+            if psnr_img2 < 20:
+                warnings.append("⚠️ エラー【画像2】: PSNR異常低値 (< 20 dB) - 元画像と全く異なる")
+                img2_valid = False
+            elif psnr_img2 < 27:
+                warnings.append("⚠️ 警告【画像2】: PSNR低値 (< 27 dB) - 品質低下の可能性")
+            elif psnr_img2 < 30:
+                warnings.append("✅ 許容範囲【画像2】: PSNR 27-30 dB")
+            else:
+                warnings.append("✅ 良好【画像2】: PSNR > 30 dB")
+
+        # CLIP + LPIPS 統合幻覚検出（高精度異常検出）
+        clip_sim = results.get('clip_similarity')
+        lpips_val = results.get('lpips')
+
+        if clip_sim is not None and lpips_val is not None:
+            warnings.append("\n【🔬 CLIP + LPIPS 統合幻覚検出】")
+
+            # 画像1の統合判定
+            # CLIP低い + LPIPS高い = 意味的にも知覚的にも異なる → 幻覚の可能性大
+            if clip_sim < 0.70 and lpips_val > 0.3:
+                warnings.append("🚨 重大警告【画像1/2】: CLIP & LPIPS両方で異常検出 - 幻覚の可能性が極めて高い")
+                img1_valid = False
+                img2_valid = False
+            elif clip_sim < 0.70:
+                warnings.append("⚠️ 警告【統合判定】: CLIP類似度低 (< 0.70) - 意味的に異なる画像の可能性")
+            elif lpips_val > 0.5:
+                warnings.append("⚠️ 警告【統合判定】: LPIPS値高 (> 0.5) - 知覚的に大きく異なる")
+            elif clip_sim > 0.85 and lpips_val < 0.2:
+                warnings.append("✅ 優良【統合判定】: CLIP & LPIPS両方で高品質確認 - 幻覚なし")
+            else:
+                warnings.append("✅ 正常【統合判定】: CLIP & LPIPS基準を満たす")
+
     # 総合判定
     img1_wins = interpretation['winner_count']['img1']
     img2_wins = interpretation['winner_count']['img2']
     draws = interpretation['winner_count']['draw']
 
-    if img1_wins > img2_wins:
-        overall_winner = 'img1'
-        overall_msg = f"画像1の方が全体的に高品質（{img1_wins}項目で優位）"
-    elif img2_wins > img1_wins:
-        overall_winner = 'img2'
-        overall_msg = f"画像2の方が全体的に高品質（{img2_wins}項目で優位）"
+    # 類似度チェックで無効と判定された場合は結論を変更
+    if has_original and (not img1_valid or not img2_valid):
+        if not img1_valid and not img2_valid:
+            overall_winner = 'invalid'
+            overall_msg = "⚠️ 両画像とも元画像と全く異なるため、評価不能"
+        elif not img1_valid:
+            overall_winner = 'invalid'
+            overall_msg = "⚠️ 画像1は元画像と全く異なるため、評価不能"
+        else:  # not img2_valid
+            overall_winner = 'invalid'
+            overall_msg = "⚠️ 画像2は元画像と全く異なるため、評価不能"
     else:
-        overall_winner = 'draw'
-        overall_msg = "両画像は同等の品質"
+        # 通常の判定
+        if img1_wins > img2_wins:
+            overall_winner = 'img1'
+            overall_msg = f"画像1の方が全体的に高品質（{img1_wins}項目で優位）"
+        elif img2_wins > img1_wins:
+            overall_winner = 'img2'
+            overall_msg = f"画像2の方が全体的に高品質（{img2_wins}項目で優位）"
+        else:
+            overall_winner = 'draw'
+            overall_msg = "両画像は同等の品質"
 
     interpretation['winner'] = overall_winner
     interpretation['summary'] = {
@@ -505,7 +623,10 @@ def interpret_results(results):
         'draws': draws,
         'message': overall_msg,
         'total_score_img1': results['total_score']['img1'],
-        'total_score_img2': results['total_score']['img2']
+        'total_score_img2': results['total_score']['img2'],
+        'warnings': warnings,
+        'img1_valid': img1_valid,
+        'img2_valid': img2_valid
     }
 
     return interpretation
@@ -515,7 +636,7 @@ def format_interpretation_text(interpretation):
 
     lines = []
     lines.append("=" * 80)
-    lines.append("📊 分析結果の解釈（わかりやすい説明）")
+    lines.append("📊 分析結果の解釈（説明）")
     lines.append("=" * 80)
     lines.append("")
 
@@ -532,6 +653,21 @@ def format_interpretation_text(interpretation):
             lines.append(f"  ✅ 画像2が優位")
         else:
             lines.append(f"  ➖ 同等")
+        lines.append("")
+
+    # 元画像との類似度チェック警告を表示
+    if 'warnings' in interpretation['summary'] and interpretation['summary']['warnings']:
+        lines.append("=" * 80)
+        lines.append("⚠️ 元画像との類似度チェック（論文ベース閾値）")
+        lines.append("=" * 80)
+        lines.append("")
+        lines.append("【SSIM基準】 < 0.50: エラー | 0.50-0.70: 警告 | 0.70-0.85: 許容 | > 0.85: 良好")
+        lines.append("【PSNR基準】 < 20dB: エラー | 20-27dB: 警告 | 27-30dB: 許容 | > 30dB: 良好")
+        lines.append("")
+        for warning in interpretation['summary']['warnings']:
+            lines.append(f"  {warning}")
+        lines.append("")
+        lines.append("=" * 80)
         lines.append("")
 
     lines.append("=" * 80)

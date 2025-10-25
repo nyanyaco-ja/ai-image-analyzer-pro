@@ -1,33 +1,33 @@
 @echo off
 chcp 65001 > nul
-title 画像比較分析ツール
+title AI Image Analyzer Pro
 
 echo ==========================================
-echo    画像比較分析ツール 起動中...
+echo    AI Image Analyzer Pro - Starting...
 echo ==========================================
 echo.
 
-REM 仮想環境をアクティベート
+REM Activate virtual environment
 if exist venv\Scripts\activate.bat (
     call venv\Scripts\activate.bat
-    echo ✓ 仮想環境を有効化しました
+    echo [OK] Virtual environment activated
 ) else (
-    echo ⚠ 仮想環境が見つかりません
-    echo   初回起動の場合は setup.bat を実行してください
+    echo [ERROR] Virtual environment not found
+    echo Please run setup.bat first
     pause
     exit
 )
 
 echo.
-echo ✓ GUIを起動します...
+echo [OK] Launching GUI...
 echo.
 
-REM GUIアプリを起動
-python image_analyzer_gui.py
+REM Launch GUI
+python modern_gui.py
 
-REM エラーチェック
+REM Error check
 if errorlevel 1 (
     echo.
-    echo ✗ エラーが発生しました
+    echo [ERROR] An error occurred
     pause
 )

@@ -39,7 +39,27 @@ No warranties are given. The license may not give you all of the permissions nec
 
 ---
 
-## Commercial Use:
+## Usage Terms Clarification:
+
+### FREE USE (No license fee required):
+The following users may use this software for FREE under CC BY-NC 4.0:
+
+✅ **Academic institutions** (universities, research laboratories)
+✅ **Individual researchers** (personal research projects)
+✅ **Educational purposes** (teaching, learning, coursework)
+✅ **Non-profit organizations** (NPO, NGO)
+✅ **Government research institutions**
+✅ **Open-source project contributions**
+
+### COMMERCIAL LICENSE REQUIRED:
+The following uses require a commercial license:
+
+❌ **Corporate/Enterprise use** (for-profit companies using internally)
+❌ **Manufacturing QA systems** (production line integration)
+❌ **Commercial services** (SaaS, consulting, paid services)
+❌ **Internal business operations** (quality control, workflow automation)
+
+### Commercial Licensing:
 
 If you wish to use this software or its derivatives for commercial purposes, you must:
 

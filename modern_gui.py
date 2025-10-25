@@ -82,7 +82,7 @@ class ModernImageAnalyzerGUI:
             header_frame,
             text="AI Image Analyzer Pro",
             font=("Arial", 32, "bold"),
-            text_color="#00ffff"
+            text_color="#4A90E2"
         )
         title_label.place(x=130, y=25)
 
@@ -104,7 +104,7 @@ class ModernImageAnalyzerGUI:
                 monitor_frame,
                 text="CPU",
                 font=("Arial", 10, "bold"),
-                text_color="#00ffff"
+                text_color="#4A90E2"
             )
             self.cpu_label.grid(row=0, column=0, padx=10)
 
@@ -153,21 +153,66 @@ class ModernImageAnalyzerGUI:
             )
             self.ram_canvas.grid(row=1, column=2, padx=10)
 
-        # コンテンツエリア
+        # モード切り替えボタンエリア
+        mode_frame = ctk.CTkFrame(main_container, fg_color="#1e2740", height=60, corner_radius=0)
+        mode_frame.pack(fill=tk.X, padx=0, pady=0)
+        mode_frame.pack_propagate(False)
+
+        # モード切り替えボタン
+        button_container = ctk.CTkFrame(mode_frame, fg_color="transparent")
+        button_container.place(relx=0.5, rely=0.5, anchor="center")
+
+        self.single_mode_btn = ctk.CTkButton(
+            button_container,
+            text="📸 単一画像比較",
+            command=self.switch_to_single_mode,
+            height=40,
+            width=200,
+            corner_radius=10,
+            font=("Arial", 14, "bold"),
+            fg_color="#4A90E2",
+            text_color="#FFFFFF",
+            hover_color="#357ABD"
+        )
+        self.single_mode_btn.pack(side=tk.LEFT, padx=10)
+
+        self.batch_mode_btn = ctk.CTkButton(
+            button_container,
+            text="🔬 バッチ処理",
+            command=self.switch_to_batch_mode,
+            height=40,
+            width=200,
+            corner_radius=10,
+            font=("Arial", 14, "bold"),
+            fg_color="#4a5568",
+            text_color="#ffffff",
+            hover_color="#2d3748"
+        )
+        self.batch_mode_btn.pack(side=tk.LEFT, padx=10)
+
+        # コンテンツエリア（2カラムレイアウト）
         content_frame = ctk.CTkFrame(main_container, fg_color="#0a0e27")
         content_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
         # 左側パネル（入力エリア）
-        left_panel = ctk.CTkFrame(content_frame, fg_color="#1e2740", width=450, corner_radius=15)
-        left_panel.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
-        left_panel.pack_propagate(False)
+        self.left_panel = ctk.CTkFrame(content_frame, fg_color="#1e2740", width=480, corner_radius=15)
+        self.left_panel.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
+        self.left_panel.pack_propagate(False)
 
-        # スクロール可能なフレーム
-        scrollable_frame = ctk.CTkScrollableFrame(left_panel, fg_color="transparent")
-        scrollable_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        # スクロール可能なフレーム（単一モード用）
+        self.single_mode_frame = ctk.CTkScrollableFrame(self.left_panel, fg_color="transparent")
+        self.single_mode_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
+        # バッチモード用フレーム（後で作成）
+        self.batch_mode_frame = ctk.CTkScrollableFrame(self.left_panel, fg_color="transparent")
+
+        # 右側パネル（画像比較・結果表示エリア）
+        self.right_panel = ctk.CTkFrame(content_frame, fg_color="#1e2740", corner_radius=15)
+        self.right_panel.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+
+        # === 単一画像比較モードのUI ===
         # 画像選択セクション
-        input_section = ctk.CTkFrame(scrollable_frame, fg_color="transparent")
+        input_section = ctk.CTkFrame(self.single_mode_frame, fg_color="transparent")
         input_section.pack(fill=tk.X)
 
         # 画像1
@@ -175,7 +220,7 @@ class ModernImageAnalyzerGUI:
             input_section,
             text="📸 画像 1",
             font=("Arial", 16, "bold"),
-            text_color="#00ffff"
+            text_color="#4A90E2"
         )
         img1_label.pack(anchor="w", pady=(0, 10))
 
@@ -196,9 +241,9 @@ class ModernImageAnalyzerGUI:
             height=40,
             corner_radius=10,
             font=("Arial", 12, "bold"),
-            fg_color="#00ffff",
-            text_color="#000000",
-            hover_color="#00cccc"
+            fg_color="#4A90E2",
+            text_color="#FFFFFF",
+            hover_color="#357ABD"
         )
         img1_btn.pack(fill=tk.X, pady=(0, 20))
 
@@ -207,7 +252,7 @@ class ModernImageAnalyzerGUI:
             input_section,
             text="📸 画像 2",
             font=("Arial", 16, "bold"),
-            text_color="#00ffff"
+            text_color="#4A90E2"
         )
         img2_label.pack(anchor="w", pady=(0, 10))
 
@@ -228,9 +273,9 @@ class ModernImageAnalyzerGUI:
             height=40,
             corner_radius=10,
             font=("Arial", 12, "bold"),
-            fg_color="#00ffff",
-            text_color="#000000",
-            hover_color="#00cccc"
+            fg_color="#4A90E2",
+            text_color="#FFFFFF",
+            hover_color="#357ABD"
         )
         img2_btn.pack(fill=tk.X, pady=(0, 20))
 
@@ -297,7 +342,7 @@ class ModernImageAnalyzerGUI:
             input_section,
             text="💾 出力フォルダ",
             font=("Arial", 16, "bold"),
-            text_color="#00ffff"
+            text_color="#4A90E2"
         )
         output_label.pack(anchor="w", pady=(0, 10))
 
@@ -317,9 +362,9 @@ class ModernImageAnalyzerGUI:
             height=40,
             corner_radius=10,
             font=("Arial", 12, "bold"),
-            fg_color="#00ffff",
-            text_color="#000000",
-            hover_color="#00cccc"
+            fg_color="#4A90E2",
+            text_color="#FFFFFF",
+            hover_color="#357ABD"
         )
         output_btn.pack(fill=tk.X, pady=(0, 30))
 
@@ -358,7 +403,7 @@ class ModernImageAnalyzerGUI:
         self.status_label.pack()
 
         # ボタングループ
-        button_group = ctk.CTkFrame(scrollable_frame, fg_color="transparent")
+        button_group = ctk.CTkFrame(self.single_mode_frame, fg_color="transparent")
         button_group.pack(fill=tk.X, pady=(20, 0))
 
         btn_report = ctk.CTkButton(
@@ -397,13 +442,69 @@ class ModernImageAnalyzerGUI:
         )
         btn_clear.pack(side=tk.LEFT, expand=True, fill=tk.X, padx=(5, 0))
 
-        # 右側パネル（結果表示エリア）
-        right_panel = ctk.CTkFrame(content_frame, fg_color="#1e2740", corner_radius=15)
-        right_panel.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+        # === 右側パネル：単一モード用フレーム ===
+        self.single_right_frame = ctk.CTkFrame(self.right_panel, fg_color="transparent")
+        self.single_right_frame.pack(fill=tk.BOTH, expand=True)
 
-        # タブビュー
+        # 画像比較プレビューエリア
+        preview_title = ctk.CTkLabel(
+            self.single_right_frame,
+            text="📸 画像比較プレビュー",
+            font=("Arial", 18, "bold"),
+            text_color="#4A90E2"
+        )
+        preview_title.pack(pady=(20, 10))
+
+        # 画像表示フレーム（Before/After）
+        image_compare_frame = ctk.CTkFrame(self.single_right_frame, fg_color="#0a0e27", corner_radius=10, height=300)
+        image_compare_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
+        image_compare_frame.pack_propagate(False)
+
+        # 画像1（Before）
+        img1_container = ctk.CTkFrame(image_compare_frame, fg_color="transparent")
+        img1_container.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        img1_title = ctk.CTkLabel(
+            img1_container,
+            text="🖼️ Image 1 (Before)",
+            font=("Arial", 12, "bold"),
+            text_color="#4A90E2"
+        )
+        img1_title.pack(pady=(0, 5))
+
+        self.preview_img1_label = tk.Label(
+            img1_container,
+            bg="#0a0e27",
+            text="画像1を選択してください",
+            fg="#888888",
+            font=("Arial", 10)
+        )
+        self.preview_img1_label.pack(fill=tk.BOTH, expand=True)
+
+        # 画像2（After）
+        img2_container = ctk.CTkFrame(image_compare_frame, fg_color="transparent")
+        img2_container.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        img2_title = ctk.CTkLabel(
+            img2_container,
+            text="🖼️ Image 2 (After)",
+            font=("Arial", 12, "bold"),
+            text_color="#00ff88"
+        )
+        img2_title.pack(pady=(0, 5))
+
+        self.preview_img2_label = tk.Label(
+            img2_container,
+            bg="#0a0e27",
+            text="画像2を選択してください",
+            fg="#888888",
+            font=("Arial", 10)
+        )
+        self.preview_img2_label.pack(fill=tk.BOTH, expand=True)
+
+        # タブビュー（結果表示）
         self.tabview = ctk.CTkTabview(
-            right_panel,
+            self.single_right_frame,
             corner_radius=15,
             fg_color="#1e2740",
             segmented_button_fg_color="#2d3748",
@@ -413,17 +514,16 @@ class ModernImageAnalyzerGUI:
         )
         self.tabview.pack(fill=tk.BOTH, expand=True, padx=15, pady=15)
 
-        # タブ作成
+        # タブ作成（単一モード用）
         self.tabview.add("📊 わかりやすい解釈")
         self.tabview.add("📝 詳細データ")
-        self.tabview.add("🔬 バッチ処理")
 
         # わかりやすい解釈タブ
         self.interpretation_text = ctk.CTkTextbox(
             self.tabview.tab("📊 わかりやすい解釈"),
-            font=("Yu Gothic UI", 12),
+            font=("Meiryo", 11),
             fg_color="#0a0e27",
-            text_color="#00ffff",
+            text_color="#4A90E2",
             corner_radius=10
         )
         self.interpretation_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -431,33 +531,82 @@ class ModernImageAnalyzerGUI:
         # 詳細データタブ
         self.result_text = ctk.CTkTextbox(
             self.tabview.tab("📝 詳細データ"),
-            font=("Yu Gothic UI", 11),
+            font=("Meiryo", 11),
             fg_color="#0a0e27",
             text_color="#00ff88",
             corner_radius=10
         )
         self.result_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        # バッチ処理タブ
-        self.create_batch_tab()
+        # === バッチモード用の右パネル ===
+        self.batch_right_frame = ctk.CTkFrame(self.right_panel, fg_color="transparent")
 
-    def create_batch_tab(self):
-        """バッチ処理タブのUI作成"""
-        batch_tab = self.tabview.tab("🔬 バッチ処理")
+        # バッチ処理進捗エリア
+        batch_progress_title = ctk.CTkLabel(
+            self.batch_right_frame,
+            text="📊 バッチ処理進捗",
+            font=("Arial", 18, "bold"),
+            text_color="#4A90E2"
+        )
+        batch_progress_title.pack(pady=(20, 10))
 
-        # スクロール可能なフレーム
-        batch_scroll = ctk.CTkScrollableFrame(batch_tab, fg_color="transparent")
-        batch_scroll.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        # 進捗表示フレーム
+        self.batch_progress_frame = ctk.CTkFrame(self.batch_right_frame, fg_color="#0a0e27", corner_radius=10)
+        self.batch_progress_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
+
+        self.batch_status_label = ctk.CTkLabel(
+            self.batch_progress_frame,
+            text="バッチ処理を開始してください",
+            font=("Arial", 14),
+            text_color="#888888"
+        )
+        self.batch_status_label.pack(pady=20)
+
+        # プログレスバー（既存のものを使用）
+        self.batch_progress = ctk.CTkProgressBar(
+            self.batch_progress_frame,
+            width=400,
+            height=20,
+            corner_radius=10,
+            fg_color="#2d3748",
+            progress_color="#00ffff"
+        )
+        self.batch_progress.pack(pady=(0, 20), padx=20)
+        self.batch_progress.set(0)
+
+        # 結果表示テキストエリア
+        batch_result_label = ctk.CTkLabel(
+            self.batch_right_frame,
+            text="📝 処理結果ログ",
+            font=("Arial", 16, "bold"),
+            text_color="#4A90E2"
+        )
+        batch_result_label.pack(pady=(10, 5), padx=15, anchor="w")
+
+        self.batch_result_text = ctk.CTkTextbox(
+            self.batch_right_frame,
+            font=("Meiryo", 11),
+            fg_color="#0a0e27",
+            text_color="#00ff88",
+            corner_radius=10
+        )
+        self.batch_result_text.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 15))
+
+        # バッチモード用のUIを作成（左パネル）
+        self.create_batch_mode_ui()
+
+    def create_batch_mode_ui(self):
+        """バッチ処理モードのUI作成（左パネル）"""
 
         # 説明セクション
-        info_frame = ctk.CTkFrame(batch_scroll, fg_color="#2d3748", corner_radius=10)
+        info_frame = ctk.CTkFrame(self.batch_mode_frame, fg_color="#2d3748", corner_radius=10)
         info_frame.pack(fill=tk.X, pady=(0, 20))
 
         info_title = ctk.CTkLabel(
             info_frame,
             text="📚 バッチ処理について",
             font=("Arial", 16, "bold"),
-            text_color="#00ffff"
+            text_color="#4A90E2"
         )
         info_title.pack(anchor="w", padx=15, pady=(15, 5))
 
@@ -472,14 +621,14 @@ class ModernImageAnalyzerGUI:
         info_text.pack(anchor="w", padx=15, pady=(0, 15))
 
         # 設定セクション
-        config_frame = ctk.CTkFrame(batch_scroll, fg_color="#1e2740", corner_radius=10)
+        config_frame = ctk.CTkFrame(self.batch_mode_frame, fg_color="#1e2740", corner_radius=10)
         config_frame.pack(fill=tk.X, pady=(0, 15))
 
         config_title = ctk.CTkLabel(
             config_frame,
             text="⚙️ バッチ処理設定",
             font=("Arial", 14, "bold"),
-            text_color="#00ffff"
+            text_color="#4A90E2"
         )
         config_title.pack(anchor="w", padx=15, pady=(15, 10))
 
@@ -511,9 +660,9 @@ class ModernImageAnalyzerGUI:
             command=self.browse_batch_original,
             width=80,
             height=35,
-            fg_color="#00ffff",
-            text_color="#000000",
-            hover_color="#00cccc"
+            fg_color="#4A90E2",
+            text_color="#FFFFFF",
+            hover_color="#357ABD"
         )
         original_btn.pack(side=tk.RIGHT)
 
@@ -607,9 +756,9 @@ class ModernImageAnalyzerGUI:
             command=self.browse_batch_csv_output,
             width=40,
             height=30,
-            fg_color="#00ffff",
-            text_color="#000000",
-            hover_color="#00cccc"
+            fg_color="#4A90E2",
+            text_color="#FFFFFF",
+            hover_color="#357ABD"
         )
         csv_browse_btn.pack(side=tk.RIGHT)
 
@@ -633,9 +782,9 @@ class ModernImageAnalyzerGUI:
             command=self.browse_batch_detail_output,
             width=40,
             height=30,
-            fg_color="#00ffff",
-            text_color="#000000",
-            hover_color="#00cccc"
+            fg_color="#4A90E2",
+            text_color="#FFFFFF",
+            hover_color="#357ABD"
         )
         detail_browse_btn.pack(side=tk.RIGHT)
 
@@ -648,9 +797,9 @@ class ModernImageAnalyzerGUI:
             text="既存CSVにデータを追加（チェックなし = 上書きモード）",
             variable=self.batch_append_mode,
             font=("Arial", 11),
-            text_color="#00ffff",
-            fg_color="#00ffff",
-            hover_color="#00cccc"
+            text_color="#4A90E2",
+            fg_color="#4A90E2",
+            hover_color="#357ABD"
         )
         append_checkbox.pack(anchor="w")
 
@@ -672,109 +821,83 @@ class ModernImageAnalyzerGUI:
         )
         limit_info.pack(anchor="w", padx=15, pady=(0, 5))
 
-        limit_frame = ctk.CTkFrame(config_frame, fg_color="transparent")
-        limit_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
+        # 処理枚数制限フレーム（縦に2段構成）
+        limit_container = ctk.CTkFrame(config_frame, fg_color="transparent")
+        limit_container.pack(fill=tk.X, padx=15, pady=(0, 15))
 
-        limit_slider_label = ctk.CTkLabel(
-            limit_frame,
-            text="処理枚数:",
-            width=80,
-            anchor="w",
-            font=("Arial", 10)
-        )
-        limit_slider_label.pack(side=tk.LEFT, padx=(0, 10))
-
-        # プリセットボタン（保存用リスト）
-        self.limit_buttons = {}
-
-        preset_frame = ctk.CTkFrame(limit_frame, fg_color="transparent")
-        preset_frame.pack(side=tk.LEFT, fill=tk.X, expand=True)
-
-        # 10枚ボタン
-        self.limit_buttons[10] = ctk.CTkButton(
-            preset_frame,
-            text="10枚",
-            command=lambda: self.set_batch_limit(10),
-            width=60,
-            height=25,
-            font=("Arial", 9),
-            fg_color="#555555",
-            hover_color="#777777"
-        )
-        self.limit_buttons[10].pack(side=tk.LEFT, padx=2)
-
-        # 30枚ボタン
-        self.limit_buttons[30] = ctk.CTkButton(
-            preset_frame,
-            text="30枚",
-            command=lambda: self.set_batch_limit(30),
-            width=60,
-            height=25,
-            font=("Arial", 9),
-            fg_color="#555555",
-            hover_color="#777777"
-        )
-        self.limit_buttons[30].pack(side=tk.LEFT, padx=2)
-
-        # 50枚ボタン
-        self.limit_buttons[50] = ctk.CTkButton(
-            preset_frame,
-            text="50枚",
-            command=lambda: self.set_batch_limit(50),
-            width=60,
-            height=25,
-            font=("Arial", 9),
-            fg_color="#555555",
-            hover_color="#777777"
-        )
-        self.limit_buttons[50].pack(side=tk.LEFT, padx=2)
-
-        # 100枚ボタン
-        self.limit_buttons[100] = ctk.CTkButton(
-            preset_frame,
-            text="100枚",
-            command=lambda: self.set_batch_limit(100),
-            width=60,
-            height=25,
-            font=("Arial", 9),
-            fg_color="#555555",
-            hover_color="#777777"
-        )
-        self.limit_buttons[100].pack(side=tk.LEFT, padx=2)
-
-        # 全てボタン
-        self.limit_buttons[0] = ctk.CTkButton(
-            preset_frame,
-            text="全て",
-            command=lambda: self.set_batch_limit(0),
-            width=60,
-            height=25,
-            font=("Arial", 9),
-            fg_color="#00ff88",
-            text_color="#000000",
-            hover_color="#00dd77"
-        )
-        self.limit_buttons[0].pack(side=tk.LEFT, padx=2)
-
-        # 現在値表示
-        self.limit_value_label = ctk.CTkLabel(
-            limit_frame,
-            text="全て",
+        # タイトル
+        limit_title = ctk.CTkLabel(
+            limit_container,
+            text="処理枚数制限:",
             font=("Arial", 11, "bold"),
-            text_color="#00ffff",
+            text_color="#4A90E2",
+            anchor="w"
+        )
+        limit_title.pack(fill=tk.X, pady=(0, 8))
+
+        # 第1段：スライダー + 現在値表示
+        slider_frame = ctk.CTkFrame(limit_container, fg_color="transparent")
+        slider_frame.pack(fill=tk.X, pady=(0, 8))
+
+        self.limit_slider = ctk.CTkSlider(
+            slider_frame,
+            from_=0,
+            to=500,
+            number_of_steps=50,
+            width=280,
+            command=self.on_slider_change,
+            fg_color="#2d3748",
+            progress_color="#00ffff",
+            button_color="#00ffff",
+            button_hover_color="#00cccc"
+        )
+        self.limit_slider.pack(side=tk.LEFT, padx=(0, 15))
+        self.limit_slider.set(0)
+
+        self.limit_value_label = ctk.CTkLabel(
+            slider_frame,
+            text="全て",
+            font=("Arial", 13, "bold"),
+            text_color="#00ff88",
             width=80
         )
-        self.limit_value_label.pack(side=tk.RIGHT, padx=(10, 0))
+        self.limit_value_label.pack(side=tk.LEFT)
+
+        # 第2段：直接入力
+        entry_frame = ctk.CTkFrame(limit_container, fg_color="transparent")
+        entry_frame.pack(fill=tk.X)
+
+        entry_label = ctk.CTkLabel(
+            entry_frame,
+            text="直接入力（大量処理用）:",
+            font=("Arial", 10),
+            text_color="#888888",
+            anchor="w"
+        )
+        entry_label.pack(side=tk.LEFT, padx=(0, 10))
+
+        self.limit_entry = ctk.CTkEntry(
+            entry_frame,
+            width=120,
+            height=35,
+            font=("Arial", 13),
+            placeholder_text="0 = 全て処理",
+            fg_color="#1e2740",
+            border_color="#00ffff",
+            text_color="#ffffff"
+        )
+        self.limit_entry.pack(side=tk.LEFT)
+        self.limit_entry.insert(0, "0")
+        self.limit_entry.bind("<Return>", self.on_entry_change)
+        self.limit_entry.bind("<FocusOut>", self.on_entry_change)
+        self.limit_entry.bind("<KeyRelease>", self.on_entry_typing)
 
         # 値変更時のコールバック
         self.batch_limit.trace_add("write", self.update_limit_label)
 
-        # 初期状態：「全て」ボタンをハイライト
-        self.set_batch_limit(0)
-
         # 実行ボタン
         self.batch_analyze_btn = ctk.CTkButton(
-            batch_scroll,
+            self.batch_mode_frame,
             text="🚀 バッチ処理開始",
             command=self.start_batch_analysis,
             height=50,
@@ -788,7 +911,7 @@ class ModernImageAnalyzerGUI:
 
         # プログレスバー
         self.batch_progress = ctk.CTkProgressBar(
-            batch_scroll,
+            self.batch_mode_frame,
             height=20,
             corner_radius=10,
             progress_color="#00ffff"
@@ -798,7 +921,7 @@ class ModernImageAnalyzerGUI:
 
         # ステータス
         self.batch_status_label = ctk.CTkLabel(
-            batch_scroll,
+            self.batch_mode_frame,
             text="設定を入力してバッチ処理を開始してください",
             font=("Arial", 11),
             text_color="#888888",
@@ -807,14 +930,14 @@ class ModernImageAnalyzerGUI:
         self.batch_status_label.pack(pady=(0, 15))
 
         # 統計分析セクション
-        stats_frame = ctk.CTkFrame(batch_scroll, fg_color="#1e2740", corner_radius=10)
+        stats_frame = ctk.CTkFrame(self.batch_mode_frame, fg_color="#1e2740", corner_radius=10)
         stats_frame.pack(fill=tk.X, pady=(0, 15))
 
         stats_title = ctk.CTkLabel(
             stats_frame,
             text="📊 統計分析・プロット生成",
             font=("Arial", 14, "bold"),
-            text_color="#00ffff"
+            text_color="#4A90E2"
         )
         stats_title.pack(anchor="w", padx=15, pady=(15, 10))
 
@@ -848,9 +971,9 @@ class ModernImageAnalyzerGUI:
             command=self.browse_stats_csv,
             width=100,
             height=35,
-            fg_color="#00ffff",
-            text_color="#000000",
-            hover_color="#00cccc"
+            fg_color="#4A90E2",
+            text_color="#FFFFFF",
+            hover_color="#357ABD"
         )
         csv_select_btn.pack(side=tk.RIGHT)
 
@@ -902,8 +1025,8 @@ class ModernImageAnalyzerGUI:
 
         # 結果表示エリア
         self.batch_result_text = ctk.CTkTextbox(
-            batch_scroll,
-            font=("Yu Gothic UI", 10),
+            self.batch_mode_frame,
+            font=("Meiryo", 11),
             fg_color="#0a0e27",
             text_color="#00ff88",
             corner_radius=10,
@@ -946,32 +1069,75 @@ class ModernImageAnalyzerGUI:
         if filename:
             self.stats_csv_path.set(filename)
 
-    def set_batch_limit(self, value):
-        """処理枚数設定とボタンの色更新"""
-        self.batch_limit.set(value)
+    def on_slider_change(self, value):
+        """スライダー変更時のコールバック"""
+        int_value = int(value)
+        self.batch_limit.set(int_value)
 
-        # 全ボタンをデフォルト色に戻す
-        for limit_value, button in self.limit_buttons.items():
-            if limit_value == 0:
-                # 「全て」ボタンは特別色
-                if limit_value == value:
-                    button.configure(fg_color="#00ff88", text_color="#000000")
-                else:
-                    button.configure(fg_color="#555555", text_color="#ffffff")
+        # 数値入力フィールドも更新
+        self.limit_entry.delete(0, tk.END)
+        self.limit_entry.insert(0, str(int_value))
+
+        # ラベル更新
+        if int_value == 0:
+            self.limit_value_label.configure(text="全て", text_color="#00ff88")
+        else:
+            self.limit_value_label.configure(text=f"{int_value}枚", text_color="#00ffff")
+
+    def on_entry_typing(self, event=None):
+        """入力中のリアルタイムフィードバック"""
+        try:
+            value = self.limit_entry.get().strip()
+            if value == "" or value == "0":
+                self.limit_value_label.configure(text="全て", text_color="#00ff88")
             else:
-                # 数字ボタン
-                if limit_value == value:
-                    button.configure(fg_color="#00ffff", text_color="#000000")
-                else:
-                    button.configure(fg_color="#555555", text_color="#ffffff")
+                int_value = int(value)
+                if int_value > 0:
+                    self.limit_value_label.configure(text=f"{int_value}枚", text_color="#00ffff")
+        except ValueError:
+            pass  # 入力中は無視
+
+    def on_entry_change(self, event=None):
+        """数値入力フィールド確定時のコールバック（Enter or フォーカスアウト）"""
+        try:
+            value = self.limit_entry.get().strip()
+            if value == "":
+                int_value = 0
+            else:
+                int_value = int(value)
+
+            # 負の値は0にする
+            if int_value < 0:
+                int_value = 0
+                self.limit_entry.delete(0, tk.END)
+                self.limit_entry.insert(0, "0")
+
+            self.batch_limit.set(int_value)
+
+            # スライダーも更新（500以下の場合のみ）
+            if int_value <= 500:
+                self.limit_slider.set(int_value)
+
+            # ラベル更新
+            if int_value == 0:
+                self.limit_value_label.configure(text="全て", text_color="#00ff88")
+            else:
+                self.limit_value_label.configure(text=f"{int_value}枚", text_color="#00ffff")
+
+        except ValueError:
+            # 無効な入力の場合は0にリセット
+            self.limit_entry.delete(0, tk.END)
+            self.limit_entry.insert(0, "0")
+            self.batch_limit.set(0)
+            self.limit_value_label.configure(text="全て", text_color="#00ff88")
 
     def update_limit_label(self, *args):
-        """処理枚数ラベル更新"""
+        """処理枚数ラベル更新（trace用）"""
         limit = self.batch_limit.get()
         if limit == 0:
-            self.limit_value_label.configure(text="全て", text_color="#00ffff")
+            self.limit_value_label.configure(text="全て", text_color="#00ff88")
         else:
-            self.limit_value_label.configure(text=f"{limit}枚", text_color="#ffa500")
+            self.limit_value_label.configure(text=f"{limit}枚", text_color="#00ffff")
 
     def start_batch_analysis(self):
         """バッチ処理開始"""
@@ -1023,7 +1189,7 @@ class ModernImageAnalyzerGUI:
         self.root.after(0, lambda: self.batch_progress.set(progress))
         self.root.after(0, lambda: self.batch_status_label.configure(
             text=f"処理中: {current}/{total} - {message}",
-            text_color="#00ffff"
+            text_color="#4A90E2"
         ))
         self.root.after(0, lambda: self.batch_result_text.insert(tk.END, f"{message}\n"))
         self.root.after(0, lambda: self.batch_result_text.see(tk.END))
@@ -1896,6 +2062,7 @@ class ModernImageAnalyzerGUI:
         )
         if filename:
             self.img1_path.set(filename)
+            self.load_preview_image1(filename)
 
     def browse_image2(self):
         filename = filedialog.askopenfilename(
@@ -1907,6 +2074,7 @@ class ModernImageAnalyzerGUI:
         )
         if filename:
             self.img2_path.set(filename)
+            self.load_preview_image2(filename)
 
     def browse_original(self):
         filename = filedialog.askopenfilename(
@@ -1923,6 +2091,36 @@ class ModernImageAnalyzerGUI:
         dirname = filedialog.askdirectory(title="出力フォルダを選択")
         if dirname:
             self.output_dir.set(dirname)
+
+    def load_preview_image1(self, filepath):
+        """画像1のプレビューを読み込んで表示"""
+        try:
+            img = Image.open(filepath)
+            # プレビューサイズに合わせてリサイズ（アスペクト比維持）
+            img.thumbnail((400, 400), Image.Resampling.LANCZOS)
+            photo = ImageTk.PhotoImage(img)
+            self.preview_img1_label.configure(image=photo, text="")
+            self.preview_img1_label.image = photo  # 参照を保持
+        except Exception as e:
+            self.preview_img1_label.configure(
+                text=f"画像読み込みエラー:\n{str(e)}",
+                image=""
+            )
+
+    def load_preview_image2(self, filepath):
+        """画像2のプレビューを読み込んで表示"""
+        try:
+            img = Image.open(filepath)
+            # プレビューサイズに合わせてリサイズ（アスペクト比維持）
+            img.thumbnail((400, 400), Image.Resampling.LANCZOS)
+            photo = ImageTk.PhotoImage(img)
+            self.preview_img2_label.configure(image=photo, text="")
+            self.preview_img2_label.image = photo  # 参照を保持
+        except Exception as e:
+            self.preview_img2_label.configure(
+                text=f"画像読み込みエラー:\n{str(e)}",
+                image=""
+            )
 
     def start_analysis(self):
         if not self.img1_path.get() or not self.img2_path.get():
@@ -2017,6 +2215,25 @@ class ModernImageAnalyzerGUI:
             from result_interpreter import format_interpretation_text
             interpretation_text = format_interpretation_text(results['interpretation'])
             self.interpretation_text.insert("1.0", interpretation_text)
+            # フォント確認デバッグ
+            if hasattr(self.interpretation_text, '_textbox'):
+                import tkinter.font as tkfont
+                actual_font_name = self.interpretation_text._textbox.cget('font')
+                print(f"DEBUG: Font name configured: {actual_font_name}")
+
+                # 実際のフォントオブジェクトを取得
+                try:
+                    font_obj = tkfont.Font(font=actual_font_name)
+                    actual_family = font_obj.actual('family')
+                    actual_size = font_obj.actual('size')
+                    print(f"DEBUG: Actual font family being rendered: {actual_family}")
+                    print(f"DEBUG: Actual font size being rendered: {actual_size}")
+                except Exception as e:
+                    print(f"DEBUG: Could not get font details: {e}")
+
+                # 強制的にメイリオを再設定（名前付きフォントとして）
+                new_font = tkfont.Font(family="Meiryo", size=11)
+                self.interpretation_text._textbox.configure(font=new_font)
 
             interp = results['interpretation']
             winner = interp['winner']
@@ -2086,6 +2303,34 @@ class ModernImageAnalyzerGUI:
         label = tk.Label(report_window, image=photo, bg="#0a0e27")
         label.image = photo
         label.pack(padx=10, pady=10)
+
+    def switch_to_single_mode(self):
+        """単一画像比較モードに切り替え"""
+        # ボタンの色を変更
+        self.single_mode_btn.configure(fg_color="#4A90E2", text_color="#FFFFFF")
+        self.batch_mode_btn.configure(fg_color="#4a5568", text_color="#ffffff")
+
+        # 左パネルの表示切り替え
+        self.batch_mode_frame.pack_forget()
+        self.single_mode_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+
+        # 右パネルの表示切り替え
+        self.batch_right_frame.pack_forget()
+        self.single_right_frame.pack(fill=tk.BOTH, expand=True)
+
+    def switch_to_batch_mode(self):
+        """バッチ処理モードに切り替え"""
+        # ボタンの色を変更
+        self.batch_mode_btn.configure(fg_color="#4A90E2", text_color="#FFFFFF")
+        self.single_mode_btn.configure(fg_color="#4a5568", text_color="#ffffff")
+
+        # 左パネルの表示切り替え
+        self.single_mode_frame.pack_forget()
+        self.batch_mode_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+
+        # 右パネルの表示切り替え
+        self.single_right_frame.pack_forget()
+        self.batch_right_frame.pack(fill=tk.BOTH, expand=True)
 
 def main():
     root = ctk.CTk()

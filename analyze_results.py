@@ -1,5 +1,9 @@
 """
-統計分析スクリプト：バッチ処理結果から閾値を決定
+統計分析スクリプト：バッチ処理結果から閾値を決定（26パターン対応版）
+
+26パターンのハルシネーション検出:
+- 9つの組み合わせパターン（複合異常）
+- 17の単独閾値判定（各指標の異常値）
 
 使い方:
 python analyze_results.py results/batch_analysis.csv
@@ -252,94 +256,260 @@ def suggest_thresholds(df, output_dir):
 
 def suggest_hallucination_logic(df, output_dir):
     """
-    ハルシネーション検出ロジックの提案
+    ハルシネーション検出ロジックの提案（26パターン完全対応版）
+    - 9つの組み合わせパターン
+    - 17の単独閾値判定
     """
 
-    print(f"\n🔍 ハルシネーション検出ロジックの提案:")
+    print(f"\n🔍 ハルシネーション検出ロジックの提案（26パターン）:")
     print(f"{'='*80}")
 
-    # パターン1: SSIM高いのにPSNR低い（構造は似てるがピクセル値が違う）
+    # 検出カウント用
+    detection_count = pd.Series(0, index=df.index)
+    detected_patterns = {idx: [] for idx in df.index}
+    pattern_stats = {}
+
+    # ========== 組み合わせパターン（9つ） ==========
+    print(f"\n【組み合わせパターン（複合異常検出）】")
+    print(f"{'='*80}")
+
+    # === パターン1: SSIM高 × PSNR低（2方式統合） ===
+    # 方法A: 固定閾値
+    pattern1a = df[(df['ssim'] > 0.97) & (df['psnr'] < 25)]
+    # 方法B: 動的閾値
     ssim_high = df['ssim'].quantile(0.75)
     psnr_low = df['psnr'].quantile(0.25)
+    pattern1b = df[(df['ssim'] >= ssim_high) & (df['psnr'] <= psnr_low)]
+    # 統合
+    pattern1 = pd.concat([pattern1a, pattern1b]).drop_duplicates()
+    detection_count[pattern1.index] += 1
+    for idx in pattern1.index:
+        detected_patterns[idx].append('P1:SSIM高×PSNR低')
+    pattern_stats['P1'] = {'count': len(pattern1), 'rate': len(pattern1)/len(df)*100}
 
-    pattern1 = df[(df['ssim'] >= ssim_high) & (df['psnr'] <= psnr_low)]
-    pattern1_rate = len(pattern1) / len(df) * 100
+    print(f"P1: SSIM高 × PSNR低（構造類似だがピクセル値相違）")
+    print(f"    固定閾値 (SSIM>0.97 & PSNR<25): {len(pattern1a)}件")
+    print(f"    動的閾値 (SSIM≥{ssim_high:.4f} & PSNR≤{psnr_low:.2f}): {len(pattern1b)}件")
+    print(f"    統合後: {len(pattern1)}件 ({len(pattern1)/len(df)*100:.1f}%)")
+    print(f"    リスク: 中～高（AIが構造を模倣した可能性）")
 
-    print(f"【パターン1】SSIM高 & PSNR低 (構造類似だがピクセル値相違)")
-    print(f"   条件: SSIM >= {ssim_high:.4f} AND PSNR <= {psnr_low:.2f}")
-    print(f"   該当率: {pattern1_rate:.1f}% ({len(pattern1)}/{len(df)}件)")
-    print(f"   リスク: 中～高（AIが構造を模倣した可能性）")
-
-    # パターン2: シャープネス高いがノイズも高い（過剰処理）
+    # === パターン2: シャープネス高 × ノイズ高 ===
     sharp_high = df['sharpness'].quantile(0.75)
     noise_high = df['noise'].quantile(0.75)
+    pattern2 = df[(df['sharpness'] > sharp_high) & (df['noise'] > noise_high)]
+    detection_count[pattern2.index] += 1
+    for idx in pattern2.index:
+        detected_patterns[idx].append('P2:シャープ高×ノイズ高')
+    pattern_stats['P2'] = {'count': len(pattern2), 'rate': len(pattern2)/len(df)*100}
 
-    pattern2 = df[(df['sharpness'] >= sharp_high) & (df['noise'] >= noise_high)]
-    pattern2_rate = len(pattern2) / len(df) * 100
+    print(f"\nP2: シャープネス高 × ノイズ高（過剰処理）")
+    print(f"    条件: シャープ>{sharp_high:.2f} & ノイズ>{noise_high:.2f}")
+    print(f"    該当: {len(pattern2)}件 ({len(pattern2)/len(df)*100:.1f}%)")
+    print(f"    リスク: 中（過度なシャープ化によるノイズ増幅）")
 
-    print(f"\n【パターン2】シャープネス高 & ノイズ高 (過剰処理)")
-    print(f"   条件: シャープネス >= {sharp_high:.2f} AND ノイズ >= {noise_high:.2f}")
-    print(f"   該当率: {pattern2_rate:.1f}% ({len(pattern2)}/{len(df)}件)")
-    print(f"   リスク: 中（過度なシャープ化によるノイズ増幅）")
+    # === パターン3: エッジ密度高 × 局所品質低 ===
+    edge_90 = df['edge_density'].quantile(0.90)
+    quality_25 = df['local_quality_mean'].quantile(0.25)
+    pattern3 = df[(df['edge_density'] > edge_90) & (df['local_quality_mean'] < quality_25)]
+    detection_count[pattern3.index] += 1
+    for idx in pattern3.index:
+        detected_patterns[idx].append('P3:エッジ高×品質低')
+    pattern_stats['P3'] = {'count': len(pattern3), 'rate': len(pattern3)/len(df)*100}
 
-    # パターン3: アーティファクト高（GAN特有）
-    artifact_high = df['artifact_total'].quantile(0.90)
+    print(f"\nP3: エッジ密度高 × 局所品質低（不自然なエッジ）")
+    print(f"    条件: エッジ>{edge_90:.2f} & 局所品質<{quality_25:.4f}")
+    print(f"    該当: {len(pattern3)}件 ({len(pattern3)/len(df)*100:.1f}%)")
+    print(f"    リスク: 中～高（エッジ追加が不均一）")
 
-    pattern3 = df[df['artifact_total'] >= artifact_high]
-    pattern3_rate = len(pattern3) / len(df) * 100
+    # === パターン4: アーティファクト異常高 ===
+    artifact_90 = df['artifact_total'].quantile(0.90)
+    pattern4 = df[df['artifact_total'] > artifact_90]
+    detection_count[pattern4.index] += 1
+    for idx in pattern4.index:
+        detected_patterns[idx].append('P4:Artifacts高')
+    pattern_stats['P4'] = {'count': len(pattern4), 'rate': len(pattern4)/len(df)*100}
 
-    print(f"\n【パターン3】アーティファクト高 (GAN特有の歪み)")
-    print(f"   条件: アーティファクト >= {artifact_high:.2f}")
-    print(f"   該当率: {pattern3_rate:.1f}% ({len(pattern3)}/{len(df)}件)")
-    print(f"   リスク: 高（リンギング・ブロックノイズによる診断阻害）")
+    print(f"\nP4: アーティファクト異常高（GAN特有の歪み）")
+    print(f"    条件: Artifacts>{artifact_90:.2f}")
+    print(f"    該当: {len(pattern4)}件 ({len(pattern4)/len(df)*100:.1f}%)")
+    print(f"    リスク: 高（リンギング・ブロックノイズ）")
 
-    # パターン4: 局所品質のばらつき大
-    local_std_high = df['local_quality_std'].quantile(0.75)
+    # === パターン5: LPIPS高 × SSIM高 ===
+    lpips_75 = df['lpips'].quantile(0.75)
+    ssim_75 = df['ssim'].quantile(0.75)
+    pattern5 = df[(df['lpips'] > lpips_75) & (df['ssim'] > ssim_75)]
+    detection_count[pattern5.index] += 1
+    for idx in pattern5.index:
+        detected_patterns[idx].append('P5:LPIPS高×SSIM高')
+    pattern_stats['P5'] = {'count': len(pattern5), 'rate': len(pattern5)/len(df)*100}
 
-    pattern4 = df[df['local_quality_std'] >= local_std_high]
-    pattern4_rate = len(pattern4) / len(df) * 100
+    print(f"\nP5: LPIPS高 × SSIM高（知覚と構造の矛盾）")
+    print(f"    条件: LPIPS>{lpips_75:.4f} & SSIM>{ssim_75:.4f}")
+    print(f"    該当: {len(pattern5)}件 ({len(pattern5)/len(df)*100:.1f}%)")
+    print(f"    リスク: 中（構造は似ているが知覚的に異なる）")
 
-    print(f"\n【パターン4】局所品質のばらつき大 (不均一な処理)")
-    print(f"   条件: 局所SSIM標準偏差 >= {local_std_high:.4f}")
-    print(f"   該当率: {pattern4_rate:.1f}% ({len(pattern4)}/{len(df)}件)")
-    print(f"   リスク: 中～高（領域によって品質が異なる = 一部にハルシネーション）")
+    # === パターン6: 局所品質ばらつき大 ===
+    if 'local_quality_std' in df.columns:
+        quality_std_75 = df['local_quality_std'].quantile(0.75)
+        pattern6 = df[df['local_quality_std'] > quality_std_75]
+        detection_count[pattern6.index] += 1
+        for idx in pattern6.index:
+            detected_patterns[idx].append('P6:品質ばらつき大')
+        pattern_stats['P6'] = {'count': len(pattern6), 'rate': len(pattern6)/len(df)*100}
 
-    print(f"{'='*80}\n")
+        print(f"\nP6: 局所品質ばらつき大（不均一な処理）")
+        print(f"    条件: 局所SSIM標準偏差>{quality_std_75:.4f}")
+        print(f"    該当: {len(pattern6)}件 ({len(pattern6)/len(df)*100:.1f}%)")
+        print(f"    リスク: 中～高（領域によって品質が異なる）")
+    else:
+        pattern_stats['P6'] = {'count': 0, 'rate': 0}
+        print(f"\nP6: 局所品質ばらつき大 → データなし（スキップ）")
 
-    # 総合ハルシネーションリスクスコアの計算
-    print(f"📊 総合ハルシネーションリスクスコアの提案:")
+    # === パターン7: Entropy低 × High-Freq高 ===
+    entropy_25 = df['entropy'].quantile(0.25)
+    highfreq_75 = df['high_freq_ratio'].quantile(0.75)
+    pattern7 = df[(df['entropy'] < entropy_25) & (df['high_freq_ratio'] > highfreq_75)]
+    detection_count[pattern7.index] += 1
+    for idx in pattern7.index:
+        detected_patterns[idx].append('P7:Entropy低×高周波高')
+    pattern_stats['P7'] = {'count': len(pattern7), 'rate': len(pattern7)/len(df)*100}
+
+    print(f"\nP7: Entropy低 × 高周波高（反復パターン）")
+    print(f"    条件: Entropy<{entropy_25:.3f} & 高周波>{highfreq_75:.4f}")
+    print(f"    該当: {len(pattern7)}件 ({len(pattern7)/len(df)*100:.1f}%)")
+    print(f"    リスク: 中（人工的な反復パターン）")
+
+    # === パターン8: Contrast異常 × Histogram相関低 ===
+    contrast_90 = df['contrast'].quantile(0.90)
+    histcorr_25 = df['histogram_corr'].quantile(0.25)
+    pattern8 = df[(df['contrast'] > contrast_90) & (df['histogram_corr'] < histcorr_25)]
+    detection_count[pattern8.index] += 1
+    for idx in pattern8.index:
+        detected_patterns[idx].append('P8:Contrast異常×Hist相関低')
+    pattern_stats['P8'] = {'count': len(pattern8), 'rate': len(pattern8)/len(df)*100}
+
+    print(f"\nP8: Contrast異常 × Histogram相関低（濃度分布崩壊）")
+    print(f"    条件: Contrast>{contrast_90:.2f} & Hist相関<{histcorr_25:.4f}")
+    print(f"    該当: {len(pattern8)}件 ({len(pattern8)/len(df)*100:.1f}%)")
+    print(f"    リスク: 中（コントラスト強調で濃度分布が崩れている）")
+
+    # === パターン9: MS-SSIM低 × 総合スコア低 ===
+    msssim_25 = df['ms_ssim'].quantile(0.25)
+    total_25 = df['total_score'].quantile(0.25)
+    pattern9 = df[(df['ms_ssim'] < msssim_25) & (df['total_score'] < total_25)]
+    detection_count[pattern9.index] += 1
+    for idx in pattern9.index:
+        detected_patterns[idx].append('P9:MS-SSIM低×総合低')
+    pattern_stats['P9'] = {'count': len(pattern9), 'rate': len(pattern9)/len(df)*100}
+
+    print(f"\nP9: MS-SSIM低 × 総合スコア低（総合的低品質）")
+    print(f"    条件: MS-SSIM<{msssim_25:.4f} & 総合<{total_25:.2f}")
+    print(f"    該当: {len(pattern9)}件 ({len(pattern9)/len(df)*100:.1f}%)")
+    print(f"    リスク: 高（複数スケールで品質劣化）")
+
+    # ========== 単独パターン（17項目） ==========
+    print(f"\n{'='*80}")
+    print(f"【単独閾値判定パターン（17項目）】")
     print(f"{'='*80}")
 
-    df['hallucination_risk_score'] = 0
+    single_pattern_count = 0
 
-    # パターン1該当: +25点
-    df.loc[(df['ssim'] >= ssim_high) & (df['psnr'] <= psnr_low), 'hallucination_risk_score'] += 25
+    # 高い方が良い指標（異常に低い = 下位10%）
+    high_is_good = [
+        ('ssim', 'SSIM低'), ('ms_ssim', 'MS-SSIM低'), ('psnr', 'PSNR低'),
+        ('sharpness', 'Sharpness低'), ('contrast', 'Contrast低'), ('entropy', 'Entropy低'),
+        ('edge_density', 'EdgeDensity低'), ('high_freq_ratio', 'HighFreq低'),
+        ('texture_complexity', 'Texture低'), ('local_quality_mean', 'LocalQuality低'),
+        ('histogram_corr', 'HistCorr低'), ('total_score', 'TotalScore低')
+    ]
 
-    # パターン2該当: +20点
-    df.loc[(df['sharpness'] >= sharp_high) & (df['noise'] >= noise_high), 'hallucination_risk_score'] += 20
+    print(f"\n高い方が良い指標（下位10%を異常検出）:")
+    for col, name in high_is_good:
+        if col in df.columns:
+            threshold = df[col].quantile(0.10)
+            detected = df[df[col] < threshold]
+            detection_count[detected.index] += 1
+            for idx in detected.index:
+                detected_patterns[idx].append(f'単独:{name}')
+            single_pattern_count += len(detected)
+            print(f"  {name:20s}: <{threshold:8.4f} → {len(detected):4d}件 ({len(detected)/len(df)*100:5.1f}%)")
 
-    # パターン3該当: +30点
-    df.loc[df['artifact_total'] >= artifact_high, 'hallucination_risk_score'] += 30
+    # 低い方が良い指標（異常に高い = 上位10%）
+    low_is_good = [
+        ('lpips', 'LPIPS高'), ('noise', 'Noise高'),
+        ('artifact_total', 'Artifacts高'), ('delta_e', 'DeltaE高')
+    ]
 
-    # パターン4該当: +25点
-    df.loc[df['local_quality_std'] >= local_std_high, 'hallucination_risk_score'] += 25
+    print(f"\n低い方が良い指標（上位10%を異常検出）:")
+    for col, name in low_is_good:
+        if col in df.columns:
+            threshold = df[col].quantile(0.90)
+            detected = df[df[col] > threshold]
+            detection_count[detected.index] += 1
+            for idx in detected.index:
+                detected_patterns[idx].append(f'単独:{name}')
+            single_pattern_count += len(detected)
+            print(f"  {name:20s}: >{threshold:8.4f} → {len(detected):4d}件 ({len(detected)/len(df)*100:5.1f}%)")
 
-    # リスクレベル分類
-    df['risk_level'] = pd.cut(df['hallucination_risk_score'],
-                               bins=[0, 10, 30, 50, 100],
-                               labels=['MINIMAL', 'LOW', 'MEDIUM', 'HIGH'])
+    if 'local_quality_std' in df.columns:
+        threshold = df['local_quality_std'].quantile(0.90)
+        detected = df[df['local_quality_std'] > threshold]
+        detection_count[detected.index] += 1
+        for idx in detected.index:
+            detected_patterns[idx].append(f'単独:LocalQualityStd高')
+        single_pattern_count += len(detected)
+        print(f"  {'LocalQualityStd高':20s}: >{threshold:8.4f} → {len(detected):4d}件 ({len(detected)/len(df)*100:5.1f}%)")
 
-    # リスク分布
-    risk_dist = df['risk_level'].value_counts().sort_index()
-    print(f"\nハルシネーションリスク分布:")
-    for level, count in risk_dist.items():
-        pct = count / len(df) * 100
-        print(f"   {level:10s}: {count:4d}件 ({pct:5.1f}%)")
+    print(f"\n単独パターン合計検出: {single_pattern_count}件（延べ数）")
+
+    # ========== 総合リスクスコア計算 ==========
+    print(f"\n{'='*80}")
+    print(f"📊 総合ハルシネーションリスクスコア（26パターン統合）")
+    print(f"{'='*80}")
+
+    # 信頼度分類（多数決）
+    high_confidence = df[detection_count >= 5]  # 5パターン以上
+    medium_confidence = df[(detection_count >= 3) & (detection_count < 5)]  # 3-4パターン
+    low_confidence = df[(detection_count >= 1) & (detection_count < 3)]  # 1-2パターン
+    no_detection = df[detection_count == 0]  # 検出なし（正常）
+
+    print(f"\n信頼度別分類:")
+    print(f"  高信頼度(5+パターン): {len(high_confidence):5d}件 ({len(high_confidence)/len(df)*100:5.1f}%)")
+    print(f"  中信頼度(3-4パターン): {len(medium_confidence):5d}件 ({len(medium_confidence)/len(df)*100:5.1f}%)")
+    print(f"  低信頼度(1-2パターン): {len(low_confidence):5d}件 ({len(low_confidence)/len(df)*100:5.1f}%)")
+    print(f"  正常(検出0):          {len(no_detection):5d}件 ({len(no_detection)/len(df)*100:5.1f}%)")
+
+    # DataFrameに結果を追加
+    df['detection_count'] = detection_count
+    df['detected_patterns'] = df.index.map(lambda idx: ', '.join(detected_patterns[idx]) if detected_patterns[idx] else 'None')
+
+    # 信頼度レベル
+    df['confidence_level'] = 'Normal'
+    df.loc[detection_count >= 1, 'confidence_level'] = 'Low'
+    df.loc[detection_count >= 3, 'confidence_level'] = 'Medium'
+    df.loc[detection_count >= 5, 'confidence_level'] = 'High'
 
     # リスク付きCSV保存
-    output_csv = output_dir / 'results_with_risk_score.csv'
+    output_csv = output_dir / 'results_with_26pattern_detection.csv'
     df.to_csv(output_csv, index=False, encoding='utf-8-sig')
-    print(f"\n💾 リスクスコア付き結果保存: {output_csv}")
+    print(f"\n💾 26パターン検出結果保存: {output_csv}")
+
+    # サマリーCSV保存
+    summary_data = {
+        'pattern_name': [],
+        'detection_count': [],
+        'detection_rate_%': []
+    }
+
+    for p_name, stats in pattern_stats.items():
+        summary_data['pattern_name'].append(p_name)
+        summary_data['detection_count'].append(stats['count'])
+        summary_data['detection_rate_%'].append(stats['rate'])
+
+    summary_df = pd.DataFrame(summary_data)
+    summary_path = output_dir / 'pattern_detection_summary.csv'
+    summary_df.to_csv(summary_path, index=False, encoding='utf-8-sig')
+    print(f"💾 パターン別サマリー保存: {summary_path}")
 
     print(f"{'='*80}\n")
 
