@@ -185,6 +185,58 @@ def calculate_lpips(img1_rgb, img2_rgb):
         print(f"LPIPS計算エラー: {e}")
         return None, None
 
+def is_document_image(img_rgb):
+    """
+    画像が文書/テキスト主体の画像かどうかを判定
+
+    医療カルテ、レシート、スキャン文書などはCLIPが苦手とするため検出する
+
+    Args:
+        img_rgb: RGB画像 (numpy array)
+
+    Returns:
+        bool: 文書画像と判定された場合True
+    """
+    try:
+        # 1. 明るい背景率の計算（文書は明るい背景が多い）
+        # RGB平均が200以上のピクセルを「明るい背景」とみなす（医療カルテ対応）
+        bright_pixels = np.sum(np.mean(img_rgb, axis=2) >= 200)
+        total_pixels = img_rgb.shape[0] * img_rgb.shape[1]
+        bright_ratio = bright_pixels / total_pixels
+
+        # 2. 非常に明るいピクセル（白に近い）
+        white_pixels = np.sum(np.all(img_rgb >= 230, axis=2))
+        white_ratio = white_pixels / total_pixels
+
+        # 3. 色分散の計算（文書は色のバリエーションが少ない）
+        color_std = np.std(img_rgb)
+
+        # 4. グレースケール率（文書は白黒が多い）
+        # RGBの差が小さいピクセルを「グレースケール」とみなす
+        rgb_diff = np.max(img_rgb, axis=2) - np.min(img_rgb, axis=2)
+        gray_pixels = np.sum(rgb_diff < 40)
+        gray_ratio = gray_pixels / total_pixels
+
+        # 5. LAB色空間でのL値（明度）が高い
+        lab_l_mean = np.mean(img_rgb)  # 簡易的な明度指標
+
+        # 判定基準（医療カルテに最適化）:
+        # - 明るい背景率 > 50% AND (色分散 < 60 OR グレー率 > 70%) → 文書
+        # - 非常に明るい背景率 > 30% AND グレー率 > 60% → 文書
+        # - 平均輝度 > 200 AND 色分散 < 70 → 文書（医療カルテ特化）
+        is_document = (bright_ratio > 0.50 and (color_std < 60 or gray_ratio > 0.70)) or \
+                     (white_ratio > 0.30 and gray_ratio > 0.60) or \
+                     (lab_l_mean > 200 and color_std < 70)
+
+        # デバッグ用：判定情報を常に表示
+        print(f"    文書判定 - 明背景: {bright_ratio*100:.1f}%, 白背景: {white_ratio*100:.1f}%, 色分散: {color_std:.1f}, グレー率: {gray_ratio*100:.1f}%, 平均輝度: {lab_l_mean:.1f} → {'📄文書' if is_document else '🖼️自然画像'}")
+
+        return is_document
+
+    except Exception as e:
+        print(f"文書判定エラー: {e}")
+        return False
+
 def calculate_clip_similarity(img1_rgb, img2_rgb):
     """
     CLIP Embeddings を使用した意味的類似度計算
@@ -201,7 +253,8 @@ def calculate_clip_similarity(img1_rgb, img2_rgb):
         # 初回のみモデルとプロセッサを読み込み
         if CLIP_MODEL is None or CLIP_PROCESSOR is None:
             print("CLIP モデルを読み込み中...")
-            CLIP_MODEL = CLIPModel.from_pretrained("openai/clip-vit-base-patch32")
+            # safetensors形式でロード（PyTorch 2.6未満でも動作）
+            CLIP_MODEL = CLIPModel.from_pretrained("openai/clip-vit-base-patch32", use_safetensors=True)
             CLIP_PROCESSOR = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 
             # GPUが利用可能ならGPUに転送
@@ -923,7 +976,7 @@ def imread_unicode(filename):
         print(f"画像読み込みエラー: {e}")
         return None
 
-def analyze_images(img1_path, img2_path, output_dir='analysis_results', original_path=None):
+def analyze_images(img1_path, img2_path, output_dir='analysis_results', original_path=None, evaluation_mode='image'):
     """
     2つの画像を詳細に比較分析する（拡張版）
 
@@ -932,25 +985,34 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
     img2_path: 画像2のパス（例: Upscayl）
     output_dir: 結果保存ディレクトリ
     original_path: 元画像のパス（オプション、AI超解像の精度評価用）
+    evaluation_mode: 評価モード ('image', 'document', 'developer')
     """
 
     # 出力ディレクトリ作成
     os.makedirs(output_dir, exist_ok=True)
 
     # 画像読み込み（日本語パス対応）
-    img1 = imread_unicode(img1_path)
-    img2 = imread_unicode(img2_path)
+    # 注: img1/img2 は超解像結果（処理後）、original は元画像（処理前）
+    img1 = imread_unicode(img1_path)  # 超解像結果1
+    img2 = imread_unicode(img2_path)  # 超解像結果2
+
+    # より明確な変数名のエイリアスを定義
+    img_sr1 = img1  # SR = Super-Resolution（超解像結果1）
+    img_sr2 = img2  # SR = Super-Resolution（超解像結果2）
 
     # 元画像の読み込み（オプション）
     img_original = None
     if original_path:
         img_original = imread_unicode(original_path)
         if img_original is not None:
-            print(f"\n✅ 元画像を読み込みました: {original_path}")
+            print(f"\n✅ 元画像（処理前）を読み込みました: {original_path}")
             print(f"   元画像サイズ: {img_original.shape[1]} x {img_original.shape[0]} px")
         else:
             print(f"\n⚠️  元画像の読み込みに失敗しました: {original_path}")
             img_original = None
+
+    # 元画像のエイリアス
+    img_before = img_original  # Before（処理前）= オリジナル
 
     if img1 is None or img2 is None:
         print("エラー: 画像ファイルが読み込めません")
@@ -968,17 +1030,25 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         # 画像2を画像1のサイズに合わせる
         img2 = cv2.resize(img2, (img1.shape[1], img1.shape[0]), interpolation=cv2.INTER_LANCZOS4)
 
-    # 元画像のリサイズ処理（アップスケール）
+    # 元画像のリサイズ処理（必要な場合のみ）
     img_original_rgb = None
     img_original_gray = None
     if img_original is not None:
         target_size = (img1.shape[1], img1.shape[0])  # 画像1のサイズに合わせる
-        print(f"\n🔄 元画像をアップスケール中...")
-        print(f"   {img_original.shape[1]}x{img_original.shape[0]} → {target_size[0]}x{target_size[1]}")
-        img_original_upscaled = cv2.resize(img_original, target_size, interpolation=cv2.INTER_LANCZOS4)
-        img_original_rgb = cv2.cvtColor(img_original_upscaled, cv2.COLOR_BGR2RGB)
-        img_original_gray = cv2.cvtColor(img_original_upscaled, cv2.COLOR_BGR2GRAY)
-        print(f"   ✅ アップスケール完了")
+        original_size = (img_original.shape[1], img_original.shape[0])
+
+        # サイズが異なる場合のみリサイズ
+        if original_size != target_size:
+            print(f"\n🔄 元画像をリサイズ中...")
+            print(f"   {original_size[0]}x{original_size[1]} → {target_size[0]}x{target_size[1]}")
+            img_original_resized = cv2.resize(img_original, target_size, interpolation=cv2.INTER_LANCZOS4)
+            print(f"   ✅ リサイズ完了")
+        else:
+            print(f"\n✅ 元画像サイズ一致（{original_size[0]}x{original_size[1]}）- リサイズ不要")
+            img_original_resized = img_original
+
+        img_original_rgb = cv2.cvtColor(img_original_resized, cv2.COLOR_BGR2RGB)
+        img_original_gray = cv2.cvtColor(img_original_resized, cv2.COLOR_BGR2GRAY)
 
     # RGB変換（OpenCVはBGRなので）
     img1_rgb = cv2.cvtColor(img1, cv2.COLOR_BGR2RGB)
@@ -1000,17 +1070,23 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
     print("=" * 80)
     print("詳細画像比較分析レポート")
     print("=" * 80)
+    print("📌 比較対象: 元画像（処理前/Before） vs AI超解像結果（処理後/After）")
+    print("=" * 80)
 
     # 1. 基本情報
     print("\n【1. 基本情報】")
-    print(f"画像1サイズ: {img1.shape[1]} x {img1.shape[0]} px")
-    print(f"画像2サイズ: {img2.shape[1]} x {img2.shape[0]} px")
+    print(f"超解像結果1サイズ: {img1.shape[1]} x {img1.shape[0]} px")
+    print(f"超解像結果2サイズ: {img2.shape[1]} x {img2.shape[0]} px")
 
     size1 = os.path.getsize(img1_path) / (1024 * 1024)
     size2 = os.path.getsize(img2_path) / (1024 * 1024)
-    print(f"画像1ファイルサイズ: {size1:.2f} MB")
-    print(f"画像2ファイルサイズ: {size2:.2f} MB")
+    print(f"超解像結果1ファイルサイズ: {size1:.2f} MB")
+    print(f"超解像結果2ファイルサイズ: {size2:.2f} MB")
     print(f"サイズ差: {abs(size1 - size2):.2f} MB ({((size2/size1 - 1) * 100):+.1f}%)")
+
+    if img_original is not None:
+        size_original = os.path.getsize(original_path) / (1024 * 1024)
+        print(f"元画像（処理前）ファイルサイズ: {size_original:.2f} MB")
 
     # GPU/CPU情報
     print(f"\n計算デバイス情報:")
@@ -1110,6 +1186,108 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         print(f"PSNR (画像1 vs 画像2): {psnr_score:.2f} dB")
         results['psnr'] = round(psnr_score, 2)
 
+    # 3.4. ピクセル差分（MAE - 平均絶対誤差）
+    print("\n【3.4. ピクセル差分（MAE）】")
+    print("元画像とのピクセル単位での絶対差分（低いほど近い、0=完全一致）")
+
+    if img_original_rgb is not None:
+        # 元画像がある場合：それぞれ元画像との差分を計算
+        diff_img1 = np.abs(img1_rgb.astype(float) - img_original_rgb.astype(float))
+        diff_img2 = np.abs(img2_rgb.astype(float) - img_original_rgb.astype(float))
+
+        # 全体のMAE
+        mae_img1 = np.mean(diff_img1)
+        mae_img2 = np.mean(diff_img2)
+
+        print(f"📊 全体MAE:")
+        print(f"  超解像結果1（After） vs 元画像（Before）: {mae_img1:.2f} (差分率: {(mae_img1/255)*100:.1f}%)")
+        print(f"  超解像結果2（After） vs 元画像（Before）: {mae_img2:.2f} (差分率: {(mae_img2/255)*100:.1f}%)")
+
+        # テキスト領域のみのMAE（白背景を除外）
+        # RGB平均が200未満のピクセルを「テキスト領域」とみなす
+        text_mask_img1 = np.mean(img1_rgb, axis=2) < 200
+        text_mask_img2 = np.mean(img2_rgb, axis=2) < 200
+        text_mask_original = np.mean(img_original_rgb, axis=2) < 200
+        # 3つの画像のいずれかにテキストがある領域を統合
+        text_mask_combined = text_mask_img1 | text_mask_img2 | text_mask_original
+
+        # テキスト領域のピクセル数を確認
+        text_pixel_count = np.sum(text_mask_combined)
+        total_pixel_count = text_mask_combined.size
+        text_ratio = text_pixel_count / total_pixel_count
+
+        if text_pixel_count > 0:
+            # テキスト領域が存在する場合
+            mae_text_img1 = np.mean(diff_img1[text_mask_combined])
+            mae_text_img2 = np.mean(diff_img2[text_mask_combined])
+
+            print(f"\n📝 テキスト領域MAE（白背景除外、{text_ratio*100:.1f}%の領域）:")
+            print(f"  超解像結果1（After） vs 元画像（Before）: {mae_text_img1:.2f} (差分率: {(mae_text_img1/255)*100:.1f}%)")
+            print(f"  超解像結果2（After） vs 元画像（Before）: {mae_text_img2:.2f} (差分率: {(mae_text_img2/255)*100:.1f}%)")
+        else:
+            # テキスト領域がない場合（純粋な白画像など）
+            mae_text_img1 = None
+            mae_text_img2 = None
+            print(f"\n  ⚠️  テキスト領域が検出されませんでした（白背景のみの画像）")
+
+        # 全体MAEでの比較
+        print(f"\n💡 全体MAE比較:")
+        if mae_img1 < mae_img2:
+            print(f"  → 超解像結果1の方が元画像（Before）に近い (差分差: {mae_img2 - mae_img1:.2f})")
+        else:
+            print(f"  → 超解像結果2の方が元画像（Before）に近い (差分差: {mae_img1 - mae_img2:.2f})")
+
+        # テキストMAEでの比較と評価（より重要）
+        if mae_text_img1 is not None and mae_text_img2 is not None:
+            print(f"\n🎯 テキスト領域MAE比較（重要度：高）:")
+            if mae_text_img1 < mae_text_img2:
+                print(f"  → 超解像結果1の方が元画像（Before）に近い (差分差: {mae_text_img2 - mae_text_img1:.2f})")
+            else:
+                print(f"  → 超解像結果2の方が元画像（Before）に近い (差分差: {mae_text_img1 - mae_text_img2:.2f})")
+
+            # テキスト領域での評価基準（より厳格）
+            print(f"\n  【テキスト領域の評価】")
+            for idx, mae_text_val in enumerate([mae_text_img1, mae_text_img2], 1):
+                if mae_text_val < 10:
+                    eval_str = "ほぼ完全一致（同じ内容）✅"
+                elif mae_text_val < 30:
+                    eval_str = "類似（一部異なる可能性）"
+                elif mae_text_val < 60:
+                    eval_str = "⚠️ 明らかに異なる内容"
+                else:
+                    eval_str = "🚨 全く異なる画像（別の文書/別の患者）"
+                print(f"  超解像結果{idx}: {eval_str}")
+
+        results['mae'] = {
+            'img1_vs_original': round(mae_img1, 2),
+            'img2_vs_original': round(mae_img2, 2),
+            'img1_diff_ratio': round((mae_img1/255)*100, 2),
+            'img2_diff_ratio': round((mae_img2/255)*100, 2),
+            'img1_text_mae': round(mae_text_img1, 2) if mae_text_img1 is not None else None,
+            'img2_text_mae': round(mae_text_img2, 2) if mae_text_img2 is not None else None,
+            'text_region_ratio': round(text_ratio * 100, 2) if text_pixel_count > 0 else 0
+        }
+    else:
+        # 元画像がない場合：画像1 vs 画像2
+        mae_score = np.mean(np.abs(img1_rgb.astype(float) - img2_rgb.astype(float)))
+        print(f"MAE (画像1 vs 画像2): {mae_score:.2f} (差分率: {(mae_score/255)*100:.1f}%)")
+
+        if mae_score < 5:
+            print("  評価: ほぼ完全一致")
+        elif mae_score < 10:
+            print("  評価: 非常に類似")
+        elif mae_score < 20:
+            print("  評価: 類似")
+        elif mae_score < 40:
+            print("  評価: やや異なる")
+        else:
+            print("  評価: 大きく異なる")
+
+        results['mae'] = {
+            'value': round(mae_score, 2),
+            'diff_ratio': round((mae_score/255)*100, 2)
+        }
+
     # 3.5. LPIPS（知覚的類似度）
     print("\n【3.5. LPIPS（知覚的類似度）】")
     print("深層学習ベースの知覚的類似度（0に近いほど類似）")
@@ -1143,30 +1321,127 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
     print("\n【3.6. CLIP Embeddings（意味的類似度）】")
     print("OpenAI CLIP モデルによる意味的類似度（1.0に近いほど意味的に類似）")
     print_usage_status("CLIP計算開始")
-    clip_similarity = calculate_clip_similarity(img1_rgb, img2_rgb)
-    print_usage_status("CLIP計算完了")
 
-    if clip_similarity is not None:
-        print(f"CLIP コサイン類似度: {clip_similarity:.4f}")
-        if GPU_AVAILABLE:
-            print(f"  GPU使用: はい")
-        else:
-            print(f"  GPU使用: いいえ（CPU処理）")
+    # 文書画像検出（CLIPが苦手とする画像タイプ）
+    is_doc_img1 = is_document_image(img1_rgb)
+    is_doc_img2 = is_document_image(img2_rgb)
+    is_doc_original = is_document_image(img_original_rgb) if img_original_rgb is not None else False
+    is_any_document_detected = is_doc_img1 or is_doc_img2 or is_doc_original
 
-        if clip_similarity > 0.95:
-            print("  評価: 意味的にほぼ同一の画像")
-        elif clip_similarity > 0.85:
-            print("  評価: 意味的に非常に類似")
-        elif clip_similarity > 0.70:
-            print("  評価: 意味的に類似")
-        elif clip_similarity > 0.50:
-            print("  評価: やや類似")
-        else:
-            print("  評価: 全く異なる画像（内容が違う）")
-        results['clip_similarity'] = round(clip_similarity, 4)
+    # 評価モードを考慮
+    if evaluation_mode == 'document':
+        # 文書モード：強制的に文書として扱う
+        is_any_document = True
+        print("📄 評価モード: 文書モード（厳格な基準で評価）")
+    elif evaluation_mode == 'developer':
+        # 開発者モード：自動検出結果を使用
+        is_any_document = is_any_document_detected
+        print("🔧 評価モード: 開発者モード（参考情報として表示）")
     else:
-        print("  ※CLIP計算をスキップしました（ライブラリ未インストール）")
-        results['clip_similarity'] = None
+        # 画像モード：自動検出結果を使用
+        is_any_document = is_any_document_detected
+        if is_any_document:
+            print("📄 文書画像を自動検出（文書モードの使用を推奨）")
+
+    if img_original_rgb is not None:
+        # 元画像がある場合：それぞれ元画像との類似度を計算
+        clip_img1_vs_orig = calculate_clip_similarity(img1_rgb, img_original_rgb)
+        clip_img2_vs_orig = calculate_clip_similarity(img2_rgb, img_original_rgb)
+        print_usage_status("CLIP計算完了")
+
+        if clip_img1_vs_orig is not None and clip_img2_vs_orig is not None:
+            print(f"画像1 vs 元画像 CLIP: {clip_img1_vs_orig:.4f}")
+            print(f"画像2 vs 元画像 CLIP: {clip_img2_vs_orig:.4f}")
+            if GPU_AVAILABLE:
+                print(f"  GPU使用: はい")
+            else:
+                print(f"  GPU使用: いいえ（CPU処理）")
+
+            if clip_img1_vs_orig > clip_img2_vs_orig:
+                print(f"→ 画像1の方が元画像に意味的に近い (+{(clip_img1_vs_orig - clip_img2_vs_orig):.4f})")
+            else:
+                print(f"→ 画像2の方が元画像に意味的に近い (+{(clip_img2_vs_orig - clip_img1_vs_orig):.4f})")
+
+            # 各画像の評価（文書画像の場合は厳格な基準を適用）
+            if is_any_document:
+                print("  ⚠️  文書/カルテ画像を検出: CLIPは厳格な基準で評価します")
+                # 文書画像用の厳格な閾値
+                for idx, clip_val in enumerate([clip_img1_vs_orig, clip_img2_vs_orig], 1):
+                    if clip_val > 0.98:
+                        eval_str = "意味的にほぼ同一"
+                    elif clip_val > 0.95:
+                        eval_str = "意味的に類似（要注意：文書は構造類似で高スコアになりやすい）"
+                    elif clip_val > 0.90:
+                        eval_str = "⚠️ 構造は類似だが内容は異なる可能性 🔍"
+                    else:
+                        eval_str = "全く異なる画像（内容が違う）🚨"
+                    print(f"  画像{idx}: {eval_str}")
+            else:
+                # 自然画像用の通常閾値
+                for idx, clip_val in enumerate([clip_img1_vs_orig, clip_img2_vs_orig], 1):
+                    if clip_val > 0.95:
+                        eval_str = "意味的にほぼ同一"
+                    elif clip_val > 0.85:
+                        eval_str = "意味的に非常に類似"
+                    elif clip_val > 0.70:
+                        eval_str = "意味的に類似"
+                    elif clip_val > 0.50:
+                        eval_str = "やや類似"
+                    else:
+                        eval_str = "全く異なる画像（内容が違う）🚨"
+                    print(f"  画像{idx}: {eval_str}")
+
+            results['clip_similarity'] = {
+                'img1_vs_original': round(clip_img1_vs_orig, 4),
+                'img2_vs_original': round(clip_img2_vs_orig, 4),
+                'is_document': is_any_document  # 文書画像フラグを追加
+            }
+        else:
+            print("  ※CLIP計算をスキップしました（ライブラリ未インストール）")
+            results['clip_similarity'] = None
+    else:
+        # 元画像がない場合：画像1 vs 画像2
+        clip_similarity = calculate_clip_similarity(img1_rgb, img2_rgb)
+        print_usage_status("CLIP計算完了")
+
+        if clip_similarity is not None:
+            print(f"CLIP コサイン類似度: {clip_similarity:.4f}")
+            if GPU_AVAILABLE:
+                print(f"  GPU使用: はい")
+            else:
+                print(f"  GPU使用: いいえ（CPU処理）")
+
+            # 文書画像の場合は厳格な基準を適用
+            if is_any_document:
+                print("  ⚠️  文書/カルテ画像を検出: CLIPは厳格な基準で評価します")
+                if clip_similarity > 0.98:
+                    print("  評価: 意味的にほぼ同一の画像")
+                elif clip_similarity > 0.95:
+                    print("  評価: 意味的に類似（要注意：文書は構造類似で高スコアになりやすい）")
+                elif clip_similarity > 0.90:
+                    print("  評価: ⚠️ 構造は類似だが内容は異なる可能性 🔍")
+                else:
+                    print("  評価: 全く異なる画像（内容が違う）")
+            else:
+                # 自然画像用の通常閾値
+                if clip_similarity > 0.95:
+                    print("  評価: 意味的にほぼ同一の画像")
+                elif clip_similarity > 0.85:
+                    print("  評価: 意味的に非常に類似")
+                elif clip_similarity > 0.70:
+                    print("  評価: 意味的に類似")
+                elif clip_similarity > 0.50:
+                    print("  評価: やや類似")
+                else:
+                    print("  評価: 全く異なる画像（内容が違う）")
+
+            results['clip_similarity'] = {
+                'value': round(clip_similarity, 4),
+                'is_document': is_any_document
+            }
+        else:
+            print("  ※CLIP計算をスキップしました（ライブラリ未インストール）")
+            results['clip_similarity'] = None
 
     # 4. シャープネス（鮮鋭度）
     print("\n【4. シャープネス（鮮鋭度）】")
@@ -1555,6 +1830,8 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
                 return float(obj)
             elif isinstance(obj, np.ndarray):
                 return obj.tolist()
+            elif isinstance(obj, (np.bool_, bool)):
+                return bool(obj)
             return super(NumpyEncoder, self).default(obj)
 
     json_path = os.path.join(output_dir, 'analysis_results.json')
@@ -1575,6 +1852,9 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
     print("=" * 80)
 
     # 結果の解釈を追加
+    # 評価モードを結果に保存
+    results['evaluation_mode'] = evaluation_mode
+
     try:
         from result_interpreter import interpret_results, format_interpretation_text
         interpretation = interpret_results(results)

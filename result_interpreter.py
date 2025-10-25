@@ -10,6 +10,10 @@ def interpret_results(results):
         dict: 各項目の評価と総合判定
     """
 
+    # 評価モードを取得
+    evaluation_mode = results.get('evaluation_mode', 'image')
+    is_developer_mode = (evaluation_mode == 'developer')
+
     interpretation = {
         'items': [],
         'summary': {},
@@ -156,28 +160,157 @@ def interpret_results(results):
         })
         interpretation['winner_count']['draw'] += 1
 
+    # 2.5.5. MAE（ピクセル差分）
+    if results.get('mae') is not None:
+        mae_data = results['mae']
+
+        if has_original and isinstance(mae_data, dict):
+            # 元画像がある場合：元画像とのMAEで比較
+            mae_img1 = mae_data['img1_vs_original']
+            mae_img2 = mae_data['img2_vs_original']
+            mae_text_img1 = mae_data.get('img1_text_mae')
+            mae_text_img2 = mae_data.get('img2_text_mae')
+
+            # テキストMAEがある場合はそちらを優先
+            if mae_text_img1 is not None and mae_text_img2 is not None:
+                # テキスト領域での比較
+                if mae_text_img1 < mae_text_img2:
+                    mae_eval = f"画像1の方が元画像に近い (テキスト差分差: {mae_text_img2 - mae_text_img1:.2f})"
+                    winner = 'img1'
+                elif mae_text_img2 < mae_text_img1:
+                    mae_eval = f"画像2の方が元画像に近い (テキスト差分差: {mae_text_img1 - mae_text_img2:.2f})"
+                    winner = 'img2'
+                else:
+                    mae_eval = "両画像とも元画像から同程度の差分"
+                    winner = 'draw'
+
+                # テキスト領域での詳細評価
+                if mae_text_img1 >= 60 or mae_text_img2 >= 60:
+                    mae_eval += " 🚨 テキスト内容が全く異なる"
+
+                interpretation['items'].append({
+                    'name': 'MAE (ピクセル差分)',
+                    'value': f"全体: 画像1={mae_img1:.2f}, 画像2={mae_img2:.2f} | テキスト: 画像1={mae_text_img1:.2f}, 画像2={mae_text_img2:.2f}",
+                    'explanation': 'テキスト領域での絶対差分平均 (0=完全一致)',
+                    'evaluation': mae_eval,
+                    'winner': winner
+                })
+            else:
+                # テキストMAEがない場合（全体のみ）
+                if mae_img1 < mae_img2:
+                    mae_eval = f"画像1の方が元画像に近い (差分差: {mae_img2 - mae_img1:.2f})"
+                    winner = 'img1'
+                elif mae_img2 < mae_img1:
+                    mae_eval = f"画像2の方が元画像に近い (差分差: {mae_img1 - mae_img2:.2f})"
+                    winner = 'img2'
+                else:
+                    mae_eval = "両画像とも元画像から同程度の差分"
+                    winner = 'draw'
+
+                interpretation['items'].append({
+                    'name': 'MAE (ピクセル差分)',
+                    'value': f"画像1: {mae_img1:.2f} | 画像2: {mae_img2:.2f}",
+                    'explanation': '元画像との絶対差分平均 (0=完全一致)',
+                    'evaluation': mae_eval,
+                    'winner': winner
+                })
+
+            interpretation['winner_count'][winner] += 1
+        else:
+            # 元画像がない場合：画像1 vs 画像2
+            mae_val = mae_data.get('value', mae_data if isinstance(mae_data, (int, float)) else 0)
+            if mae_val < 5:
+                mae_eval = "ほぼ完全一致"
+            elif mae_val < 10:
+                mae_eval = "非常に類似"
+            elif mae_val < 20:
+                mae_eval = "類似"
+            elif mae_val < 40:
+                mae_eval = "やや異なる"
+            else:
+                mae_eval = "大きく異なる"
+
+            interpretation['items'].append({
+                'name': 'MAE (ピクセル差分)',
+                'value': f"{mae_val:.2f}",
+                'explanation': 'ピクセル単位での絶対差分平均 (0=完全一致)',
+                'evaluation': mae_eval,
+                'winner': 'draw'
+            })
+            interpretation['winner_count']['draw'] += 1
+
     # 2.6. CLIP Embeddings（意味的類似度）
     if results.get('clip_similarity') is not None:
-        clip_val = results['clip_similarity']
-        if clip_val > 0.95:
-            clip_eval = "意味的にほぼ同一の画像"
-        elif clip_val > 0.85:
-            clip_eval = "意味的に非常に類似"
-        elif clip_val > 0.70:
-            clip_eval = "意味的に類似"
-        elif clip_val > 0.50:
-            clip_eval = "意味的にやや類似"
-        else:
-            clip_eval = "全く異なる画像（内容が異なる可能性）"
+        clip_data = results['clip_similarity']
 
-        interpretation['items'].append({
-            'name': 'CLIP Similarity (意味的類似度)',
-            'value': f"{clip_val:.4f}",
-            'explanation': 'OpenAI CLIPモデルによる意味的類似度 (1.0=完全一致)',
-            'evaluation': clip_eval,
-            'winner': 'draw'
-        })
-        interpretation['winner_count']['draw'] += 1
+        if has_original and isinstance(clip_data, dict):
+            # 元画像がある場合：元画像とのCLIP類似度で比較
+            clip_img1 = clip_data['img1_vs_original']
+            clip_img2 = clip_data['img2_vs_original']
+            is_document = clip_data.get('is_document', False)
+
+            if clip_img1 > clip_img2:
+                clip_eval = f"画像1の方が元画像に意味的に近い (CLIP差: +{clip_img1 - clip_img2:.4f})"
+                winner = 'img1'
+            elif clip_img2 > clip_img1:
+                clip_eval = f"画像2の方が元画像に意味的に近い (CLIP差: +{clip_img2 - clip_img1:.4f})"
+                winner = 'img2'
+            else:
+                clip_eval = "両画像とも元画像に意味的に同程度近い"
+                winner = 'draw'
+
+            # 文書画像の場合は警告を追加
+            if is_document:
+                clip_eval += " ⚠️ 文書/カルテ画像: 構造類似で高スコアになりやすい"
+
+            interpretation['items'].append({
+                'name': 'CLIP Similarity (意味的類似度)',
+                'value': f"画像1: {clip_img1:.4f} | 画像2: {clip_img2:.4f}",
+                'explanation': '元画像との意味的類似度 (1.0=完全一致)' + (' [文書検出]' if is_document else ''),
+                'evaluation': clip_eval,
+                'winner': winner
+            })
+            interpretation['winner_count'][winner] += 1
+        else:
+            # 元画像がない場合：画像1 vs 画像2
+            if isinstance(clip_data, dict):
+                clip_val = clip_data.get('value', 0)
+                is_document = clip_data.get('is_document', False)
+            else:
+                clip_val = clip_data if isinstance(clip_data, (int, float)) else 0
+                is_document = False
+
+            # 文書画像の場合は厳格な基準を適用
+            if is_document:
+                if clip_val > 0.98:
+                    clip_eval = "意味的にほぼ同一の画像"
+                elif clip_val > 0.95:
+                    clip_eval = "意味的に類似（⚠️ 文書は構造類似で高スコアになりやすい）"
+                elif clip_val > 0.90:
+                    clip_eval = "⚠️ 構造は類似だが内容は異なる可能性 🔍"
+                else:
+                    clip_eval = "全く異なる画像（内容が異なる）"
+            else:
+                # 自然画像用の通常閾値
+                if clip_val > 0.95:
+                    clip_eval = "意味的にほぼ同一の画像"
+                elif clip_val > 0.85:
+                    clip_eval = "意味的に非常に類似"
+                elif clip_val > 0.70:
+                    clip_eval = "意味的に類似"
+                elif clip_val > 0.50:
+                    clip_eval = "意味的にやや類似"
+                else:
+                    clip_eval = "全く異なる画像（内容が異なる可能性）"
+
+            interpretation['items'].append({
+                'name': 'CLIP Similarity (意味的類似度)',
+                'value': f"{clip_val:.4f}",
+                'explanation': 'OpenAI CLIPモデルによる意味的類似度 (1.0=完全一致)' + (' [文書検出]' if is_document else ''),
+                'evaluation': clip_eval,
+                'winner': 'draw'
+            })
+            interpretation['winner_count']['draw'] += 1
 
     # 3. シャープネス（鮮鋭度）
     sharp1 = results['sharpness']['img1']
@@ -546,8 +679,11 @@ def interpret_results(results):
 
             # 画像1のPSNR検証
             if psnr_img1 < 20:
-                warnings.append("⚠️ エラー【画像1】: PSNR異常低値 (< 20 dB) - 元画像と全く異なる")
-                img1_valid = False
+                if is_developer_mode:
+                    warnings.append("⚠️ 検出【画像1】: PSNR異常低値 (< 20 dB) ※開発者モード: 参考情報")
+                else:
+                    warnings.append("⚠️ エラー【画像1】: PSNR異常低値 (< 20 dB) - 元画像と全く異なる")
+                    img1_valid = False
             elif psnr_img1 < 27:
                 warnings.append("⚠️ 警告【画像1】: PSNR低値 (< 27 dB) - 品質低下の可能性")
             elif psnr_img1 < 30:
@@ -557,8 +693,11 @@ def interpret_results(results):
 
             # 画像2のPSNR検証
             if psnr_img2 < 20:
-                warnings.append("⚠️ エラー【画像2】: PSNR異常低値 (< 20 dB) - 元画像と全く異なる")
-                img2_valid = False
+                if is_developer_mode:
+                    warnings.append("⚠️ 検出【画像2】: PSNR異常低値 (< 20 dB) ※開発者モード: 参考情報")
+                else:
+                    warnings.append("⚠️ エラー【画像2】: PSNR異常低値 (< 20 dB) - 元画像と全く異なる")
+                    img2_valid = False
             elif psnr_img2 < 27:
                 warnings.append("⚠️ 警告【画像2】: PSNR低値 (< 27 dB) - 品質低下の可能性")
             elif psnr_img2 < 30:
@@ -567,26 +706,124 @@ def interpret_results(results):
                 warnings.append("✅ 良好【画像2】: PSNR > 30 dB")
 
         # CLIP + LPIPS 統合幻覚検出（高精度異常検出）
-        clip_sim = results.get('clip_similarity')
+        clip_data = results.get('clip_similarity')
         lpips_val = results.get('lpips')
 
-        if clip_sim is not None and lpips_val is not None:
+        if clip_data is not None and lpips_val is not None:
             warnings.append("\n【🔬 CLIP + LPIPS 統合幻覚検出】")
 
-            # 画像1の統合判定
-            # CLIP低い + LPIPS高い = 意味的にも知覚的にも異なる → 幻覚の可能性大
-            if clip_sim < 0.70 and lpips_val > 0.3:
-                warnings.append("🚨 重大警告【画像1/2】: CLIP & LPIPS両方で異常検出 - 幻覚の可能性が極めて高い")
-                img1_valid = False
-                img2_valid = False
-            elif clip_sim < 0.70:
-                warnings.append("⚠️ 警告【統合判定】: CLIP類似度低 (< 0.70) - 意味的に異なる画像の可能性")
-            elif lpips_val > 0.5:
-                warnings.append("⚠️ 警告【統合判定】: LPIPS値高 (> 0.5) - 知覚的に大きく異なる")
-            elif clip_sim > 0.85 and lpips_val < 0.2:
-                warnings.append("✅ 優良【統合判定】: CLIP & LPIPS両方で高品質確認 - 幻覚なし")
+            # 元画像がある場合は各画像を個別にチェック
+            if isinstance(clip_data, dict):
+                clip_img1 = clip_data['img1_vs_original']
+                clip_img2 = clip_data['img2_vs_original']
+                is_document = clip_data.get('is_document', False)
+
+                # 文書画像の場合は厳格な基準を適用
+                if is_document:
+                    warnings.append("📄 文書/カルテ画像検出: CLIPに厳格な基準を適用")
+                    clip_threshold_error = 0.90   # 通常 0.70 → 文書 0.90
+                    clip_threshold_good = 0.95    # 通常 0.85 → 文書 0.95
+                else:
+                    clip_threshold_error = 0.70
+                    clip_threshold_good = 0.85
+
+                # 画像1の統合判定
+                if clip_img1 < clip_threshold_error and lpips_val > 0.3:
+                    if is_developer_mode:
+                        warnings.append(f"🚨 検出【画像1】: CLIP & LPIPS両方で異常検出 (CLIP: {clip_img1:.4f} < {clip_threshold_error}) ※開発者モード: 参考情報")
+                    else:
+                        warnings.append(f"🚨 重大警告【画像1】: CLIP & LPIPS両方で異常検出 - 幻覚の可能性が極めて高い (CLIP: {clip_img1:.4f} < {clip_threshold_error})")
+                        img1_valid = False
+                elif clip_img1 < clip_threshold_error:
+                    warnings.append(f"⚠️ 警告【画像1】: CLIP類似度低 (< {clip_threshold_error}) - 意味的に異なる画像の可能性")
+                elif clip_img1 > clip_threshold_good and lpips_val < 0.2:
+                    warnings.append(f"✅ 優良【画像1】: CLIP & LPIPS両方で高品質確認 - 幻覚なし")
+                else:
+                    warnings.append("✅ 正常【画像1】: CLIP & LPIPS基準を満たす")
+
+                # 画像2の統合判定
+                if clip_img2 < clip_threshold_error and lpips_val > 0.3:
+                    if is_developer_mode:
+                        warnings.append(f"🚨 検出【画像2】: CLIP & LPIPS両方で異常検出 (CLIP: {clip_img2:.4f} < {clip_threshold_error}) ※開発者モード: 参考情報")
+                    else:
+                        warnings.append(f"🚨 重大警告【画像2】: CLIP & LPIPS両方で異常検出 - 幻覚の可能性が極めて高い (CLIP: {clip_img2:.4f} < {clip_threshold_error})")
+                        img2_valid = False
+                elif clip_img2 < clip_threshold_error:
+                    warnings.append(f"⚠️ 警告【画像2】: CLIP類似度低 (< {clip_threshold_error}) - 意味的に異なる画像の可能性")
+                elif clip_img2 > clip_threshold_good and lpips_val < 0.2:
+                    warnings.append(f"✅ 優良【画像2】: CLIP & LPIPS両方で高品質確認 - 幻覚なし")
+                else:
+                    warnings.append("✅ 正常【画像2】: CLIP & LPIPS基準を満たす")
             else:
-                warnings.append("✅ 正常【統合判定】: CLIP & LPIPS基準を満たす")
+                # 元画像がない場合（画像1 vs 画像2）
+                if isinstance(clip_data, dict):
+                    clip_sim = clip_data.get('value', 0)
+                    is_document = clip_data.get('is_document', False)
+                else:
+                    clip_sim = clip_data if isinstance(clip_data, (int, float)) else 0
+                    is_document = False
+
+                # 文書画像の場合は厳格な基準を適用
+                if is_document:
+                    warnings.append("📄 文書/カルテ画像検出: CLIPに厳格な基準を適用")
+                    clip_threshold_error = 0.90
+                    clip_threshold_good = 0.95
+                else:
+                    clip_threshold_error = 0.70
+                    clip_threshold_good = 0.85
+
+                if clip_sim < clip_threshold_error and lpips_val > 0.3:
+                    warnings.append("🚨 重大警告【画像1/2】: CLIP & LPIPS両方で異常検出 - 大きく異なる画像")
+                elif clip_sim < clip_threshold_error:
+                    warnings.append(f"⚠️ 警告【統合判定】: CLIP類似度低 (< {clip_threshold_error}) - 意味的に異なる画像")
+                elif lpips_val > 0.5:
+                    warnings.append("⚠️ 警告【統合判定】: LPIPS値高 (> 0.5) - 知覚的に大きく異なる")
+                elif clip_sim > clip_threshold_good and lpips_val < 0.2:
+                    warnings.append("✅ 優良【統合判定】: CLIP & LPIPS両方で高品質確認")
+                else:
+                    warnings.append("✅ 正常【統合判定】: CLIP & LPIPS基準を満たす")
+
+        # テキストMAE判定（文書画像の場合）
+        mae_data = results.get('mae')
+        if mae_data is not None and isinstance(mae_data, dict):
+            mae_text_img1 = mae_data.get('img1_text_mae')
+            mae_text_img2 = mae_data.get('img2_text_mae')
+            text_region_ratio = mae_data.get('text_region_ratio', 0)
+
+            if mae_text_img1 is not None and mae_text_img2 is not None and text_region_ratio > 0:
+                warnings.append("\n【📝 テキストMAE判定（文書画像専用）】")
+                warnings.append(f"テキスト領域比率: {text_region_ratio:.1f}%")
+
+                # テキストMAE閾値（文書画像用・厳格）
+                # < 10: ほぼ同一、< 20: 類似、< 40: 明らかに異なる、≥ 40: 全く異なる
+
+                # 画像1の判定
+                if mae_text_img1 >= 40:
+                    if is_developer_mode:
+                        warnings.append(f"🚨 検出【画像1】: テキスト内容が全く異なる (MAE: {mae_text_img1:.2f} ≥ 40) ※開発者モード: 参考情報")
+                    else:
+                        warnings.append(f"🚨 重大警告【画像1】: テキスト内容が全く異なる (MAE: {mae_text_img1:.2f} ≥ 40)")
+                        img1_valid = False
+                elif mae_text_img1 >= 20:
+                    warnings.append(f"⚠️ 警告【画像1】: テキスト内容が明らかに異なる (MAE: {mae_text_img1:.2f})")
+                elif mae_text_img1 >= 10:
+                    warnings.append(f"✅ 許容範囲【画像1】: テキスト内容は類似 (MAE: {mae_text_img1:.2f})")
+                else:
+                    warnings.append(f"✅ 優良【画像1】: テキスト内容がほぼ同一 (MAE: {mae_text_img1:.2f})")
+
+                # 画像2の判定
+                if mae_text_img2 >= 40:
+                    if is_developer_mode:
+                        warnings.append(f"🚨 検出【画像2】: テキスト内容が全く異なる (MAE: {mae_text_img2:.2f} ≥ 40) ※開発者モード: 参考情報")
+                    else:
+                        warnings.append(f"🚨 重大警告【画像2】: テキスト内容が全く異なる (MAE: {mae_text_img2:.2f} ≥ 40)")
+                        img2_valid = False
+                elif mae_text_img2 >= 20:
+                    warnings.append(f"⚠️ 警告【画像2】: テキスト内容が明らかに異なる (MAE: {mae_text_img2:.2f})")
+                elif mae_text_img2 >= 10:
+                    warnings.append(f"✅ 許容範囲【画像2】: テキスト内容は類似 (MAE: {mae_text_img2:.2f})")
+                else:
+                    warnings.append(f"✅ 優良【画像2】: テキスト内容がほぼ同一 (MAE: {mae_text_img2:.2f})")
 
     # 総合判定
     img1_wins = interpretation['winner_count']['img1']
@@ -597,13 +834,13 @@ def interpret_results(results):
     if has_original and (not img1_valid or not img2_valid):
         if not img1_valid and not img2_valid:
             overall_winner = 'invalid'
-            overall_msg = "⚠️ 両画像とも元画像と全く異なるため、評価不能"
+            overall_msg = "⚠️ 両画像とも元画像と全く異なるため、評価不能（CLIP/PSNR/テキストMAEで異常検出）"
         elif not img1_valid:
-            overall_winner = 'invalid'
-            overall_msg = "⚠️ 画像1は元画像と全く異なるため、評価不能"
+            overall_winner = 'img2'
+            overall_msg = "⚠️ 画像1は元画像と全く異なるため、画像2を推奨（CLIP/PSNR/テキストMAEで異常検出）"
         else:  # not img2_valid
-            overall_winner = 'invalid'
-            overall_msg = "⚠️ 画像2は元画像と全く異なるため、評価不能"
+            overall_winner = 'img1'
+            overall_msg = "⚠️ 画像2は元画像と全く異なるため、画像1を推奨（CLIP/PSNR/テキストMAEで異常検出）"
     else:
         # 通常の判定
         if img1_wins > img2_wins:
@@ -677,8 +914,29 @@ def format_interpretation_text(interpretation):
     lines.append(f"画像2が優位: {interpretation['summary']['img2_wins']}項目")
     lines.append(f"同等: {interpretation['summary']['draws']}項目")
     lines.append("")
-    lines.append(f"総合スコア: 画像1={interpretation['summary']['total_score_img1']:.1f}点 | "
-                 f"画像2={interpretation['summary']['total_score_img2']:.1f}点")
+
+    # 総合スコア表示（Option B: 評価不能時でもスコアを表示するが無効マーク付き）
+    img1_valid = interpretation['summary'].get('img1_valid', True)
+    img2_valid = interpretation['summary'].get('img2_valid', True)
+
+    lines.append("総合スコア:")
+    if img1_valid and img2_valid:
+        # 両方有効
+        lines.append(f"  画像1: {interpretation['summary']['total_score_img1']:.1f}点 ✅")
+        lines.append(f"  画像2: {interpretation['summary']['total_score_img2']:.1f}点 ✅")
+    elif not img1_valid and not img2_valid:
+        # 両方無効
+        lines.append(f"  画像1: {interpretation['summary']['total_score_img1']:.1f}点 ❌ ハルシネーション検出のため無効")
+        lines.append(f"  画像2: {interpretation['summary']['total_score_img2']:.1f}点 ❌ ハルシネーション検出のため無効")
+    elif not img1_valid:
+        # 画像1のみ無効
+        lines.append(f"  画像1: {interpretation['summary']['total_score_img1']:.1f}点 ❌ ハルシネーション検出のため無効")
+        lines.append(f"  画像2: {interpretation['summary']['total_score_img2']:.1f}点 ✅")
+    else:
+        # 画像2のみ無効
+        lines.append(f"  画像1: {interpretation['summary']['total_score_img1']:.1f}点 ✅")
+        lines.append(f"  画像2: {interpretation['summary']['total_score_img2']:.1f}点 ❌ ハルシネーション検出のため無効")
+
     lines.append("")
     lines.append(f"💡 結論: {interpretation['summary']['message']}")
     lines.append("=" * 80)

@@ -215,6 +215,84 @@ class ModernImageAnalyzerGUI:
         input_section = ctk.CTkFrame(self.single_mode_frame, fg_color="transparent")
         input_section.pack(fill=tk.X)
 
+        # 評価モード選択
+        mode_frame = ctk.CTkFrame(input_section, fg_color="#1e2740", corner_radius=10)
+        mode_frame.pack(fill=tk.X, pady=(0, 20))
+
+        mode_title = ctk.CTkLabel(
+            mode_frame,
+            text="📊 評価モード",
+            font=("Arial", 16, "bold"),
+            text_color="#4A90E2"
+        )
+        mode_title.pack(anchor="w", padx=15, pady=(15, 10))
+
+        # 評価モード変数
+        self.evaluation_mode = tk.StringVar(value="image")
+
+        # 画像モード
+        mode_image = ctk.CTkRadioButton(
+            mode_frame,
+            text="画像（レントゲン、内視鏡、写真など）",
+            variable=self.evaluation_mode,
+            value="image",
+            font=("Arial", 12),
+            text_color="#ffffff",
+            fg_color="#4A90E2",
+            hover_color="#357ABD"
+        )
+        mode_image.pack(anchor="w", padx=30, pady=(0, 8))
+
+        mode_image_desc = ctk.CTkLabel(
+            mode_frame,
+            text="  └─ CLIP基準: 0.70、全指標使用、診断テキスト自動検出",
+            font=("Arial", 10),
+            text_color="#888888"
+        )
+        mode_image_desc.pack(anchor="w", padx=30, pady=(0, 10))
+
+        # 文書モード
+        mode_document = ctk.CTkRadioButton(
+            mode_frame,
+            text="文書（医療カルテ、契約書、レシートなど）",
+            variable=self.evaluation_mode,
+            value="document",
+            font=("Arial", 12),
+            text_color="#ffffff",
+            fg_color="#4A90E2",
+            hover_color="#357ABD"
+        )
+        mode_document.pack(anchor="w", padx=30, pady=(0, 8))
+
+        mode_document_desc = ctk.CTkLabel(
+            mode_frame,
+            text="  └─ CLIP基準: 0.90（厳格）、テキストMAE重視",
+            font=("Arial", 10),
+            text_color="#888888"
+        )
+        mode_document_desc.pack(anchor="w", padx=30, pady=(0, 10))
+
+        # 開発者モード
+        mode_developer = ctk.CTkRadioButton(
+            mode_frame,
+            text="開発者モード（バグテスト・デバッグ用）",
+            variable=self.evaluation_mode,
+            value="developer",
+            font=("Arial", 12),
+            text_color="#ffffff",
+            fg_color="#ffa500",
+            hover_color="#cc8400"
+        )
+        mode_developer.pack(anchor="w", padx=30, pady=(0, 8))
+
+        mode_developer_desc = ctk.CTkLabel(
+            mode_frame,
+            text="  └─ 評価不能判定なし、すべての警告を表示",
+            font=("Arial", 10),
+            text_color="#888888"
+        )
+        mode_developer_desc.pack(anchor="w", padx=30, pady=(0, 15))
+
         # 画像1
         img1_label = ctk.CTkLabel(
             input_section,
@@ -460,34 +538,55 @@ class ModernImageAnalyzerGUI:
         image_compare_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
         image_compare_frame.pack_propagate(False)
 
-        # 画像1（Before）
+        # 元画像（Before）
+        img_before_container = ctk.CTkFrame(image_compare_frame, fg_color="transparent")
+        img_before_container.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        img_before_title = ctk.CTkLabel(
+            img_before_container,
+            text="📄 元画像 (Before)",
+            font=("Arial", 12, "bold"),
+            text_color="#FFA500"
+        )
+        img_before_title.pack(pady=(0, 5))
+
+        self.preview_img_before_label = tk.Label(
+            img_before_container,
+            bg="#0a0e27",
+            text="元画像を選択してください",
+            fg="#888888",
+            font=("Arial", 10)
+        )
+        self.preview_img_before_label.pack(fill=tk.BOTH, expand=True)
+
+        # 画像1（超解像結果1 - After）
         img1_container = ctk.CTkFrame(image_compare_frame, fg_color="transparent")
         img1_container.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         img1_title = ctk.CTkLabel(
             img1_container,
-            text="🖼️ Image 1 (Before)",
+            text="🎨 超解像結果1 (After)",
             font=("Arial", 12, "bold"),
-            text_color="#4A90E2"
+            text_color="#00ff88"
         )
         img1_title.pack(pady=(0, 5))
 
         self.preview_img1_label = tk.Label(
             img1_container,
             bg="#0a0e27",
-            text="画像1を選択してください",
+            text="超解像結果1を選択してください",
             fg="#888888",
             font=("Arial", 10)
         )
         self.preview_img1_label.pack(fill=tk.BOTH, expand=True)
 
-        # 画像2（After）
+        # 画像2（超解像結果2 - After）
         img2_container = ctk.CTkFrame(image_compare_frame, fg_color="transparent")
         img2_container.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         img2_title = ctk.CTkLabel(
             img2_container,
-            text="🖼️ Image 2 (After)",
+            text="🎨 超解像結果2 (After)",
             font=("Arial", 12, "bold"),
             text_color="#00ff88"
         )
@@ -496,7 +595,7 @@ class ModernImageAnalyzerGUI:
         self.preview_img2_label = tk.Label(
             img2_container,
             bg="#0a0e27",
-            text="画像2を選択してください",
+            text="超解像結果2を選択してください",
             fg="#888888",
             font=("Arial", 10)
         )
@@ -2078,7 +2177,7 @@ class ModernImageAnalyzerGUI:
 
     def browse_original(self):
         filename = filedialog.askopenfilename(
-            title="元画像を選択（低解像度）",
+            title="元画像を選択（処理前/Before）",
             filetypes=[
                 ("画像ファイル", "*.png *.jpg *.jpeg *.bmp *.tiff *.webp"),
                 ("すべてのファイル", "*.*")
@@ -2086,6 +2185,7 @@ class ModernImageAnalyzerGUI:
         )
         if filename:
             self.original_path.set(filename)
+            self.load_preview_image_before(filename)
 
     def browse_output(self):
         dirname = filedialog.askdirectory(title="出力フォルダを選択")
@@ -2118,6 +2218,21 @@ class ModernImageAnalyzerGUI:
             self.preview_img2_label.image = photo  # 参照を保持
         except Exception as e:
             self.preview_img2_label.configure(
+                text=f"画像読み込みエラー:\n{str(e)}",
+                image=""
+            )
+
+    def load_preview_image_before(self, filepath):
+        """元画像（Before）のプレビューを読み込んで表示"""
+        try:
+            img = Image.open(filepath)
+            # プレビューサイズに合わせてリサイズ（アスペクト比維持）
+            img.thumbnail((400, 400), Image.Resampling.LANCZOS)
+            photo = ImageTk.PhotoImage(img)
+            self.preview_img_before_label.configure(image=photo, text="")
+            self.preview_img_before_label.image = photo  # 参照を保持
+        except Exception as e:
+            self.preview_img_before_label.configure(
                 text=f"画像読み込みエラー:\n{str(e)}",
                 image=""
             )
@@ -2189,7 +2304,8 @@ class ModernImageAnalyzerGUI:
                 self.img1_path.get(),
                 self.img2_path.get(),
                 self.output_dir.get(),
-                self.original_path.get() if self.original_path.get() else None
+                self.original_path.get() if self.original_path.get() else None,
+                evaluation_mode=self.evaluation_mode.get()  # 評価モードを渡す
             )
 
             sys.stdout = old_stdout
