@@ -287,12 +287,15 @@ class ModernImageAnalyzerGUI:
         # スクロール可能なフレーム（単一モード用）
         self.single_mode_frame = ctk.CTkScrollableFrame(self.left_panel, fg_color="transparent")
         self.single_mode_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        self._improve_scroll_speed(self.single_mode_frame)
 
         # バッチモード用フレーム（後で作成）
         self.batch_mode_frame = ctk.CTkScrollableFrame(self.left_panel, fg_color="transparent")
+        self._improve_scroll_speed(self.batch_mode_frame)
 
         # 論文用ベンチマーク評価モード用フレーム（後で作成）
         self.academic_mode_frame = ctk.CTkScrollableFrame(self.left_panel, fg_color="transparent")
+        self._improve_scroll_speed(self.academic_mode_frame)
 
         # 右側パネル（画像比較・結果表示エリア）
         self.right_panel = ctk.CTkFrame(self.paned_window, fg_color="#1e2740", corner_radius=15)
@@ -3295,6 +3298,38 @@ class ModernImageAnalyzerGUI:
         # 3秒後に再実行（1秒→3秒に変更してパフォーマンス向上）
         if self.monitoring_active:
             self.root.after(3000, self.update_system_monitor)
+
+    def _improve_scroll_speed(self, scrollable_frame):
+        """CTkScrollableFrameのスクロール速度を改善"""
+        try:
+            # CTkScrollableFrameの内部Canvasにアクセス
+            canvas = scrollable_frame._parent_canvas
+
+            # 既存のマウスホイールバインドを解除
+            canvas.unbind_all("<MouseWheel>")
+            canvas.unbind_all("<Button-4>")
+            canvas.unbind_all("<Button-5>")
+
+            # マウスホイールのスクロール量を増やす
+            def _on_mousewheel(event):
+                # マウスがCanvas上にある時のみスクロール
+                if event.widget.winfo_containing(event.x_root, event.y_root) == canvas:
+                    # Windowsの場合
+                    if event.delta:
+                        canvas.yview_scroll(int(-1 * (event.delta / 40)), "units")  # 約3倍速
+                    # Linuxの場合
+                    elif event.num == 4:
+                        canvas.yview_scroll(-3, "units")
+                    elif event.num == 5:
+                        canvas.yview_scroll(3, "units")
+
+            # Windows
+            self.root.bind_all("<MouseWheel>", _on_mousewheel, add="+")
+            # Linux
+            self.root.bind_all("<Button-4>", _on_mousewheel, add="+")
+            self.root.bind_all("<Button-5>", _on_mousewheel, add="+")
+        except:
+            pass  # CTkScrollableFrameの内部構造が変わった場合でもエラーにしない
 
     def start_monitoring(self):
         """モニタリング開始"""
