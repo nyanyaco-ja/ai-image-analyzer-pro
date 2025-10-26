@@ -263,7 +263,7 @@ class ModernImageAnalyzerGUI:
         content_frame = ctk.CTkFrame(main_container, fg_color="#0a0e27")
         content_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
-        # PanedWindowで左右調整可能に（標準tkinter）
+        # PanedWindowで左右調整可能に（標準tkinter・最適化版）
         self.paned_window = tk.PanedWindow(
             content_frame,
             orient=tk.HORIZONTAL,
@@ -275,7 +275,8 @@ class ModernImageAnalyzerGUI:
             handlepad=30,
             showhandle=True,
             sashpad=2,
-            relief=tk.FLAT
+            relief=tk.FLAT,
+            opaqueresize=False  # リサイズ中は枠線のみ表示（パフォーマンス向上）
         )
         self.paned_window.pack(fill=tk.BOTH, expand=True)
 
@@ -3262,13 +3263,13 @@ class ModernImageAnalyzerGUI:
         )
 
     def update_system_monitor(self):
-        """システム使用率を更新"""
+        """システム使用率を更新（最適化版）"""
         if not MONITORING_AVAILABLE:
             return
 
         try:
-            # CPU使用率
-            self.cpu_usage = psutil.cpu_percent(interval=0.1)
+            # CPU使用率（interval=0でブロッキングなし、前回からの平均）
+            self.cpu_usage = psutil.cpu_percent(interval=0)
 
             # RAM使用率
             self.ram_usage = psutil.virtual_memory().percent
@@ -3291,9 +3292,9 @@ class ModernImageAnalyzerGUI:
         except Exception as e:
             pass
 
-        # 1秒後に再実行
+        # 3秒後に再実行（1秒→3秒に変更してパフォーマンス向上）
         if self.monitoring_active:
-            self.root.after(1000, self.update_system_monitor)
+            self.root.after(3000, self.update_system_monitor)
 
     def start_monitoring(self):
         """モニタリング開始"""
@@ -3520,10 +3521,11 @@ class ModernImageAnalyzerGUI:
         thread.start()
 
     def update_progress_display(self):
-        """進捗状況を定期的に更新"""
+        """進捗状況を定期的に更新（最適化版）"""
         if self.current_step and self.analyze_btn.cget('state') == 'disabled':
             self.status_label.configure(text=f"分析中: {self.current_step}")
-            self.root.after(100, self.update_progress_display)
+            # 100ms→300msに変更してパフォーマンス向上
+            self.root.after(300, self.update_progress_display)
 
     def progress_callback(self, step_name):
         """分析ステップ更新用コールバック"""
