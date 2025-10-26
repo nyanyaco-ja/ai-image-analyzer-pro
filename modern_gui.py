@@ -164,31 +164,45 @@ class ModernImageAnalyzerGUI:
 
         self.single_mode_btn = ctk.CTkButton(
             button_container,
-            text="📸 単一画像比較",
+            text="📸 単一画像分析",
             command=self.switch_to_single_mode,
             height=40,
-            width=200,
+            width=180,
             corner_radius=10,
-            font=("Arial", 14, "bold"),
+            font=("Arial", 13, "bold"),
             fg_color="#4A90E2",
             text_color="#FFFFFF",
             hover_color="#357ABD"
         )
-        self.single_mode_btn.pack(side=tk.LEFT, padx=10)
+        self.single_mode_btn.pack(side=tk.LEFT, padx=5)
 
         self.batch_mode_btn = ctk.CTkButton(
             button_container,
             text="🔬 バッチ処理",
             command=self.switch_to_batch_mode,
             height=40,
-            width=200,
+            width=180,
             corner_radius=10,
-            font=("Arial", 14, "bold"),
+            font=("Arial", 13, "bold"),
             fg_color="#4a5568",
             text_color="#ffffff",
             hover_color="#2d3748"
         )
-        self.batch_mode_btn.pack(side=tk.LEFT, padx=10)
+        self.batch_mode_btn.pack(side=tk.LEFT, padx=5)
+
+        self.academic_mode_btn = ctk.CTkButton(
+            button_container,
+            text="📚 論文用ベンチマーク評価",
+            command=self.switch_to_academic_mode,
+            height=40,
+            width=220,
+            corner_radius=10,
+            font=("Arial", 13, "bold"),
+            fg_color="#4a5568",
+            text_color="#ffffff",
+            hover_color="#2d3748"
+        )
+        self.academic_mode_btn.pack(side=tk.LEFT, padx=5)
 
         # コンテンツエリア（2カラムレイアウト）
         content_frame = ctk.CTkFrame(main_container, fg_color="#0a0e27")
@@ -205,6 +219,9 @@ class ModernImageAnalyzerGUI:
 
         # バッチモード用フレーム（後で作成）
         self.batch_mode_frame = ctk.CTkScrollableFrame(self.left_panel, fg_color="transparent")
+
+        # 論文用ベンチマーク評価モード用フレーム（後で作成）
+        self.academic_mode_frame = ctk.CTkScrollableFrame(self.left_panel, fg_color="transparent")
 
         # 右側パネル（画像比較・結果表示エリア）
         self.right_panel = ctk.CTkFrame(content_frame, fg_color="#1e2740", corner_radius=15)
@@ -271,27 +288,6 @@ class ModernImageAnalyzerGUI:
             text_color="#888888"
         )
         mode_document_desc.pack(anchor="w", padx=30, pady=(0, 10))
-
-        # 学術評価モード
-        mode_academic = ctk.CTkRadioButton(
-            mode_frame,
-            text="学術評価モード（論文用・標準ベンチマーク互換）",
-            variable=self.evaluation_mode,
-            value="academic",
-            font=("Arial", 12),
-            text_color="#ffffff",
-            fg_color="#9b59b6",
-            hover_color="#7d3c98"
-        )
-        mode_academic.pack(anchor="w", padx=30, pady=(0, 8))
-
-        mode_academic_desc = ctk.CTkLabel(
-            mode_frame,
-            text="  └─ ×2スケール標準評価、Bicubic縮小、既存研究比較用",
-            font=("Arial", 10),
-            text_color="#888888"
-        )
-        mode_academic_desc.pack(anchor="w", padx=30, pady=(0, 10))
 
         # 開発者モード
         mode_developer = ctk.CTkRadioButton(
@@ -755,8 +751,65 @@ class ModernImageAnalyzerGUI:
         )
         self.batch_result_text.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 15))
 
+        # === 論文用ベンチマーク評価モード用の右パネル ===
+        self.academic_right_frame = ctk.CTkFrame(self.right_panel, fg_color="transparent")
+
+        # 論文用処理進捗エリア
+        academic_progress_title = ctk.CTkLabel(
+            self.academic_right_frame,
+            text="📊 論文用ベンチマーク評価進捗",
+            font=("Arial", 18, "bold"),
+            text_color="#9b59b6"
+        )
+        academic_progress_title.pack(pady=(20, 10))
+
+        # 進捗表示フレーム
+        self.academic_progress_frame = ctk.CTkFrame(self.academic_right_frame, fg_color="#0a0e27", corner_radius=10)
+        self.academic_progress_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
+
+        self.academic_status_label = ctk.CTkLabel(
+            self.academic_progress_frame,
+            text="論文用評価を開始してください（推奨: 15,000枚）",
+            font=("Arial", 14),
+            text_color="#888888"
+        )
+        self.academic_status_label.pack(pady=20)
+
+        # プログレスバー
+        self.academic_progress = ctk.CTkProgressBar(
+            self.academic_progress_frame,
+            width=400,
+            height=20,
+            corner_radius=10,
+            fg_color="#2d3748",
+            progress_color="#9b59b6"
+        )
+        self.academic_progress.pack(pady=(0, 20), padx=20)
+        self.academic_progress.set(0)
+
+        # 結果表示テキストエリア
+        academic_result_label = ctk.CTkLabel(
+            self.academic_right_frame,
+            text="📝 処理結果ログ",
+            font=("Arial", 16, "bold"),
+            text_color="#9b59b6"
+        )
+        academic_result_label.pack(pady=(10, 5), padx=15, anchor="w")
+
+        self.academic_result_text = ctk.CTkTextbox(
+            self.academic_right_frame,
+            font=("Meiryo", 11),
+            fg_color="#0a0e27",
+            text_color="#00ff88",
+            corner_radius=10
+        )
+        self.academic_result_text.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 15))
+
         # バッチモード用のUIを作成（左パネル）
         self.create_batch_mode_ui()
+
+        # 論文用ベンチマーク評価モード用のUIを作成（左パネル）
+        self.create_academic_mode_ui()
 
     def create_batch_mode_ui(self):
         """バッチ処理モードのUI作成（左パネル）"""
@@ -794,6 +847,84 @@ class ModernImageAnalyzerGUI:
             text_color="#4A90E2"
         )
         config_title.pack(anchor="w", padx=15, pady=(15, 10))
+
+        # 評価モード選択（バッチ処理専用）
+        mode_label = ctk.CTkLabel(
+            config_frame,
+            text="📊 評価モード",
+            font=("Arial", 12, "bold"),
+            text_color="#ffffff"
+        )
+        mode_label.pack(anchor="w", padx=15, pady=(10, 5))
+
+        self.batch_evaluation_mode = tk.StringVar(value="image")
+
+        # 評価モード選択フレーム
+        mode_select_frame = ctk.CTkFrame(config_frame, fg_color="transparent")
+        mode_select_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
+
+        # 画像モード
+        batch_mode_image = ctk.CTkRadioButton(
+            mode_select_frame,
+            text="画像（レントゲン、内視鏡、写真など）",
+            variable=self.batch_evaluation_mode,
+            value="image",
+            font=("Arial", 12),
+            text_color="#ffffff",
+            fg_color="#4A90E2",
+            hover_color="#357ABD"
+        )
+        batch_mode_image.pack(anchor="w", padx=30, pady=(0, 8))
+
+        batch_mode_image_desc = ctk.CTkLabel(
+            mode_select_frame,
+            text="  └─ CLIP基準: 0.70、全指標使用、診断テキスト自動検出",
+            font=("Arial", 10),
+            text_color="#888888"
+        )
+        batch_mode_image_desc.pack(anchor="w", padx=30, pady=(0, 10))
+
+        # 文書モード
+        batch_mode_document = ctk.CTkRadioButton(
+            mode_select_frame,
+            text="文書（医療カルテ、契約書、レシートなど）",
+            variable=self.batch_evaluation_mode,
+            value="document",
+            font=("Arial", 12),
+            text_color="#ffffff",
+            fg_color="#4A90E2",
+            hover_color="#357ABD"
+        )
+        batch_mode_document.pack(anchor="w", padx=30, pady=(0, 8))
+
+        batch_mode_document_desc = ctk.CTkLabel(
+            mode_select_frame,
+            text="  └─ CLIP基準: 0.90（厳格）、テキストMAE重視",
+            font=("Arial", 10),
+            text_color="#888888"
+        )
+        batch_mode_document_desc.pack(anchor="w", padx=30, pady=(0, 10))
+
+        # 開発者モード
+        batch_mode_developer = ctk.CTkRadioButton(
+            mode_select_frame,
+            text="開発者モード（バグテスト・デバッグ用）",
+            variable=self.batch_evaluation_mode,
+            value="developer",
+            font=("Arial", 12),
+            text_color="#ffffff",
+            fg_color="#ffa500",
+            hover_color="#cc8400"
+        )
+        batch_mode_developer.pack(anchor="w", padx=30, pady=(0, 8))
+
+        batch_mode_developer_desc = ctk.CTkLabel(
+            mode_select_frame,
+            text="  └─ 評価不能判定なし、すべての警告を表示",
+            font=("Arial", 10),
+            text_color="#888888"
+        )
+        batch_mode_developer_desc.pack(anchor="w", padx=30, pady=(0, 10))
 
         # 元画像フォルダ
         self.batch_original_dir = tk.StringVar()
@@ -1058,136 +1189,6 @@ class ModernImageAnalyzerGUI:
         # 値変更時のコールバック
         self.batch_limit.trace_add("write", self.update_limit_label)
 
-        # === 学術評価用：バッチBicubic縮小セクション ===
-        academic_batch_frame = ctk.CTkFrame(self.batch_mode_frame, fg_color="#2d1b3d", corner_radius=10)
-        academic_batch_frame.pack(fill=tk.X, pady=(15, 15))
-
-        academic_batch_title = ctk.CTkLabel(
-            academic_batch_frame,
-            text="📚 学術評価用：バッチBicubic縮小",
-            font=("Arial", 14, "bold"),
-            text_color="#9b59b6"
-        )
-        academic_batch_title.pack(anchor="w", padx=15, pady=(15, 5))
-
-        academic_batch_desc = ctk.CTkLabel(
-            academic_batch_frame,
-            text="高解像度GT画像フォルダから低解像度画像フォルダを一括生成（×2 SR評価用）",
-            font=("Arial", 10),
-            text_color="#888888"
-        )
-        academic_batch_desc.pack(anchor="w", padx=15, pady=(0, 10))
-
-        # 入力フォルダ
-        input_folder_label = ctk.CTkLabel(
-            academic_batch_frame,
-            text="入力フォルダ（高解像度GT、例: 1000px × 5000枚）:",
-            font=("Arial", 11),
-            text_color="#cccccc"
-        )
-        input_folder_label.pack(anchor="w", padx=15, pady=(5, 5))
-
-        input_folder_frame = ctk.CTkFrame(academic_batch_frame, fg_color="transparent")
-        input_folder_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
-
-        self.academic_input_dir = tk.StringVar()
-        input_entry = ctk.CTkEntry(
-            input_folder_frame,
-            textvariable=self.academic_input_dir,
-            placeholder_text="GT画像フォルダを選択...",
-            height=35,
-            font=("Arial", 11)
-        )
-        input_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
-
-        input_btn = ctk.CTkButton(
-            input_folder_frame,
-            text="参照",
-            command=self.browse_academic_input,
-            width=80,
-            height=35,
-            fg_color="#9b59b6",
-            hover_color="#7d3c98"
-        )
-        input_btn.pack(side=tk.RIGHT)
-
-        # 出力フォルダ
-        output_folder_label = ctk.CTkLabel(
-            academic_batch_frame,
-            text="出力フォルダ（低解像度LR、例: 500px × 5000枚）:",
-            font=("Arial", 11),
-            text_color="#cccccc"
-        )
-        output_folder_label.pack(anchor="w", padx=15, pady=(5, 5))
-
-        output_folder_frame = ctk.CTkFrame(academic_batch_frame, fg_color="transparent")
-        output_folder_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
-
-        self.academic_output_dir = tk.StringVar()
-        output_entry = ctk.CTkEntry(
-            output_folder_frame,
-            textvariable=self.academic_output_dir,
-            placeholder_text="LR画像出力先フォルダを選択...",
-            height=35,
-            font=("Arial", 11)
-        )
-        output_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
-
-        output_btn = ctk.CTkButton(
-            output_folder_frame,
-            text="参照",
-            command=self.browse_academic_output,
-            width=80,
-            height=35,
-            fg_color="#9b59b6",
-            hover_color="#7d3c98"
-        )
-        output_btn.pack(side=tk.RIGHT)
-
-        # 縮小倍率
-        scale_label = ctk.CTkLabel(
-            academic_batch_frame,
-            text="縮小倍率:",
-            font=("Arial", 11),
-            text_color="#cccccc"
-        )
-        scale_label.pack(anchor="w", padx=15, pady=(5, 5))
-
-        scale_frame = ctk.CTkFrame(academic_batch_frame, fg_color="transparent")
-        scale_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
-
-        self.academic_scale = tk.StringVar(value="0.5")
-        scale_entry = ctk.CTkEntry(
-            scale_frame,
-            textvariable=self.academic_scale,
-            width=100,
-            height=35,
-            font=("Arial", 11)
-        )
-        scale_entry.pack(side=tk.LEFT, padx=(0, 10))
-
-        scale_note = ctk.CTkLabel(
-            scale_frame,
-            text="（0.5 = ×2 SR用、0.25 = ×4 SR用）",
-            font=("Arial", 9),
-            text_color="#888888"
-        )
-        scale_note.pack(side=tk.LEFT)
-
-        # 実行ボタン
-        academic_batch_btn = ctk.CTkButton(
-            academic_batch_frame,
-            text="🔬 バッチBicubic縮小を実行",
-            command=self.run_batch_bicubic_downscale,
-            height=45,
-            corner_radius=10,
-            font=("Arial", 13, "bold"),
-            fg_color="#9b59b6",
-            text_color="#ffffff",
-            hover_color="#7d3c98"
-        )
-        academic_batch_btn.pack(fill=tk.X, padx=15, pady=(5, 15))
-
         # === 通常のバッチ処理セクション ===
         # 実行ボタン
         self.batch_analyze_btn = ctk.CTkButton(
@@ -1203,26 +1204,6 @@ class ModernImageAnalyzerGUI:
         )
         self.batch_analyze_btn.pack(fill=tk.X, pady=(0, 15))
 
-        # プログレスバー
-        self.batch_progress = ctk.CTkProgressBar(
-            self.batch_mode_frame,
-            height=20,
-            corner_radius=10,
-            progress_color="#00ffff"
-        )
-        self.batch_progress.pack(fill=tk.X, pady=(0, 10))
-        self.batch_progress.set(0)
-
-        # ステータス
-        self.batch_status_label = ctk.CTkLabel(
-            self.batch_mode_frame,
-            text="設定を入力してバッチ処理を開始してください",
-            font=("Arial", 11),
-            text_color="#888888",
-            wraplength=600
-        )
-        self.batch_status_label.pack(pady=(0, 15))
-
         # 統計分析セクション
         stats_frame = ctk.CTkFrame(self.batch_mode_frame, fg_color="#1e2740", corner_radius=10)
         stats_frame.pack(fill=tk.X, pady=(0, 15))
@@ -1237,7 +1218,7 @@ class ModernImageAnalyzerGUI:
 
         stats_info = ctk.CTkLabel(
             stats_frame,
-            text="バッチ処理完了後、CSVファイルを統計分析して23種類の研究用プロットを生成します。",
+            text="バッチ処理完了後、CSVファイルを統計分析して25種類の研究用プロットを生成します。",
             font=("Arial", 11),
             text_color="#cccccc",
             justify="left"
@@ -1278,7 +1259,7 @@ class ModernImageAnalyzerGUI:
         # 統計分析実行ボタン
         self.stats_analyze_btn = ctk.CTkButton(
             button_frame,
-            text="📈 統計分析＋プロット生成（23種類）",
+            text="📈 統計分析＋プロット生成（25種類）",
             command=self.start_stats_analysis,
             height=50,
             corner_radius=10,
@@ -1330,6 +1311,493 @@ class ModernImageAnalyzerGUI:
 
     def browse_batch_original(self):
         dirname = filedialog.askdirectory(title="元画像フォルダを選択")
+    def create_academic_mode_ui(self):
+        """論文用ベンチマーク評価モードのUI作成（左パネル）"""
+
+        # 説明セクション
+        info_frame = ctk.CTkFrame(self.academic_mode_frame, fg_color="#2d1b4e", corner_radius=10)
+        info_frame.pack(fill=tk.X, pady=(0, 20))
+
+        info_title = ctk.CTkLabel(
+            info_frame,
+            text="📚 論文用ベンチマーク評価について",
+            font=("Arial", 16, "bold"),
+            text_color="#9b59b6"
+        )
+        info_title.pack(anchor="w", padx=15, pady=(15, 5))
+
+        info_text = ctk.CTkLabel(
+            info_frame,
+            text="既存研究との公平な比較のため、標準的なBicubic縮小で基準画像を作成します。\n"
+                 "大規模データセット（15,000枚推奨）で超解像モデルを定量評価し、論文投稿用データを生成します。",
+            font=("Arial", 11),
+            text_color="#cccccc",
+            justify="left"
+        )
+        info_text.pack(anchor="w", padx=15, pady=(0, 15))
+
+        # ワークフロー表示
+        workflow_frame = ctk.CTkFrame(self.academic_mode_frame, fg_color="#1e2740", corner_radius=10)
+        workflow_frame.pack(fill=tk.X, pady=(0, 20))
+
+        workflow_title = ctk.CTkLabel(
+            workflow_frame,
+            text="📋 処理フロー（全5ステップ）",
+            font=("Arial", 14, "bold"),
+            text_color="#4A90E2"
+        )
+        workflow_title.pack(anchor="w", padx=15, pady=(15, 10))
+
+        workflow_text = ctk.CTkLabel(
+            workflow_frame,
+            text="Step 1: 高解像度画像を用意（15,000枚推奨）\n"
+                 "Step 2: 元画像・超解像モデルフォルダを設定\n"
+                 "Step 3: バッチ処理開始（数時間～1日）\n"
+                 "Step 4: 統計分析・25種類プロット生成 ⭐必須\n"
+                 "Step 5: detection_count（26パターン）確認 → 深層学習へ",
+            font=("Arial", 11),
+            text_color="#cccccc",
+            justify="left"
+        )
+        workflow_text.pack(anchor="w", padx=15, pady=(0, 15))
+
+        # === Step 0: バッチBicubic縮小（準備段階） ===
+        bicubic_frame = ctk.CTkFrame(self.academic_mode_frame, fg_color="#2d1b3d", corner_radius=10)
+        bicubic_frame.pack(fill=tk.X, pady=(0, 20))
+
+        bicubic_title = ctk.CTkLabel(
+            bicubic_frame,
+            text="🔬 Step 0: バッチBicubic縮小（準備段階・オプション）",
+            font=("Arial", 14, "bold"),
+            text_color="#9b59b6"
+        )
+        bicubic_title.pack(anchor="w", padx=15, pady=(15, 5))
+
+        bicubic_desc = ctk.CTkLabel(
+            bicubic_frame,
+            text="高解像度GT画像から低解像度LR画像を一括生成します（×2 SR評価用）。\n"
+                 "既にLR画像がある場合はスキップ可能です。",
+            font=("Arial", 10),
+            text_color="#888888",
+            justify="left"
+        )
+        bicubic_desc.pack(anchor="w", padx=15, pady=(0, 10))
+
+        # 入力フォルダ
+        input_folder_label = ctk.CTkLabel(
+            bicubic_frame,
+            text="入力フォルダ（高解像度GT、例: 1000px × 15,000枚）:",
+            font=("Arial", 11),
+            text_color="#cccccc"
+        )
+        input_folder_label.pack(anchor="w", padx=15, pady=(5, 5))
+
+        input_folder_frame = ctk.CTkFrame(bicubic_frame, fg_color="transparent")
+        input_folder_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
+
+        self.academic_input_dir = tk.StringVar()
+        input_entry = ctk.CTkEntry(
+            input_folder_frame,
+            textvariable=self.academic_input_dir,
+            placeholder_text="GT画像フォルダを選択...",
+            height=35,
+            font=("Arial", 11)
+        )
+        input_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+
+        input_btn = ctk.CTkButton(
+            input_folder_frame,
+            text="参照",
+            command=self.browse_academic_input,
+            width=80,
+            height=35,
+            fg_color="#9b59b6",
+            hover_color="#7d3c98"
+        )
+        input_btn.pack(side=tk.RIGHT)
+
+        # 出力フォルダ
+        output_folder_label = ctk.CTkLabel(
+            bicubic_frame,
+            text="出力フォルダ（低解像度LR、例: 500px × 15,000枚）:",
+            font=("Arial", 11),
+            text_color="#cccccc"
+        )
+        output_folder_label.pack(anchor="w", padx=15, pady=(5, 5))
+
+        output_folder_frame = ctk.CTkFrame(bicubic_frame, fg_color="transparent")
+        output_folder_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
+
+        self.academic_output_dir = tk.StringVar()
+        output_entry = ctk.CTkEntry(
+            output_folder_frame,
+            textvariable=self.academic_output_dir,
+            placeholder_text="LR画像出力先フォルダを選択...",
+            height=35,
+            font=("Arial", 11)
+        )
+        output_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+
+        output_btn = ctk.CTkButton(
+            output_folder_frame,
+            text="参照",
+            command=self.browse_academic_output,
+            width=80,
+            height=35,
+            fg_color="#9b59b6",
+            hover_color="#7d3c98"
+        )
+        output_btn.pack(side=tk.RIGHT)
+
+        # 縮小倍率
+        scale_label = ctk.CTkLabel(
+            bicubic_frame,
+            text="縮小倍率:",
+            font=("Arial", 11),
+            text_color="#cccccc"
+        )
+        scale_label.pack(anchor="w", padx=15, pady=(5, 5))
+
+        scale_frame = ctk.CTkFrame(bicubic_frame, fg_color="transparent")
+        scale_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
+
+        self.academic_scale = tk.StringVar(value="0.5")
+        scale_entry = ctk.CTkEntry(
+            scale_frame,
+            textvariable=self.academic_scale,
+            width=100,
+            height=35,
+            font=("Arial", 11)
+        )
+        scale_entry.pack(side=tk.LEFT, padx=(0, 10))
+
+        scale_note = ctk.CTkLabel(
+            scale_frame,
+            text="（0.5 = ×2 SR用、0.25 = ×4 SR用）",
+            font=("Arial", 9),
+            text_color="#888888"
+        )
+        scale_note.pack(side=tk.LEFT)
+
+        # 実行ボタン
+        bicubic_btn = ctk.CTkButton(
+            bicubic_frame,
+            text="🔬 バッチBicubic縮小を実行",
+            command=self.run_batch_bicubic_downscale,
+            height=45,
+            corner_radius=10,
+            font=("Arial", 13, "bold"),
+            fg_color="#9b59b6",
+            text_color="#ffffff",
+            hover_color="#7d3c98"
+        )
+        bicubic_btn.pack(fill=tk.X, padx=15, pady=(5, 15))
+
+        # 設定セクション
+        config_frame = ctk.CTkFrame(self.academic_mode_frame, fg_color="#1e2740", corner_radius=10)
+        config_frame.pack(fill=tk.X, pady=(0, 15))
+
+        config_title = ctk.CTkLabel(
+            config_frame,
+            text="⚙️ 評価設定（学術評価モード固定）",
+            font=("Arial", 14, "bold"),
+            text_color="#9b59b6"
+        )
+        config_title.pack(anchor="w", padx=15, pady=(15, 10))
+
+        # 評価モード固定表示
+        mode_info = ctk.CTkLabel(
+            config_frame,
+            text="📊 評価モード: 学術評価モード（Bicubic縮小・×2スケール標準評価）",
+            font=("Arial", 12, "bold"),
+            text_color="#9b59b6"
+        )
+        mode_info.pack(anchor="w", padx=15, pady=(10, 15))
+
+        # 元画像フォルダ
+        self.academic_original_dir = tk.StringVar()
+        original_label = ctk.CTkLabel(
+            config_frame,
+            text="📁 元画像フォルダ（高解像度画像・15,000枚推奨）",
+            font=("Arial", 12, "bold"),
+            text_color="#ffffff"
+        )
+        original_label.pack(anchor="w", padx=15, pady=(10, 5))
+
+        original_frame = ctk.CTkFrame(config_frame, fg_color="transparent")
+        original_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
+
+        original_entry = ctk.CTkEntry(
+            original_frame,
+            textvariable=self.academic_original_dir,
+            placeholder_text="dataset/original/",
+            height=35,
+            font=("Arial", 11)
+        )
+        original_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+
+        original_btn = ctk.CTkButton(
+            original_frame,
+            text="参照",
+            command=self.browse_academic_original,
+            width=80,
+            height=35,
+            fg_color="#9b59b6",
+            text_color="#FFFFFF",
+            hover_color="#7d3c98"
+        )
+        original_btn.pack(side=tk.RIGHT)
+
+        # 超解像モデルフォルダ（最大5つ）
+        models_label = ctk.CTkLabel(
+            config_frame,
+            text="🤖 超解像モデルフォルダ（複数モデル比較可能）",
+            font=("Arial", 12, "bold"),
+            text_color="#ffffff"
+        )
+        models_label.pack(anchor="w", padx=15, pady=(10, 5))
+
+        self.academic_model_vars = []
+        self.academic_model_name_vars = []
+
+        for i in range(5):
+            model_frame = ctk.CTkFrame(config_frame, fg_color="transparent")
+            model_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
+
+            name_var = tk.StringVar()
+            self.academic_model_name_vars.append(name_var)
+
+            name_entry = ctk.CTkEntry(
+                model_frame,
+                textvariable=name_var,
+                placeholder_text=f"モデル{i+1}名",
+                width=120,
+                height=35,
+                font=("Arial", 11)
+            )
+            name_entry.pack(side=tk.LEFT, padx=(0, 10))
+
+            path_var = tk.StringVar()
+            self.academic_model_vars.append(path_var)
+
+            path_entry = ctk.CTkEntry(
+                model_frame,
+                textvariable=path_var,
+                placeholder_text=f"dataset/model{i+1}/",
+                height=35,
+                font=("Arial", 11)
+            )
+            path_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+
+            browse_btn = ctk.CTkButton(
+                model_frame,
+                text="参照",
+                command=lambda idx=i: self.browse_academic_model(idx),
+                width=80,
+                height=35,
+                fg_color="#9b59b6",
+                text_color="#FFFFFF",
+                hover_color="#7d3c98"
+            )
+            browse_btn.pack(side=tk.RIGHT)
+
+        # 出力設定
+        output_label = ctk.CTkLabel(
+            config_frame,
+            text="💾 出力設定",
+            font=("Arial", 12, "bold"),
+            text_color="#ffffff"
+        )
+        output_label.pack(anchor="w", padx=15, pady=(15, 5))
+
+        # CSV出力パス
+        csv_frame = ctk.CTkFrame(config_frame, fg_color="transparent")
+        csv_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
+
+        csv_label = ctk.CTkLabel(csv_frame, text="CSV:", width=80, anchor="w", font=("Arial", 11))
+        csv_label.pack(side=tk.LEFT, padx=(0, 10))
+
+        self.academic_output_csv = tk.StringVar(value="batch_results_academic.csv")
+        csv_entry = ctk.CTkEntry(
+            csv_frame,
+            textvariable=self.academic_output_csv,
+            height=35,
+            font=("Arial", 11)
+        )
+        csv_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+
+        csv_btn = ctk.CTkButton(
+            csv_frame,
+            text="参照",
+            command=self.browse_academic_csv_output,
+            width=80,
+            height=35,
+            fg_color="#9b59b6",
+            text_color="#FFFFFF",
+            hover_color="#7d3c98"
+        )
+        csv_btn.pack(side=tk.RIGHT)
+
+        # 詳細出力フォルダ
+        detail_frame = ctk.CTkFrame(config_frame, fg_color="transparent")
+        detail_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
+
+        detail_label = ctk.CTkLabel(detail_frame, text="詳細:", width=80, anchor="w", font=("Arial", 11))
+        detail_label.pack(side=tk.LEFT, padx=(0, 10))
+
+        self.academic_output_detail = tk.StringVar(value="batch_results_detail_academic")
+        detail_entry = ctk.CTkEntry(
+            detail_frame,
+            textvariable=self.academic_output_detail,
+            height=35,
+            font=("Arial", 11)
+        )
+        detail_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+
+        detail_btn = ctk.CTkButton(
+            detail_frame,
+            text="参照",
+            command=self.browse_academic_detail_output,
+            width=80,
+            height=35,
+            fg_color="#9b59b6",
+            text_color="#FFFFFF",
+            hover_color="#7d3c98"
+        )
+        detail_btn.pack(side=tk.RIGHT)
+
+        # 処理枚数制限
+        limit_frame = ctk.CTkFrame(config_frame, fg_color="transparent")
+        limit_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
+
+        limit_label = ctk.CTkLabel(
+            limit_frame,
+            text="📊 処理枚数:",
+            width=80,
+            anchor="w",
+            font=("Arial", 11)
+        )
+        limit_label.pack(side=tk.LEFT, padx=(0, 10))
+
+        self.academic_limit = tk.IntVar(value=0)
+        limit_entry = ctk.CTkEntry(
+            limit_frame,
+            textvariable=self.academic_limit,
+            width=100,
+            height=35,
+            font=("Arial", 11)
+        )
+        limit_entry.pack(side=tk.LEFT)
+
+        limit_hint = ctk.CTkLabel(
+            limit_frame,
+            text="（0=全画像処理、論文用は15,000枚推奨）",
+            font=("Arial", 10),
+            text_color="#888888"
+        )
+        limit_hint.pack(side=tk.LEFT, padx=(10, 0))
+
+        # 追加モード
+        append_frame = ctk.CTkFrame(config_frame, fg_color="transparent")
+        append_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
+
+        self.academic_append_mode = tk.BooleanVar(value=False)
+        append_check = ctk.CTkCheckBox(
+            append_frame,
+            text="既存CSVに追記（チェック=追加、未チェック=上書き）",
+            variable=self.academic_append_mode,
+            font=("Arial", 11),
+            text_color="#ffffff",
+            fg_color="#9b59b6",
+            hover_color="#7d3c98"
+        )
+        append_check.pack(anchor="w")
+
+        # 実行ボタン
+        self.academic_analyze_btn = ctk.CTkButton(
+            self.academic_mode_frame,
+            text="🚀 論文用ベンチマーク評価開始",
+            command=self.start_academic_analysis,
+            height=50,
+            corner_radius=10,
+            font=("Arial", 16, "bold"),
+            fg_color="#9b59b6",
+            text_color="#FFFFFF",
+            hover_color="#7d3c98"
+        )
+        self.academic_analyze_btn.pack(fill=tk.X, pady=(0, 15))
+
+        # 統計分析セクション
+        stats_frame = ctk.CTkFrame(self.academic_mode_frame, fg_color="#1e2740", corner_radius=10)
+        stats_frame.pack(fill=tk.X, pady=(0, 15))
+
+        stats_title = ctk.CTkLabel(
+            stats_frame,
+            text="📊 統計分析・プロット生成（必須ステップ）",
+            font=("Arial", 14, "bold"),
+            text_color="#ff6b6b"
+        )
+        stats_title.pack(anchor="w", padx=15, pady=(15, 10))
+
+        stats_info = ctk.CTkLabel(
+            stats_frame,
+            text="⚠️ バッチ処理完了後、必ずこの統計分析を実行してください。\n"
+                 "26パターンハルシネーション検出とdetection_countが生成されます。\n"
+                 "このdetection_countが深層学習のラベルになります！",
+            font=("Arial", 11),
+            text_color="#ffcc00",
+            justify="left"
+        )
+        stats_info.pack(anchor="w", padx=15, pady=(0, 10))
+
+        stats_csv_frame = ctk.CTkFrame(stats_frame, fg_color="transparent")
+        stats_csv_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
+
+        stats_csv_label = ctk.CTkLabel(
+            stats_csv_frame,
+            text="CSV:",
+            width=80,
+            anchor="w",
+            font=("Arial", 11)
+        )
+        stats_csv_label.pack(side=tk.LEFT, padx=(0, 10))
+
+        self.academic_stats_csv_path = tk.StringVar()
+        stats_csv_entry = ctk.CTkEntry(
+            stats_csv_frame,
+            textvariable=self.academic_stats_csv_path,
+            placeholder_text="batch_results_academic.csv",
+            height=35,
+            font=("Arial", 11)
+        )
+        stats_csv_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+
+        stats_csv_btn = ctk.CTkButton(
+            stats_csv_frame,
+            text="参照",
+            command=self.browse_academic_stats_csv,
+            width=80,
+            height=35,
+            fg_color="#9b59b6",
+            text_color="#FFFFFF",
+            hover_color="#7d3c98"
+        )
+        stats_csv_btn.pack(side=tk.RIGHT)
+
+        self.academic_stats_analyze_btn = ctk.CTkButton(
+            stats_frame,
+            text="📈 統計分析・25種類プロット生成",
+            command=self.start_academic_stats_analysis,
+            height=45,
+            corner_radius=10,
+            font=("Arial", 14, "bold"),
+            fg_color="#ff6b6b",
+            text_color="#FFFFFF",
+            hover_color="#ff4444"
+        )
+        self.academic_stats_analyze_btn.pack(fill=tk.X, padx=15, pady=(0, 15))
+    def browse_batch_original(self):
+        dirname = filedialog.askdirectory(title="元画像フォルダを選択")
         if dirname:
             self.batch_original_dir.set(dirname)
 
@@ -1366,6 +1834,247 @@ class ModernImageAnalyzerGUI:
         dirname = filedialog.askdirectory(title="低解像度LR画像出力先フォルダを選択")
         if dirname:
             self.academic_output_dir.set(dirname)
+
+
+    def browse_academic_original(self):
+        dirname = filedialog.askdirectory(title="元画像フォルダを選択（高解像度画像・15,000枚推奨）")
+        if dirname:
+            self.academic_original_dir.set(dirname)
+
+    def browse_academic_model(self, index):
+        dirname = filedialog.askdirectory(title=f"超解像モデル{index+1}のフォルダを選択")
+        if dirname:
+            self.academic_model_vars[index].set(dirname)
+
+    def browse_academic_csv_output(self):
+        """論文用：CSV出力先選択"""
+        filename = filedialog.asksaveasfilename(
+            title="CSV出力先を選択",
+            defaultextension=".csv",
+            filetypes=[("CSV", "*.csv"), ("すべてのファイル", "*.*")],
+            initialfile="batch_results_academic.csv"
+        )
+        if filename:
+            self.academic_output_csv.set(filename)
+
+    def browse_academic_detail_output(self):
+        """論文用：詳細レポート出力先フォルダ選択"""
+        dirname = filedialog.askdirectory(title="詳細レポート出力先フォルダを選択")
+        if dirname:
+            self.academic_output_detail.set(dirname)
+
+    def browse_academic_stats_csv(self):
+        """論文用：統計分析用CSV選択"""
+        filename = filedialog.askopenfilename(
+            title="統計分析するCSVファイルを選択",
+            filetypes=[("CSV", "*.csv"), ("すべてのファイル", "*.*")]
+        )
+        if filename:
+            self.academic_stats_csv_path.set(filename)
+
+    def start_academic_analysis(self):
+        """論文用ベンチマーク評価開始"""
+        # バリデーション
+        if not self.academic_original_dir.get():
+            messagebox.showerror("エラー", "元画像フォルダを選択してください")
+            return
+
+        # 有効なモデルフォルダをカウント
+        valid_models = {}
+        for i in range(5):
+            model_name = self.academic_model_name_vars[i].get().strip()
+            model_path = self.academic_model_vars[i].get().strip()
+
+            if model_path:
+                if not model_name:
+                    messagebox.showerror("エラー", f"モデル{i+1}の名前を入力してください")
+                    return
+                valid_models[model_name] = model_path
+
+        if len(valid_models) == 0:
+            messagebox.showerror("エラー", "少なくとも1つの超解像モデルフォルダを選択してください")
+            return
+
+        # 設定ファイル作成（評価モード固定：academic）
+        config = {
+            "original_dir": self.academic_original_dir.get(),
+            "upscaled_dirs": valid_models,
+            "output_csv": self.academic_output_csv.get(),
+            "output_detail_dir": self.academic_output_detail.get(),
+            "limit": self.academic_limit.get(),
+            "append_mode": self.academic_append_mode.get(),
+            "evaluation_mode": "academic"  # 学術評価モード固定
+        }
+
+        # UIを無効化
+        self.academic_analyze_btn.configure(state='disabled')
+        self.academic_progress.set(0)
+        self.academic_status_label.configure(
+            text="論文用ベンチマーク評価を開始します...",
+            text_color="#00ffff"
+        )
+        self.academic_result_text.delete("1.0", tk.END)
+
+        # 別スレッドで実行
+        thread = threading.Thread(target=self.run_academic_analysis, args=(config,))
+        thread.daemon = True
+        thread.start()
+
+    def run_academic_analysis(self, config):
+        """論文用ベンチマーク評価実行"""
+        try:
+            import sys
+            from io import StringIO
+            from batch_analyzer import batch_analyze
+            from pathlib import Path
+
+            # 一時設定ファイル作成
+            temp_config_path = "temp_academic_config.json"
+            with open(temp_config_path, 'w', encoding='utf-8') as f:
+                json.dump(config, f, indent=2, ensure_ascii=False)
+
+            # 標準出力をキャプチャ
+            old_stdout = sys.stdout
+            sys.stdout = captured_output = StringIO()
+
+            # バッチ処理実行（進捗コールバック付き）
+            batch_analyze(temp_config_path, progress_callback=self.update_academic_progress)
+
+            sys.stdout = old_stdout
+            output = captured_output.getvalue()
+
+            # 一時ファイル削除
+            if os.path.exists(temp_config_path):
+                os.remove(temp_config_path)
+
+            self.root.after(0, self.display_academic_results, output, True, config['output_csv'])
+
+        except Exception as e:
+            sys.stdout = old_stdout
+            self.root.after(0, self.display_academic_results, str(e), False, None)
+
+    def update_academic_progress(self, current, total, message):
+        """論文用評価進捗更新（別スレッドから呼ばれる）"""
+        progress = current / total if total > 0 else 0
+        self.root.after(0, lambda: self.academic_progress.set(progress))
+        self.root.after(0, lambda: self.academic_status_label.configure(
+            text=f"処理中: {current}/{total} - {message}",
+            text_color="#9b59b6"
+        ))
+        self.root.after(0, lambda: self.academic_result_text.insert(tk.END, f"{message}\n"))
+        self.root.after(0, lambda: self.academic_result_text.see(tk.END))
+
+    def display_academic_results(self, output, success, csv_path):
+        """論文用評価結果表示"""
+        self.academic_analyze_btn.configure(state='normal')
+        self.academic_progress.set(1 if success else 0)
+
+        self.academic_result_text.insert("1.0", output)
+
+        if success:
+            self.academic_status_label.configure(
+                text=f"✅ 論文用評価完了！次は統計分析を実行してください",
+                text_color="#00ff88"
+            )
+
+            # CSVパスを統計分析欄に自動入力
+            if csv_path:
+                self.academic_stats_csv_path.set(csv_path)
+
+            messagebox.showinfo(
+                "完了",
+                f"論文用ベンチマーク評価が完了しました。\n\n"
+                f"CSV: {csv_path}\n\n"
+                f"⭐ 次は必ず統計分析を実行してください！\n"
+                f"26パターン検出とdetection_countが生成されます。"
+            )
+        else:
+            self.academic_status_label.configure(
+                text="❌ 評価エラー",
+                text_color="#ff4444"
+            )
+            messagebox.showerror("エラー", f"評価中にエラーが発生しました:\n{output}")
+
+    def start_academic_stats_analysis(self):
+        """論文用統計分析開始"""
+        csv_path = self.academic_stats_csv_path.get()
+
+        if not csv_path:
+            messagebox.showerror("エラー", "CSVファイルを選択してください")
+            return
+
+        if not os.path.exists(csv_path):
+            messagebox.showerror("エラー", f"CSVファイルが見つかりません:\n{csv_path}")
+            return
+
+        # UIを無効化
+        self.academic_stats_analyze_btn.configure(state='disabled')
+        self.academic_status_label.configure(
+            text="統計分析・26パターン検出を実行中...",
+            text_color="#ffa500"
+        )
+
+        # 別スレッドで実行
+        thread = threading.Thread(target=self.run_academic_stats_analysis, args=(csv_path,))
+        thread.daemon = True
+        thread.start()
+
+    def run_academic_stats_analysis(self, csv_path):
+        """論文用統計分析実行"""
+        try:
+            import sys
+            from io import StringIO
+            from analyze_results import analyze_batch_results
+
+            # 標準出力をキャプチャ
+            old_stdout = sys.stdout
+            sys.stdout = captured_output = StringIO()
+
+            # 統計分析実行
+            analyze_batch_results(csv_path)
+
+            sys.stdout = old_stdout
+            output = captured_output.getvalue()
+
+            self.root.after(0, self.display_academic_stats_results, output, True)
+
+        except Exception as e:
+            import traceback
+            error_detail = traceback.format_exc()
+            sys.stdout = old_stdout
+            self.root.after(0, self.display_academic_stats_results, error_detail, False)
+
+    def display_academic_stats_results(self, output, success):
+        """論文用統計分析結果表示"""
+        self.academic_stats_analyze_btn.configure(state='normal')
+
+        self.academic_result_text.insert(tk.END, "\n" + "="*50 + "\n")
+        self.academic_result_text.insert(tk.END, output)
+        self.academic_result_text.see(tk.END)
+
+        if success:
+            self.academic_status_label.configure(
+                text="✅ 統計分析完了！detection_countが生成されました",
+                text_color="#00ff88"
+            )
+
+            messagebox.showinfo(
+                "完了",
+                "統計分析が完了しました。\n\n"
+                "✅ 25種類のプロットが生成されました\n"
+                "✅ 26パターンハルシネーション検出完了\n"
+                "✅ detection_countがCSVに追加されました\n\n"
+                "出力先: analysis_output/\n\n"
+                "次のステップ:\n"
+                "results_with_26pattern_detection.csv を確認し、\n"
+                "detection_countを使って深層学習のラベルを生成できます。"
+            )
+        else:
+            self.academic_status_label.configure(
+                text="❌ 統計分析エラー",
+                text_color="#ff4444"
+            )
+            messagebox.showerror("エラー", f"統計分析中にエラーが発生しました:\n{output}")
 
     def run_batch_bicubic_downscale(self):
         """バッチBicubic縮小を実行"""
@@ -1598,7 +2307,8 @@ class ModernImageAnalyzerGUI:
             "output_csv": self.batch_output_csv.get(),
             "output_detail_dir": self.batch_output_detail.get(),
             "limit": self.batch_limit.get(),  # 処理枚数制限
-            "append_mode": self.batch_append_mode.get()  # 追加モード
+            "append_mode": self.batch_append_mode.get(),  # 追加モード
+            "evaluation_mode": self.batch_evaluation_mode.get()  # 評価モード（バッチ処理タブの設定）
         }
 
         # UIを無効化
@@ -1677,7 +2387,7 @@ class ModernImageAnalyzerGUI:
                 "完了",
                 f"バッチ処理が完了しました。\n\n"
                 f"CSV: {csv_path}\n\n"
-                f"統計分析を実行して23種類のプロットを生成できます。"
+                f"統計分析を実行して25種類のプロットを生成できます。"
             )
         else:
             self.batch_status_label.configure(
@@ -1739,14 +2449,14 @@ class ModernImageAnalyzerGUI:
 
         if success:
             self.batch_status_label.configure(
-                text="✅ 統計分析完了！23種類のプロットが analysis_output/ に保存されました",
+                text="✅ 統計分析完了！25種類のプロットが analysis_output/ に保存されました",
                 text_color="#00ff88"
             )
 
             messagebox.showinfo(
                 "完了",
                 "統計分析が完了しました。\n\n"
-                "23種類の研究用プロット（300dpi）が\n"
+                "25種類の研究用プロット（300dpi）が\n"
                 "analysis_output/ フォルダに保存されました。\n\n"
                 "・ハルシネーション検出（4種類）\n"
                 "・品質トレードオフ（5種類）\n"
@@ -2809,13 +3519,16 @@ class ModernImageAnalyzerGUI:
         # ボタンの色を変更
         self.single_mode_btn.configure(fg_color="#4A90E2", text_color="#FFFFFF")
         self.batch_mode_btn.configure(fg_color="#4a5568", text_color="#ffffff")
+        self.academic_mode_btn.configure(fg_color="#4a5568", text_color="#ffffff")
 
         # 左パネルの表示切り替え
         self.batch_mode_frame.pack_forget()
+        self.academic_mode_frame.pack_forget()
         self.single_mode_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
         # 右パネルの表示切り替え
         self.batch_right_frame.pack_forget()
+        self.academic_right_frame.pack_forget()
         self.single_right_frame.pack(fill=tk.BOTH, expand=True)
 
     def switch_to_batch_mode(self):
@@ -2823,14 +3536,34 @@ class ModernImageAnalyzerGUI:
         # ボタンの色を変更
         self.batch_mode_btn.configure(fg_color="#4A90E2", text_color="#FFFFFF")
         self.single_mode_btn.configure(fg_color="#4a5568", text_color="#ffffff")
+        self.academic_mode_btn.configure(fg_color="#4a5568", text_color="#ffffff")
 
         # 左パネルの表示切り替え
         self.single_mode_frame.pack_forget()
+        self.academic_mode_frame.pack_forget()
         self.batch_mode_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
         # 右パネルの表示切り替え
         self.single_right_frame.pack_forget()
+        self.academic_right_frame.pack_forget()
         self.batch_right_frame.pack(fill=tk.BOTH, expand=True)
+
+    def switch_to_academic_mode(self):
+        """論文用ベンチマーク評価モードに切り替え"""
+        # ボタンの色を変更
+        self.academic_mode_btn.configure(fg_color="#9b59b6", text_color="#FFFFFF")
+        self.single_mode_btn.configure(fg_color="#4a5568", text_color="#ffffff")
+        self.batch_mode_btn.configure(fg_color="#4a5568", text_color="#ffffff")
+
+        # 左パネルの表示切り替え
+        self.single_mode_frame.pack_forget()
+        self.batch_mode_frame.pack_forget()
+        self.academic_mode_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+
+        # 右パネルの表示切り替え
+        self.single_right_frame.pack_forget()
+        self.batch_right_frame.pack_forget()
+        self.academic_right_frame.pack(fill=tk.BOTH, expand=True)
 
 def main():
     root = ctk.CTk()

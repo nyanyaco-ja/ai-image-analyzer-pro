@@ -38,6 +38,7 @@ def batch_analyze(config_file, progress_callback=None):
     output_detail_dir = Path(config.get('output_detail_dir', 'results/detailed/'))
     limit = config.get('limit', 0)  # 0 = 全て処理
     append_mode = config.get('append_mode', False)  # False = 上書き, True = 追加
+    evaluation_mode = config.get('evaluation_mode', 'image')  # デフォルトは画像モード
 
     # 出力ディレクトリ作成
     output_detail_dir.mkdir(parents=True, exist_ok=True)
@@ -55,6 +56,14 @@ def batch_analyze(config_file, progress_callback=None):
         print(f"❌ エラー: 元画像が見つかりません: {original_dir}")
         return
 
+    # 評価モード表示用辞書
+    mode_names = {
+        'image': '📸 画像モード（医療画像・写真など）',
+        'document': '📄 文書モード（カルテ・契約書など）',
+        'academic': '📚 学術評価モード（論文用・標準ベンチマーク互換）',
+        'developer': '🔧 開発者モード（デバッグ用）'
+    }
+
     print(f"\n{'='*60}")
     print(f"🚀 バッチ処理開始")
     print(f"{'='*60}")
@@ -64,6 +73,7 @@ def batch_analyze(config_file, progress_callback=None):
     for model_name in upscaled_dirs.keys():
         print(f"   - {model_name}")
     print(f"💾 出力CSV: {output_csv}")
+    print(f"⚙️  評価モード: {mode_names.get(evaluation_mode, evaluation_mode)}")
     print(f"{'='*60}\n")
 
     # 結果を格納するリスト
@@ -80,8 +90,10 @@ def batch_analyze(config_file, progress_callback=None):
         for model_name, upscaled_dir in upscaled_dirs.items():
             # 超解像画像のパスを探す（PNG/JPG両対応）
             upscaled_path = None
+            tried_extensions = []
             for ext in ['.png', '.jpg', '.jpeg']:
                 candidate = upscaled_dir / f"{image_id}{ext}"
+                tried_extensions.append(str(candidate))
                 if candidate.exists():
                     upscaled_path = candidate
                     break
@@ -89,26 +101,27 @@ def batch_analyze(config_file, progress_callback=None):
             if upscaled_path is None:
                 msg = f"⚠️  超解像画像が見つかりません: {model_name}/{image_id}"
                 print(msg)
-                if progress_callback:
-                    progress_callback(processed, total_pairs, msg)
+                print(f"   探索したパス:")
+                for tried_path in tried_extensions:
+                    print(f"     - {tried_path}")
                 errors += 1
+                # 進捗通知（エラーもカウント）
+                if progress_callback:
+                    progress_callback(processed + errors, total_pairs, msg)
                 continue
 
             # 分析実行
             output_subdir = output_detail_dir / model_name / image_id
 
             try:
-                # 進捗通知
-                if progress_callback:
-                    progress_callback(processed, total_pairs, f"処理中: {image_id} - {model_name}")
-
-                # analyze_images(元画像, 超解像画像, 出力先, 低解像度元画像)
+                # analyze_images(元画像, 超解像画像, 出力先, 低解像度元画像, 評価モード)
                 # ここでは元画像=低解像度として使用
                 results = analyze_images(
                     str(orig_img_path),      # 画像1: 元画像（基準）
                     str(upscaled_path),      # 画像2: AI超解像
                     str(output_subdir),      # 出力先
-                    str(orig_img_path)       # 元画像（original_path）として同じものを使用
+                    str(orig_img_path),      # 元画像（original_path）として同じものを使用
+                    evaluation_mode          # 評価モード（GUIから渡される）
                 )
 
                 # 17項目のスコアを抽出
@@ -123,24 +136,38 @@ def batch_analyze(config_file, progress_callback=None):
                 all_results.append(row)
                 processed += 1
 
+                # 進捗通知（処理完了後）
+                if progress_callback:
+                    progress_callback(processed, total_pairs, f"完了: {image_id} - {model_name}")
+
             except Exception as e:
                 msg = f"❌ エラー: {image_id} - {model_name}: {str(e)}"
                 print(f"\n{msg}")
-                if progress_callback:
-                    progress_callback(processed, total_pairs, msg)
                 errors += 1
+                # 進捗通知（エラーもカウント）
+                if progress_callback:
+                    progress_callback(processed + errors, total_pairs, msg)
                 continue
 
     # 結果をCSV保存
     if len(all_results) > 0:
         save_results_to_csv(all_results, output_csv, append_mode)
 
+        # モデル別の処理件数を集計
+        model_counts = {}
+        for row in all_results:
+            model = row['model']
+            model_counts[model] = model_counts.get(model, 0) + 1
+
         print(f"\n{'='*60}")
         print(f"✅ バッチ処理完了！")
         print(f"{'='*60}")
         print(f"✔️  成功: {processed} / {total_pairs}")
         print(f"❌ エラー: {errors} / {total_pairs}")
-        print(f"📄 結果CSV: {output_csv}")
+        print(f"\n📊 モデル別処理件数:")
+        for model, count in model_counts.items():
+            print(f"   {model}: {count}件")
+        print(f"\n📄 結果CSV: {output_csv}")
         print(f"📊 詳細レポート: {output_detail_dir}")
         print(f"{'='*60}\n")
 
