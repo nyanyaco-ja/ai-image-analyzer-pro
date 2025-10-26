@@ -44,8 +44,31 @@ def batch_analyze(config_file, progress_callback=None):
     output_detail_dir.mkdir(parents=True, exist_ok=True)
     Path(output_csv).parent.mkdir(parents=True, exist_ok=True)
 
-    # 元画像リスト取得（PNG, JPG対応）
-    original_images = sorted(list(original_dir.glob('*.png')) + list(original_dir.glob('*.jpg')))
+    # 元画像リスト取得（PNG推奨、JPGは警告）
+    png_images = sorted(list(original_dir.glob('*.png')))
+    jpg_images = sorted(list(original_dir.glob('*.jpg')) + list(original_dir.glob('*.jpeg')))
+
+    # JPG画像がある場合は警告
+    if len(jpg_images) > 0:
+        print(f"\n{'='*60}")
+        print(f"⚠️  警告: JPGファイルが検出されました ({len(jpg_images)}枚)")
+        print(f"{'='*60}")
+        print(f"JPGは非可逆圧縮形式のため、すでに画質が劣化しています。")
+        print(f"正確な評価のためには、元データからPNG形式で再出力することを強く推奨します。")
+        print(f"")
+        print(f"【JPGの問題点】")
+        print(f"  - ブロックノイズ（8×8ピクセル単位の圧縮アーティファクト）")
+        print(f"  - 高周波成分の損失（細かいディテールが消失）")
+        print(f"  - 色情報の劣化（色滲み、バンディング）")
+        print(f"  - AI超解像の劣化と区別不可能")
+        print(f"")
+        print(f"【推奨対応】")
+        print(f"  1. 元のソフトウェア/カメラからPNG形式で再出力")
+        print(f"  2. TIFF等の可逆形式から変換")
+        print(f"  3. 医療用途・論文発表には必ずPNG形式を使用")
+        print(f"{'='*60}\n")
+
+    original_images = sorted(png_images + jpg_images)
 
     # 処理枚数制限
     if limit > 0 and limit < len(original_images):
@@ -75,6 +98,24 @@ def batch_analyze(config_file, progress_callback=None):
     print(f"💾 出力CSV: {output_csv}")
     print(f"⚙️  評価モード: {mode_names.get(evaluation_mode, evaluation_mode)}")
     print(f"{'='*60}\n")
+
+    # 超解像モデルフォルダのJPG検出
+    jpg_detected_models = []
+    for model_name, upscaled_dir in upscaled_dirs.items():
+        jpg_count = len(list(upscaled_dir.glob('*.jpg'))) + len(list(upscaled_dir.glob('*.jpeg')))
+        if jpg_count > 0:
+            jpg_detected_models.append((model_name, jpg_count))
+
+    if len(jpg_detected_models) > 0:
+        print(f"\n{'='*60}")
+        print(f"⚠️  警告: 超解像結果にJPGファイルが検出されました")
+        print(f"{'='*60}")
+        for model_name, jpg_count in jpg_detected_models:
+            print(f"  - {model_name}: {jpg_count}枚のJPGファイル")
+        print(f"")
+        print(f"JPGは非可逆圧縮のため、AI処理の品質を正確に評価できません。")
+        print(f"元のAI超解像ツールでPNG形式で出力し直すことを強く推奨します。")
+        print(f"{'='*60}\n")
 
     # 結果を格納するリスト
     all_results = []

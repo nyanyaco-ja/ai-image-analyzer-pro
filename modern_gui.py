@@ -377,6 +377,15 @@ class ModernImageAnalyzerGUI:
         # デフォルトで開く（閉じない）
         original_frame = original_accordion.get_content_frame()
 
+        # PNG推奨警告
+        single_png_warning = ctk.CTkLabel(
+            original_frame,
+            text="⚠️ PNG形式推奨（JPGは非可逆圧縮で劣化済み）",
+            font=("Arial", 12, "bold"),
+            text_color="#ff6b6b"
+        )
+        single_png_warning.pack(anchor="w", padx=15, pady=(15, 5))
+
         original_sublabel = ctk.CTkLabel(
             original_frame,
             text="※ AI処理前の高解像度オリジナル画像（超解像前、ノイズ除去前など）\n"
@@ -385,7 +394,7 @@ class ModernImageAnalyzerGUI:
             text_color="#888888",
             justify="left"
         )
-        original_sublabel.pack(anchor="w", padx=15, pady=(15, 10))
+        original_sublabel.pack(anchor="w", padx=15, pady=(5, 10))
 
         original_entry = ctk.CTkEntry(
             original_frame,
@@ -992,15 +1001,24 @@ class ModernImageAnalyzerGUI:
             font_size=18
         )
 
+        # PNG推奨の注意書き
+        png_warning = ctk.CTkLabel(
+            folder_accordion.content_frame,
+            text="⚠️ 重要: PNG形式を使用してください（JPGは非可逆圧縮で劣化済み）",
+            font=("Arial", 12, "bold"),
+            text_color="#ff6b6b"
+        )
+        png_warning.pack(anchor="w", padx=15, pady=(10, 5))
+
         # 元画像フォルダ
         self.batch_original_dir = tk.StringVar()
         original_label = ctk.CTkLabel(
             folder_accordion.content_frame,
-            text="📁 元画像フォルダ（必須・処理前）",
+            text="📁 元画像フォルダ（必須・処理前・PNG推奨）",
             font=("Arial", 14, "bold"),
             text_color="#00ff88"
         )
-        original_label.pack(anchor="w", padx=15, pady=(10, 5))
+        original_label.pack(anchor="w", padx=15, pady=(5, 5))
 
         original_frame = ctk.CTkFrame(folder_accordion.content_frame, fg_color="transparent")
         original_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
@@ -1578,15 +1596,24 @@ class ModernImageAnalyzerGUI:
         )
         mode_info.pack(anchor="w", padx=15, pady=(10, 15))
 
+        # PNG推奨の注意書き
+        academic_png_warning = ctk.CTkLabel(
+            config_accordion.content_frame,
+            text="⚠️ 重要: PNG形式を使用してください（JPGは非可逆圧縮で劣化済み）",
+            font=("Arial", 12, "bold"),
+            text_color="#ff6b6b"
+        )
+        academic_png_warning.pack(anchor="w", padx=15, pady=(0, 10))
+
         # 元画像フォルダ
         self.academic_original_dir = tk.StringVar()
         original_label = ctk.CTkLabel(
             config_accordion.content_frame,
-            text="📁 元画像フォルダ（必須・高解像度画像・15,000枚推奨）",
+            text="📁 元画像フォルダ（必須・高解像度画像・PNG推奨・15,000枚推奨）",
             font=("Arial", 14, "bold"),
             text_color="#00ff88"
         )
-        original_label.pack(anchor="w", padx=15, pady=(10, 5))
+        original_label.pack(anchor="w", padx=15, pady=(5, 5))
 
         original_frame = ctk.CTkFrame(config_accordion.content_frame, fg_color="transparent")
         original_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
