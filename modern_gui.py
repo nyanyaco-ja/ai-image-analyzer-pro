@@ -19,6 +19,51 @@ except ImportError:
 ctk.set_appearance_mode("dark")  # ダークモード
 ctk.set_default_color_theme("blue")  # カラーテーマ
 
+class AccordionSection:
+    """アコーディオンセクション（クリックで開閉）"""
+    def __init__(self, parent, title, bg_color="#1e2740", title_color="#4A90E2", font_size=16):
+        self.is_open = True
+
+        # メインフレーム
+        self.main_frame = ctk.CTkFrame(parent, fg_color="transparent")
+        self.main_frame.pack(fill=tk.X, pady=(0, 10))
+
+        # ヘッダー（クリック可能）
+        self.header_btn = ctk.CTkButton(
+            self.main_frame,
+            text=f"▼ {title}",
+            command=self.toggle,
+            height=45,
+            corner_radius=10,
+            font=("Arial", font_size, "bold"),
+            fg_color=bg_color,
+            text_color=title_color,
+            hover_color="#2d3748",
+            anchor="w"
+        )
+        self.header_btn.pack(fill=tk.X, padx=0, pady=0)
+
+        # コンテンツフレーム
+        self.content_frame = ctk.CTkFrame(self.main_frame, fg_color=bg_color, corner_radius=10)
+        self.content_frame.pack(fill=tk.BOTH, expand=True, padx=0, pady=(5, 0))
+
+        self.title = title
+
+    def toggle(self):
+        """開閉切り替え"""
+        if self.is_open:
+            self.content_frame.pack_forget()
+            self.header_btn.configure(text=f"▶ {self.title}")
+            self.is_open = False
+        else:
+            self.content_frame.pack(fill=tk.BOTH, expand=True, padx=0, pady=(5, 0))
+            self.header_btn.configure(text=f"▼ {self.title}")
+            self.is_open = True
+
+    def get_content_frame(self):
+        """コンテンツフレームを取得"""
+        return self.content_frame
+
 class ModernImageAnalyzerGUI:
     def __init__(self, root):
         self.root = root
@@ -33,7 +78,10 @@ class ModernImageAnalyzerGUI:
         # 変数
         self.img1_path = tk.StringVar()
         self.img2_path = tk.StringVar()
-        self.original_path = tk.StringVar()  # 元画像（オプション）
+        self.img3_path = tk.StringVar()
+        self.img4_path = tk.StringVar()
+        self.img5_path = tk.StringVar()
+        self.original_path = tk.StringVar()  # 元画像（GT画像・必須）
         self.output_dir = tk.StringVar(value="analysis_results")
         self.analysis_results = None
         self.current_step = ""
@@ -204,14 +252,29 @@ class ModernImageAnalyzerGUI:
         )
         self.academic_mode_btn.pack(side=tk.LEFT, padx=5)
 
-        # コンテンツエリア（2カラムレイアウト）
+        # コンテンツエリア（2カラムレイアウト - リサイズ可能）
         content_frame = ctk.CTkFrame(main_container, fg_color="#0a0e27")
         content_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
+        # PanedWindowで左右調整可能に（標準tkinter）
+        self.paned_window = tk.PanedWindow(
+            content_frame,
+            orient=tk.HORIZONTAL,
+            bg="#0a0e27",
+            sashwidth=8,
+            sashrelief=tk.RAISED,
+            bd=0,
+            handlesize=10,
+            handlepad=30,
+            showhandle=True,
+            sashpad=2,
+            relief=tk.FLAT
+        )
+        self.paned_window.pack(fill=tk.BOTH, expand=True)
+
         # 左側パネル（入力エリア）
-        self.left_panel = ctk.CTkFrame(content_frame, fg_color="#1e2740", width=480, corner_radius=15)
-        self.left_panel.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
-        self.left_panel.pack_propagate(False)
+        self.left_panel = ctk.CTkFrame(self.paned_window, fg_color="#1e2740", corner_radius=15)
+        self.paned_window.add(self.left_panel, width=550, minsize=400, stretch="never")
 
         # スクロール可能なフレーム（単一モード用）
         self.single_mode_frame = ctk.CTkScrollableFrame(self.left_panel, fg_color="transparent")
@@ -224,25 +287,17 @@ class ModernImageAnalyzerGUI:
         self.academic_mode_frame = ctk.CTkScrollableFrame(self.left_panel, fg_color="transparent")
 
         # 右側パネル（画像比較・結果表示エリア）
-        self.right_panel = ctk.CTkFrame(content_frame, fg_color="#1e2740", corner_radius=15)
-        self.right_panel.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+        self.right_panel = ctk.CTkFrame(self.paned_window, fg_color="#1e2740", corner_radius=15)
+        self.paned_window.add(self.right_panel, minsize=300, stretch="always")
 
         # === 単一画像比較モードのUI ===
         # 画像選択セクション
         input_section = ctk.CTkFrame(self.single_mode_frame, fg_color="transparent")
         input_section.pack(fill=tk.X)
 
-        # 評価モード選択
-        mode_frame = ctk.CTkFrame(input_section, fg_color="#1e2740", corner_radius=10)
-        mode_frame.pack(fill=tk.X, pady=(0, 20))
-
-        mode_title = ctk.CTkLabel(
-            mode_frame,
-            text="📊 評価モード",
-            font=("Arial", 16, "bold"),
-            text_color="#4A90E2"
-        )
-        mode_title.pack(anchor="w", padx=15, pady=(15, 10))
+        # 評価モード選択（アコーディオン）
+        mode_accordion = AccordionSection(input_section, "📊 評価モード", font_size=18)
+        mode_frame = mode_accordion.get_content_frame()
 
         # 評価モード変数
         self.evaluation_mode = tk.StringVar(value="image")
@@ -253,17 +308,17 @@ class ModernImageAnalyzerGUI:
             text="画像（レントゲン、内視鏡、写真など）",
             variable=self.evaluation_mode,
             value="image",
-            font=("Arial", 12),
+            font=("Arial", 14),
             text_color="#ffffff",
             fg_color="#4A90E2",
             hover_color="#357ABD"
         )
-        mode_image.pack(anchor="w", padx=30, pady=(0, 8))
+        mode_image.pack(anchor="w", padx=30, pady=(15, 8))
 
         mode_image_desc = ctk.CTkLabel(
             mode_frame,
             text="  └─ CLIP基準: 0.70、全指標使用、診断テキスト自動検出",
-            font=("Arial", 10),
+            font=("Arial", 12),
             text_color="#888888"
         )
         mode_image_desc.pack(anchor="w", padx=30, pady=(0, 10))
@@ -274,7 +329,7 @@ class ModernImageAnalyzerGUI:
             text="文書（医療カルテ、契約書、レシートなど）",
             variable=self.evaluation_mode,
             value="document",
-            font=("Arial", 12),
+            font=("Arial", 14),
             text_color="#ffffff",
             fg_color="#4A90E2",
             hover_color="#357ABD"
@@ -284,7 +339,7 @@ class ModernImageAnalyzerGUI:
         mode_document_desc = ctk.CTkLabel(
             mode_frame,
             text="  └─ CLIP基準: 0.90（厳格）、テキストMAE重視",
-            font=("Arial", 10),
+            font=("Arial", 12),
             text_color="#888888"
         )
         mode_document_desc.pack(anchor="w", padx=30, pady=(0, 10))
@@ -295,7 +350,7 @@ class ModernImageAnalyzerGUI:
             text="開発者モード（バグテスト・デバッグ用）",
             variable=self.evaluation_mode,
             value="developer",
-            font=("Arial", 12),
+            font=("Arial", 14),
             text_color="#ffffff",
             fg_color="#ffa500",
             hover_color="#cc8400"
@@ -305,215 +360,222 @@ class ModernImageAnalyzerGUI:
         mode_developer_desc = ctk.CTkLabel(
             mode_frame,
             text="  └─ 評価不能判定なし、すべての警告を表示",
-            font=("Arial", 10),
+            font=("Arial", 12),
             text_color="#888888"
         )
         mode_developer_desc.pack(anchor="w", padx=30, pady=(0, 15))
 
-        # 画像1
-        img1_label = ctk.CTkLabel(
-            input_section,
-            text="📸 画像 1",
-            font=("Arial", 16, "bold"),
-            text_color="#4A90E2"
-        )
-        img1_label.pack(anchor="w", pady=(0, 10))
-
-        img1_entry = ctk.CTkEntry(
-            input_section,
-            textvariable=self.img1_path,
-            placeholder_text="画像ファイルを選択...",
-            height=40,
-            corner_radius=10,
-            font=("Arial", 11)
-        )
-        img1_entry.pack(fill=tk.X, pady=(0, 10))
-
-        img1_btn = ctk.CTkButton(
-            input_section,
-            text="参照",
-            command=self.browse_image1,
-            height=40,
-            corner_radius=10,
-            font=("Arial", 12, "bold"),
-            fg_color="#4A90E2",
-            text_color="#FFFFFF",
-            hover_color="#357ABD"
-        )
-        img1_btn.pack(fill=tk.X, pady=(0, 20))
-
-        # 画像2
-        img2_label = ctk.CTkLabel(
-            input_section,
-            text="📸 画像 2",
-            font=("Arial", 16, "bold"),
-            text_color="#4A90E2"
-        )
-        img2_label.pack(anchor="w", pady=(0, 10))
-
-        img2_entry = ctk.CTkEntry(
-            input_section,
-            textvariable=self.img2_path,
-            placeholder_text="画像ファイルを選択...",
-            height=40,
-            corner_radius=10,
-            font=("Arial", 11)
-        )
-        img2_entry.pack(fill=tk.X, pady=(0, 10))
-
-        img2_btn = ctk.CTkButton(
-            input_section,
-            text="参照",
-            command=self.browse_image2,
-            height=40,
-            corner_radius=10,
-            font=("Arial", 12, "bold"),
-            fg_color="#4A90E2",
-            text_color="#FFFFFF",
-            hover_color="#357ABD"
-        )
-        img2_btn.pack(fill=tk.X, pady=(0, 20))
-
-        # 元画像（オプション）
-        original_label = ctk.CTkLabel(
-            input_section,
-            text="🎯 元画像（オプション）",
-            font=("Arial", 16, "bold"),
-            text_color="#ffa500"
-        )
-        original_label.pack(anchor="w", pady=(0, 10))
+        # 元画像（必須）
+        original_accordion = AccordionSection(input_section, "🎯 元画像（必須・GT画像）", bg_color="#1b3d1b", title_color="#00ff88", font_size=18)
+        # デフォルトで開く（閉じない）
+        original_frame = original_accordion.get_content_frame()
 
         original_sublabel = ctk.CTkLabel(
-            input_section,
-            text="※ AI処理前の元画像（超解像、ノイズ除去、色調補正など）",
-            font=("Arial", 10),
-            text_color="#888888"
-        )
-        original_sublabel.pack(anchor="w", pady=(0, 5))
-
-        original_entry = ctk.CTkEntry(
-            input_section,
-            textvariable=self.original_path,
-            placeholder_text="元画像を選択（省略可）...",
-            height=40,
-            corner_radius=10,
-            font=("Arial", 11)
-        )
-        original_entry.pack(fill=tk.X, pady=(0, 10))
-
-        original_btn_frame = ctk.CTkFrame(input_section, fg_color="transparent")
-        original_btn_frame.pack(fill=tk.X, pady=(0, 20))
-
-        original_btn = ctk.CTkButton(
-            original_btn_frame,
-            text="参照",
-            command=self.browse_original,
-            height=40,
-            width=200,
-            corner_radius=10,
-            font=("Arial", 12, "bold"),
-            fg_color="#ffa500",
-            text_color="#000000",
-            hover_color="#cc8400"
-        )
-        original_btn.pack(side=tk.LEFT, padx=(0, 10))
-
-        clear_original_btn = ctk.CTkButton(
-            original_btn_frame,
-            text="クリア",
-            command=lambda: self.original_path.set(""),
-            height=40,
-            width=100,
-            corner_radius=10,
+            original_frame,
+            text="※ AI処理前の高解像度オリジナル画像（超解像前、ノイズ除去前など）\n"
+                 "※ 各AI処理結果（画像1〜5）をこの元画像と比較して精度を評価します",
             font=("Arial", 12),
-            fg_color="#555555",
-            text_color="#ffffff",
-            hover_color="#777777"
-        )
-        clear_original_btn.pack(side=tk.LEFT)
-
-        # 学術評価モード専用機能
-        academic_section = ctk.CTkFrame(input_section, fg_color="#2d1b3d", corner_radius=10)
-        academic_section.pack(fill=tk.X, pady=(0, 20))
-
-        academic_title = ctk.CTkLabel(
-            academic_section,
-            text="📚 学術評価モード専用機能",
-            font=("Arial", 14, "bold"),
-            text_color="#9b59b6"
-        )
-        academic_title.pack(anchor="w", padx=15, pady=(15, 5))
-
-        academic_desc = ctk.CTkLabel(
-            academic_section,
-            text="高解像度GT画像から低解像度画像を生成（Bicubic縮小 ×0.5）",
-            font=("Arial", 10),
-            text_color="#888888"
-        )
-        academic_desc.pack(anchor="w", padx=15, pady=(0, 10))
-
-        academic_btn = ctk.CTkButton(
-            academic_section,
-            text="🔬 低解像度画像を生成（元画像 → 0.5倍 Bicubic）",
-            command=self.generate_lowres_academic,
-            height=40,
-            corner_radius=10,
-            font=("Arial", 12, "bold"),
-            fg_color="#9b59b6",
-            text_color="#ffffff",
-            hover_color="#7d3c98"
-        )
-        academic_btn.pack(fill=tk.X, padx=15, pady=(0, 10))
-
-        academic_note = ctk.CTkLabel(
-            academic_section,
-            text="※ 元画像が1000pxの場合、500pxのLR画像を生成します\n"
-                 "※ 生成後、外部でAI超解像を実行し、結果を画像1・2に指定してください",
-            font=("Arial", 9),
             text_color="#888888",
             justify="left"
         )
-        academic_note.pack(anchor="w", padx=15, pady=(0, 15))
+        original_sublabel.pack(anchor="w", padx=15, pady=(15, 10))
 
-        # 出力フォルダ
-        output_label = ctk.CTkLabel(
-            input_section,
-            text="💾 出力フォルダ",
-            font=("Arial", 16, "bold"),
-            text_color="#4A90E2"
-        )
-        output_label.pack(anchor="w", pady=(0, 10))
-
-        output_entry = ctk.CTkEntry(
-            input_section,
-            textvariable=self.output_dir,
-            height=40,
+        original_entry = ctk.CTkEntry(
+            original_frame,
+            textvariable=self.original_path,
+            placeholder_text="元画像を選択してください（必須）...",
+            height=45,
             corner_radius=10,
-            font=("Arial", 11)
+            font=("Arial", 13)
         )
-        output_entry.pack(fill=tk.X, pady=(0, 10))
+        original_entry.pack(fill=tk.X, padx=15, pady=(0, 10))
 
-        output_btn = ctk.CTkButton(
-            input_section,
+        original_btn = ctk.CTkButton(
+            original_frame,
             text="参照",
-            command=self.browse_output,
-            height=40,
+            command=self.browse_original,
+            height=45,
+            width=200,
             corner_radius=10,
-            font=("Arial", 12, "bold"),
+            font=("Arial", 14, "bold"),
+            fg_color="#00ff88",
+            text_color="#000000",
+            hover_color="#00cc66"
+        )
+        original_btn.pack(padx=15, pady=(0, 15), anchor="w")
+
+        # 画像1（必須）
+        img1_accordion = AccordionSection(input_section, "📸 画像 1（AI処理結果）", font_size=18)
+        img1_frame = img1_accordion.get_content_frame()
+
+        img1_entry = ctk.CTkEntry(
+            img1_frame,
+            textvariable=self.img1_path,
+            placeholder_text="画像ファイルを選択...",
+            height=45,
+            corner_radius=10,
+            font=("Arial", 13)
+        )
+        img1_entry.pack(fill=tk.X, padx=15, pady=(15, 10))
+
+        img1_btn = ctk.CTkButton(
+            img1_frame,
+            text="参照",
+            command=self.browse_image1,
+            height=45,
+            corner_radius=10,
+            font=("Arial", 14, "bold"),
             fg_color="#4A90E2",
             text_color="#FFFFFF",
             hover_color="#357ABD"
         )
-        output_btn.pack(fill=tk.X, pady=(0, 30))
+        img1_btn.pack(fill=tk.X, padx=15, pady=(0, 15))
+
+        # 画像2（オプション）
+        img2_accordion = AccordionSection(input_section, "📸 画像 2（AI処理結果・オプション）", bg_color="#1e2740", title_color="#4A90E2", font_size=18)
+        img2_frame = img2_accordion.get_content_frame()
+
+        img2_entry = ctk.CTkEntry(
+            img2_frame,
+            textvariable=self.img2_path,
+            placeholder_text="画像ファイルを選択...",
+            height=45,
+            corner_radius=10,
+            font=("Arial", 13)
+        )
+        img2_entry.pack(fill=tk.X, padx=15, pady=(15, 10))
+
+        img2_btn = ctk.CTkButton(
+            img2_frame,
+            text="参照",
+            command=self.browse_image2,
+            height=45,
+            corner_radius=10,
+            font=("Arial", 14, "bold"),
+            fg_color="#4A90E2",
+            text_color="#FFFFFF",
+            hover_color="#357ABD"
+        )
+        img2_btn.pack(fill=tk.X, padx=15, pady=(0, 15))
+
+        # 画像3（オプション）
+        img3_accordion = AccordionSection(input_section, "📸 画像 3（AI処理結果・オプション）", bg_color="#1e2740", title_color="#4A90E2", font_size=18)
+        img3_accordion.toggle()  # デフォルトで閉じる
+        img3_frame = img3_accordion.get_content_frame()
+
+        img3_entry = ctk.CTkEntry(
+            img3_frame,
+            textvariable=self.img3_path,
+            placeholder_text="画像ファイルを選択...",
+            height=45,
+            corner_radius=10,
+            font=("Arial", 13)
+        )
+        img3_entry.pack(fill=tk.X, padx=15, pady=(15, 10))
+
+        img3_btn = ctk.CTkButton(
+            img3_frame,
+            text="参照",
+            command=self.browse_image3,
+            height=45,
+            corner_radius=10,
+            font=("Arial", 14, "bold"),
+            fg_color="#4A90E2",
+            text_color="#FFFFFF",
+            hover_color="#357ABD"
+        )
+        img3_btn.pack(fill=tk.X, padx=15, pady=(0, 15))
+
+        # 画像4（オプション）
+        img4_accordion = AccordionSection(input_section, "📸 画像 4（AI処理結果・オプション）", bg_color="#1e2740", title_color="#4A90E2", font_size=18)
+        img4_accordion.toggle()  # デフォルトで閉じる
+        img4_frame = img4_accordion.get_content_frame()
+
+        img4_entry = ctk.CTkEntry(
+            img4_frame,
+            textvariable=self.img4_path,
+            placeholder_text="画像ファイルを選択...",
+            height=45,
+            corner_radius=10,
+            font=("Arial", 13)
+        )
+        img4_entry.pack(fill=tk.X, padx=15, pady=(15, 10))
+
+        img4_btn = ctk.CTkButton(
+            img4_frame,
+            text="参照",
+            command=self.browse_image4,
+            height=45,
+            corner_radius=10,
+            font=("Arial", 14, "bold"),
+            fg_color="#4A90E2",
+            text_color="#FFFFFF",
+            hover_color="#357ABD"
+        )
+        img4_btn.pack(fill=tk.X, padx=15, pady=(0, 15))
+
+        # 画像5（オプション）
+        img5_accordion = AccordionSection(input_section, "📸 画像 5（AI処理結果・オプション）", bg_color="#1e2740", title_color="#4A90E2", font_size=18)
+        img5_accordion.toggle()  # デフォルトで閉じる
+        img5_frame = img5_accordion.get_content_frame()
+
+        img5_entry = ctk.CTkEntry(
+            img5_frame,
+            textvariable=self.img5_path,
+            placeholder_text="画像ファイルを選択...",
+            height=45,
+            corner_radius=10,
+            font=("Arial", 13)
+        )
+        img5_entry.pack(fill=tk.X, padx=15, pady=(15, 10))
+
+        img5_btn = ctk.CTkButton(
+            img5_frame,
+            text="参照",
+            command=self.browse_image5,
+            height=45,
+            corner_radius=10,
+            font=("Arial", 14, "bold"),
+            fg_color="#4A90E2",
+            text_color="#FFFFFF",
+            hover_color="#357ABD"
+        )
+        img5_btn.pack(fill=tk.X, padx=15, pady=(0, 15))
+
+        # 出力フォルダ（アコーディオン）
+        output_accordion = AccordionSection(input_section, "💾 出力フォルダ", font_size=18)
+        output_frame = output_accordion.get_content_frame()
+
+        output_entry = ctk.CTkEntry(
+            output_frame,
+            textvariable=self.output_dir,
+            height=45,
+            corner_radius=10,
+            font=("Arial", 13)
+        )
+        output_entry.pack(fill=tk.X, padx=15, pady=(15, 10))
+
+        output_btn = ctk.CTkButton(
+            output_frame,
+            text="参照",
+            command=self.browse_output,
+            height=45,
+            corner_radius=10,
+            font=("Arial", 14, "bold"),
+            fg_color="#4A90E2",
+            text_color="#FFFFFF",
+            hover_color="#357ABD"
+        )
+        output_btn.pack(fill=tk.X, padx=15, pady=(0, 15))
 
         # 分析開始ボタン（大きく目立つ）
         self.analyze_btn = ctk.CTkButton(
             input_section,
             text="🚀 分析開始",
             command=self.start_analysis,
-            height=60,
+            height=70,
             corner_radius=15,
-            font=("Arial", 18, "bold"),
+            font=("Arial", 20, "bold"),
             fg_color="#00ff88",
             text_color="#000000",
             hover_color="#00dd77"
@@ -821,7 +883,7 @@ class ModernImageAnalyzerGUI:
         info_title = ctk.CTkLabel(
             info_frame,
             text="📚 バッチ処理について",
-            font=("Arial", 16, "bold"),
+            font=("Arial", 18, "bold"),
             text_color="#4A90E2"
         )
         info_title.pack(anchor="w", padx=15, pady=(15, 5))
@@ -830,37 +892,25 @@ class ModernImageAnalyzerGUI:
             info_frame,
             text="大量の画像ペア（300枚以上）を自動で分析し、統計的に妥当な閾値を決定します。\n"
                  "医療画像研究・AIモデル比較に最適です。",
-            font=("Arial", 11),
+            font=("Arial", 13),
             text_color="#cccccc",
             justify="left"
         )
         info_text.pack(anchor="w", padx=15, pady=(0, 15))
 
-        # 設定セクション
-        config_frame = ctk.CTkFrame(self.batch_mode_frame, fg_color="#1e2740", corner_radius=10)
-        config_frame.pack(fill=tk.X, pady=(0, 15))
-
-        config_title = ctk.CTkLabel(
-            config_frame,
-            text="⚙️ バッチ処理設定",
-            font=("Arial", 14, "bold"),
-            text_color="#4A90E2"
-        )
-        config_title.pack(anchor="w", padx=15, pady=(15, 10))
-
-        # 評価モード選択（バッチ処理専用）
-        mode_label = ctk.CTkLabel(
-            config_frame,
-            text="📊 評価モード",
-            font=("Arial", 12, "bold"),
-            text_color="#ffffff"
-        )
-        mode_label.pack(anchor="w", padx=15, pady=(10, 5))
-
+        # === アコーディオン: 評価モード選択 ===
         self.batch_evaluation_mode = tk.StringVar(value="image")
 
+        eval_accordion = AccordionSection(
+            self.batch_mode_frame,
+            "📊 評価モード選択",
+            bg_color="#1e2740",
+            title_color="#4A90E2",
+            font_size=18
+        )
+
         # 評価モード選択フレーム
-        mode_select_frame = ctk.CTkFrame(config_frame, fg_color="transparent")
+        mode_select_frame = ctk.CTkFrame(eval_accordion.content_frame, fg_color="transparent")
         mode_select_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
 
         # 画像モード
@@ -869,7 +919,7 @@ class ModernImageAnalyzerGUI:
             text="画像（レントゲン、内視鏡、写真など）",
             variable=self.batch_evaluation_mode,
             value="image",
-            font=("Arial", 12),
+            font=("Arial", 14),
             text_color="#ffffff",
             fg_color="#4A90E2",
             hover_color="#357ABD"
@@ -879,7 +929,7 @@ class ModernImageAnalyzerGUI:
         batch_mode_image_desc = ctk.CTkLabel(
             mode_select_frame,
             text="  └─ CLIP基準: 0.70、全指標使用、診断テキスト自動検出",
-            font=("Arial", 10),
+            font=("Arial", 12),
             text_color="#888888"
         )
         batch_mode_image_desc.pack(anchor="w", padx=30, pady=(0, 10))
@@ -890,7 +940,7 @@ class ModernImageAnalyzerGUI:
             text="文書（医療カルテ、契約書、レシートなど）",
             variable=self.batch_evaluation_mode,
             value="document",
-            font=("Arial", 12),
+            font=("Arial", 14),
             text_color="#ffffff",
             fg_color="#4A90E2",
             hover_color="#357ABD"
@@ -900,7 +950,7 @@ class ModernImageAnalyzerGUI:
         batch_mode_document_desc = ctk.CTkLabel(
             mode_select_frame,
             text="  └─ CLIP基準: 0.90（厳格）、テキストMAE重視",
-            font=("Arial", 10),
+            font=("Arial", 12),
             text_color="#888888"
         )
         batch_mode_document_desc.pack(anchor="w", padx=30, pady=(0, 10))
@@ -911,7 +961,7 @@ class ModernImageAnalyzerGUI:
             text="開発者モード（バグテスト・デバッグ用）",
             variable=self.batch_evaluation_mode,
             value="developer",
-            font=("Arial", 12),
+            font=("Arial", 14),
             text_color="#ffffff",
             fg_color="#ffa500",
             hover_color="#cc8400"
@@ -921,30 +971,39 @@ class ModernImageAnalyzerGUI:
         batch_mode_developer_desc = ctk.CTkLabel(
             mode_select_frame,
             text="  └─ 評価不能判定なし、すべての警告を表示",
-            font=("Arial", 10),
+            font=("Arial", 12),
             text_color="#888888"
         )
         batch_mode_developer_desc.pack(anchor="w", padx=30, pady=(0, 10))
 
+        # === アコーディオン: フォルダ設定 ===
+        folder_accordion = AccordionSection(
+            self.batch_mode_frame,
+            "📁 フォルダ設定（元画像・超解像モデル）",
+            bg_color="#1e2740",
+            title_color="#4A90E2",
+            font_size=18
+        )
+
         # 元画像フォルダ
         self.batch_original_dir = tk.StringVar()
         original_label = ctk.CTkLabel(
-            config_frame,
-            text="📁 元画像フォルダ（処理前）",
-            font=("Arial", 12, "bold"),
-            text_color="#ffffff"
+            folder_accordion.content_frame,
+            text="📁 元画像フォルダ（必須・処理前）",
+            font=("Arial", 14, "bold"),
+            text_color="#00ff88"
         )
         original_label.pack(anchor="w", padx=15, pady=(10, 5))
 
-        original_frame = ctk.CTkFrame(config_frame, fg_color="transparent")
+        original_frame = ctk.CTkFrame(folder_accordion.content_frame, fg_color="transparent")
         original_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
 
         original_entry = ctk.CTkEntry(
             original_frame,
             textvariable=self.batch_original_dir,
             placeholder_text="dataset/original/",
-            height=35,
-            font=("Arial", 11)
+            height=45,
+            font=("Arial", 13)
         )
         original_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
 
@@ -953,7 +1012,8 @@ class ModernImageAnalyzerGUI:
             text="参照",
             command=self.browse_batch_original,
             width=80,
-            height=35,
+            height=45,
+            font=("Arial", 14),
             fg_color="#4A90E2",
             text_color="#FFFFFF",
             hover_color="#357ABD"
@@ -962,9 +1022,9 @@ class ModernImageAnalyzerGUI:
 
         # 超解像モデルフォルダ（複数）
         upscaled_label = ctk.CTkLabel(
-            config_frame,
-            text="🤖 超解像モデルフォルダ（最大5個まで）",
-            font=("Arial", 12, "bold"),
+            folder_accordion.content_frame,
+            text="🤖 超解像モデルフォルダ（必須・最低1つ、最大5個）",
+            font=("Arial", 14, "bold"),
             text_color="#ffffff"
         )
         upscaled_label.pack(anchor="w", padx=15, pady=(10, 5))
@@ -974,7 +1034,7 @@ class ModernImageAnalyzerGUI:
         self.batch_model_name_vars = []
 
         for i in range(5):
-            model_frame = ctk.CTkFrame(config_frame, fg_color="transparent")
+            model_frame = ctk.CTkFrame(folder_accordion.content_frame, fg_color="transparent")
             model_frame.pack(fill=tk.X, padx=15, pady=5)
 
             model_name_var = tk.StringVar(value=f"model{i+1}")
@@ -988,9 +1048,9 @@ class ModernImageAnalyzerGUI:
                 model_frame,
                 textvariable=model_name_var,
                 placeholder_text=f"モデル{i+1}名",
-                width=120,
-                height=30,
-                font=("Arial", 10)
+                width=140,
+                height=40,
+                font=("Arial", 12)
             )
             name_entry.pack(side=tk.LEFT, padx=(0, 5))
 
@@ -999,8 +1059,8 @@ class ModernImageAnalyzerGUI:
                 model_frame,
                 textvariable=model_path_var,
                 placeholder_text=f"dataset/upscayl_model{i+1}/",
-                height=30,
-                font=("Arial", 10)
+                height=40,
+                font=("Arial", 12)
             )
             path_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
 
@@ -1009,38 +1069,39 @@ class ModernImageAnalyzerGUI:
                 model_frame,
                 text="📁",
                 command=lambda idx=i: self.browse_batch_model(idx),
-                width=40,
-                height=30,
+                width=50,
+                height=40,
+                font=("Arial", 13),
                 fg_color="#555555",
                 hover_color="#777777"
             )
             browse_btn.pack(side=tk.RIGHT)
 
-        # 出力先設定
-        output_label = ctk.CTkLabel(
-            config_frame,
-            text="💾 出力設定",
-            font=("Arial", 12, "bold"),
-            text_color="#ffffff"
+        # === アコーディオン: 出力設定 ===
+        output_accordion = AccordionSection(
+            self.batch_mode_frame,
+            "💾 出力設定",
+            bg_color="#1e2740",
+            title_color="#4A90E2",
+            font_size=18
         )
-        output_label.pack(anchor="w", padx=15, pady=(15, 5))
 
         self.batch_output_csv = tk.StringVar(value="results/batch_analysis.csv")
         self.batch_output_detail = tk.StringVar(value="results/detailed/")
         self.batch_limit = tk.IntVar(value=0)  # 0 = 全て
         self.batch_append_mode = tk.BooleanVar(value=True)  # True = 追加（デフォルト）, False = 上書き
 
-        csv_frame = ctk.CTkFrame(config_frame, fg_color="transparent")
+        csv_frame = ctk.CTkFrame(output_accordion.content_frame, fg_color="transparent")
         csv_frame.pack(fill=tk.X, padx=15, pady=5)
 
-        csv_label = ctk.CTkLabel(csv_frame, text="CSV:", width=80, anchor="w", font=("Arial", 10))
+        csv_label = ctk.CTkLabel(csv_frame, text="CSV:", width=80, anchor="w", font=("Arial", 12))
         csv_label.pack(side=tk.LEFT)
 
         csv_entry = ctk.CTkEntry(
             csv_frame,
             textvariable=self.batch_output_csv,
-            height=30,
-            font=("Arial", 10)
+            height=40,
+            font=("Arial", 12)
         )
         csv_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
 
@@ -1048,25 +1109,26 @@ class ModernImageAnalyzerGUI:
             csv_frame,
             text="📁",
             command=self.browse_batch_csv_output,
-            width=40,
-            height=30,
+            width=50,
+            height=40,
+            font=("Arial", 13),
             fg_color="#4A90E2",
             text_color="#FFFFFF",
             hover_color="#357ABD"
         )
         csv_browse_btn.pack(side=tk.RIGHT)
 
-        detail_frame = ctk.CTkFrame(config_frame, fg_color="transparent")
+        detail_frame = ctk.CTkFrame(output_accordion.content_frame, fg_color="transparent")
         detail_frame.pack(fill=tk.X, padx=15, pady=(5, 15))
 
-        detail_label = ctk.CTkLabel(detail_frame, text="詳細:", width=80, anchor="w", font=("Arial", 10))
+        detail_label = ctk.CTkLabel(detail_frame, text="詳細:", width=80, anchor="w", font=("Arial", 12))
         detail_label.pack(side=tk.LEFT)
 
         detail_entry = ctk.CTkEntry(
             detail_frame,
             textvariable=self.batch_output_detail,
-            height=30,
-            font=("Arial", 10)
+            height=40,
+            font=("Arial", 12)
         )
         detail_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
 
@@ -1074,8 +1136,9 @@ class ModernImageAnalyzerGUI:
             detail_frame,
             text="📁",
             command=self.browse_batch_detail_output,
-            width=40,
-            height=30,
+            width=50,
+            height=40,
+            font=("Arial", 13),
             fg_color="#4A90E2",
             text_color="#FFFFFF",
             hover_color="#357ABD"
@@ -1083,47 +1146,47 @@ class ModernImageAnalyzerGUI:
         detail_browse_btn.pack(side=tk.RIGHT)
 
         # 追加モード選択チェックボックス
-        append_mode_frame = ctk.CTkFrame(config_frame, fg_color="transparent")
+        append_mode_frame = ctk.CTkFrame(output_accordion.content_frame, fg_color="transparent")
         append_mode_frame.pack(fill=tk.X, padx=15, pady=(5, 15))
 
         append_checkbox = ctk.CTkCheckBox(
             append_mode_frame,
             text="既存CSVにデータを追加（チェックなし = 上書きモード）",
             variable=self.batch_append_mode,
-            font=("Arial", 11),
+            font=("Arial", 13),
             text_color="#4A90E2",
             fg_color="#4A90E2",
             hover_color="#357ABD"
         )
         append_checkbox.pack(anchor="w")
 
-        # 分割実行設定
-        limit_label = ctk.CTkLabel(
-            config_frame,
-            text="🔢 分割実行（テスト用）",
-            font=("Arial", 12, "bold"),
-            text_color="#ffffff"
+        # === アコーディオン: 詳細設定 ===
+        detail_accordion = AccordionSection(
+            self.batch_mode_frame,
+            "🔢 詳細設定（処理枚数制限）",
+            bg_color="#1e2740",
+            title_color="#4A90E2",
+            font_size=18
         )
-        limit_label.pack(anchor="w", padx=15, pady=(15, 5))
 
         limit_info = ctk.CTkLabel(
-            config_frame,
+            detail_accordion.content_frame,
             text="※ 0 = 全画像処理、10 = 最初の10枚のみ処理（テスト用）",
-            font=("Arial", 9),
+            font=("Arial", 11),
             text_color="#888888",
             justify="left"
         )
-        limit_info.pack(anchor="w", padx=15, pady=(0, 5))
+        limit_info.pack(anchor="w", padx=15, pady=(10, 5))
 
         # 処理枚数制限フレーム（縦に2段構成）
-        limit_container = ctk.CTkFrame(config_frame, fg_color="transparent")
+        limit_container = ctk.CTkFrame(detail_accordion.content_frame, fg_color="transparent")
         limit_container.pack(fill=tk.X, padx=15, pady=(0, 15))
 
         # タイトル
         limit_title = ctk.CTkLabel(
             limit_container,
             text="処理枚数制限:",
-            font=("Arial", 11, "bold"),
+            font=("Arial", 13, "bold"),
             text_color="#4A90E2",
             anchor="w"
         )
@@ -1151,9 +1214,9 @@ class ModernImageAnalyzerGUI:
         self.limit_value_label = ctk.CTkLabel(
             slider_frame,
             text="全て",
-            font=("Arial", 13, "bold"),
+            font=("Arial", 15, "bold"),
             text_color="#00ff88",
-            width=80
+            width=90
         )
         self.limit_value_label.pack(side=tk.LEFT)
 
@@ -1164,7 +1227,7 @@ class ModernImageAnalyzerGUI:
         entry_label = ctk.CTkLabel(
             entry_frame,
             text="直接入力（大量処理用）:",
-            font=("Arial", 10),
+            font=("Arial", 12),
             text_color="#888888",
             anchor="w"
         )
@@ -1172,9 +1235,9 @@ class ModernImageAnalyzerGUI:
 
         self.limit_entry = ctk.CTkEntry(
             entry_frame,
-            width=120,
-            height=35,
-            font=("Arial", 13),
+            width=140,
+            height=40,
+            font=("Arial", 14),
             placeholder_text="0 = 全て処理",
             fg_color="#1e2740",
             border_color="#00ffff",
@@ -1195,48 +1258,45 @@ class ModernImageAnalyzerGUI:
             self.batch_mode_frame,
             text="🚀 バッチ処理開始",
             command=self.start_batch_analysis,
-            height=50,
+            height=60,
             corner_radius=10,
-            font=("Arial", 16, "bold"),
+            font=("Arial", 18, "bold"),
             fg_color="#00ff88",
             text_color="#000000",
             hover_color="#00dd77"
         )
         self.batch_analyze_btn.pack(fill=tk.X, pady=(0, 15))
 
-        # 統計分析セクション
-        stats_frame = ctk.CTkFrame(self.batch_mode_frame, fg_color="#1e2740", corner_radius=10)
-        stats_frame.pack(fill=tk.X, pady=(0, 15))
-
-        stats_title = ctk.CTkLabel(
-            stats_frame,
-            text="📊 統計分析・プロット生成",
-            font=("Arial", 14, "bold"),
-            text_color="#4A90E2"
+        # === アコーディオン: 統計分析 ===
+        stats_accordion = AccordionSection(
+            self.batch_mode_frame,
+            "📊 統計分析・プロット生成",
+            bg_color="#1e2740",
+            title_color="#4A90E2",
+            font_size=18
         )
-        stats_title.pack(anchor="w", padx=15, pady=(15, 10))
 
         stats_info = ctk.CTkLabel(
-            stats_frame,
+            stats_accordion.content_frame,
             text="バッチ処理完了後、CSVファイルを統計分析して25種類の研究用プロットを生成します。",
-            font=("Arial", 11),
+            font=("Arial", 13),
             text_color="#cccccc",
             justify="left"
         )
-        stats_info.pack(anchor="w", padx=15, pady=(0, 10))
+        stats_info.pack(anchor="w", padx=15, pady=(10, 10))
 
         # CSV選択
         self.stats_csv_path = tk.StringVar()
 
-        csv_select_frame = ctk.CTkFrame(stats_frame, fg_color="transparent")
+        csv_select_frame = ctk.CTkFrame(stats_accordion.content_frame, fg_color="transparent")
         csv_select_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
 
         csv_select_entry = ctk.CTkEntry(
             csv_select_frame,
             textvariable=self.stats_csv_path,
             placeholder_text="results/batch_analysis.csv を選択...",
-            height=35,
-            font=("Arial", 11)
+            height=45,
+            font=("Arial", 13)
         )
         csv_select_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
 
@@ -1244,8 +1304,9 @@ class ModernImageAnalyzerGUI:
             csv_select_frame,
             text="📁 CSV選択",
             command=self.browse_stats_csv,
-            width=100,
-            height=35,
+            width=120,
+            height=45,
+            font=("Arial", 14),
             fg_color="#4A90E2",
             text_color="#FFFFFF",
             hover_color="#357ABD"
@@ -1253,7 +1314,7 @@ class ModernImageAnalyzerGUI:
         csv_select_btn.pack(side=tk.RIGHT)
 
         # ボタン配置用フレーム
-        button_frame = ctk.CTkFrame(stats_frame, fg_color="transparent")
+        button_frame = ctk.CTkFrame(stats_accordion.content_frame, fg_color="transparent")
         button_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
 
         # 統計分析実行ボタン
@@ -1261,9 +1322,9 @@ class ModernImageAnalyzerGUI:
             button_frame,
             text="📈 統計分析＋プロット生成（25種類）",
             command=self.start_stats_analysis,
-            height=50,
+            height=55,
             corner_radius=10,
-            font=("Arial", 14, "bold"),
+            font=("Arial", 15, "bold"),
             fg_color="#ffa500",
             text_color="#000000",
             hover_color="#cc8400"
@@ -1275,9 +1336,9 @@ class ModernImageAnalyzerGUI:
             button_frame,
             text="⚠️ ハルシネーション疑いデータ抽出",
             command=self.extract_hallucination_suspects,
-            height=40,
+            height=45,
             corner_radius=10,
-            font=("Arial", 12, "bold"),
+            font=("Arial", 13, "bold"),
             fg_color="#ff4444",
             text_color="#ffffff",
             hover_color="#cc3333"
@@ -1289,9 +1350,9 @@ class ModernImageAnalyzerGUI:
             button_frame,
             text="✨ 正常データ抽出（AI学習用）",
             command=self.extract_clean_dataset,
-            height=40,
+            height=45,
             corner_radius=10,
-            font=("Arial", 12, "bold"),
+            font=("Arial", 13, "bold"),
             fg_color="#44ff44",
             text_color="#000000",
             hover_color="#33cc33"
@@ -1301,7 +1362,7 @@ class ModernImageAnalyzerGUI:
         # 結果表示エリア
         self.batch_result_text = ctk.CTkTextbox(
             self.batch_mode_frame,
-            font=("Meiryo", 11),
+            font=("Meiryo", 12),
             fg_color="#0a0e27",
             text_color="#00ff88",
             corner_radius=10,
@@ -1321,7 +1382,7 @@ class ModernImageAnalyzerGUI:
         info_title = ctk.CTkLabel(
             info_frame,
             text="📚 論文用ベンチマーク評価について",
-            font=("Arial", 16, "bold"),
+            font=("Arial", 18, "bold"),
             text_color="#9b59b6"
         )
         info_title.pack(anchor="w", padx=15, pady=(15, 5))
@@ -1330,69 +1391,66 @@ class ModernImageAnalyzerGUI:
             info_frame,
             text="既存研究との公平な比較のため、標準的なBicubic縮小で基準画像を作成します。\n"
                  "大規模データセット（15,000枚推奨）で超解像モデルを定量評価し、論文投稿用データを生成します。",
-            font=("Arial", 11),
+            font=("Arial", 13),
             text_color="#cccccc",
             justify="left"
         )
         info_text.pack(anchor="w", padx=15, pady=(0, 15))
 
-        # ワークフロー表示
-        workflow_frame = ctk.CTkFrame(self.academic_mode_frame, fg_color="#1e2740", corner_radius=10)
-        workflow_frame.pack(fill=tk.X, pady=(0, 20))
-
-        workflow_title = ctk.CTkLabel(
-            workflow_frame,
-            text="📋 処理フロー（全5ステップ）",
-            font=("Arial", 14, "bold"),
-            text_color="#4A90E2"
+        # === アコーディオン: 処理フロー ===
+        workflow_accordion = AccordionSection(
+            self.academic_mode_frame,
+            "📋 処理フロー（全5ステップ）",
+            bg_color="#1e2740",
+            title_color="#4A90E2",
+            font_size=18
         )
-        workflow_title.pack(anchor="w", padx=15, pady=(15, 10))
 
         workflow_text = ctk.CTkLabel(
-            workflow_frame,
+            workflow_accordion.content_frame,
             text="Step 1: 高解像度画像を用意（15,000枚推奨）\n"
                  "Step 2: 元画像・超解像モデルフォルダを設定\n"
                  "Step 3: バッチ処理開始（数時間～1日）\n"
                  "Step 4: 統計分析・25種類プロット生成 ⭐必須\n"
                  "Step 5: detection_count（26パターン）確認 → 深層学習へ",
-            font=("Arial", 11),
+            font=("Arial", 13),
             text_color="#cccccc",
             justify="left"
         )
-        workflow_text.pack(anchor="w", padx=15, pady=(0, 15))
+        workflow_text.pack(anchor="w", padx=15, pady=(10, 15))
 
-        # === Step 0: バッチBicubic縮小（準備段階） ===
-        bicubic_frame = ctk.CTkFrame(self.academic_mode_frame, fg_color="#2d1b3d", corner_radius=10)
-        bicubic_frame.pack(fill=tk.X, pady=(0, 20))
-
-        bicubic_title = ctk.CTkLabel(
-            bicubic_frame,
-            text="🔬 Step 0: バッチBicubic縮小（準備段階・オプション）",
-            font=("Arial", 14, "bold"),
-            text_color="#9b59b6"
+        # === アコーディオン: Step 0（デフォルト閉） ===
+        bicubic_accordion = AccordionSection(
+            self.academic_mode_frame,
+            "🔬 Step 0: バッチBicubic縮小（準備段階・オプション）",
+            bg_color="#2d1b3d",
+            title_color="#9b59b6",
+            font_size=18
         )
-        bicubic_title.pack(anchor="w", padx=15, pady=(15, 5))
+        bicubic_accordion.is_open = False
+        bicubic_accordion.content_frame.pack_forget()
+        bicubic_accordion.header_btn.configure(text=f"▶ {bicubic_accordion.title}")
 
         bicubic_desc = ctk.CTkLabel(
-            bicubic_frame,
+            bicubic_accordion.content_frame,
             text="高解像度GT画像から低解像度LR画像を一括生成します（×2 SR評価用）。\n"
                  "既にLR画像がある場合はスキップ可能です。",
-            font=("Arial", 10),
+            font=("Arial", 12),
             text_color="#888888",
             justify="left"
         )
-        bicubic_desc.pack(anchor="w", padx=15, pady=(0, 10))
+        bicubic_desc.pack(anchor="w", padx=15, pady=(10, 10))
 
         # 入力フォルダ
         input_folder_label = ctk.CTkLabel(
-            bicubic_frame,
+            bicubic_accordion.content_frame,
             text="入力フォルダ（高解像度GT、例: 1000px × 15,000枚）:",
-            font=("Arial", 11),
+            font=("Arial", 13),
             text_color="#cccccc"
         )
         input_folder_label.pack(anchor="w", padx=15, pady=(5, 5))
 
-        input_folder_frame = ctk.CTkFrame(bicubic_frame, fg_color="transparent")
+        input_folder_frame = ctk.CTkFrame(bicubic_accordion.content_frame, fg_color="transparent")
         input_folder_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
 
         self.academic_input_dir = tk.StringVar()
@@ -1400,8 +1458,8 @@ class ModernImageAnalyzerGUI:
             input_folder_frame,
             textvariable=self.academic_input_dir,
             placeholder_text="GT画像フォルダを選択...",
-            height=35,
-            font=("Arial", 11)
+            height=45,
+            font=("Arial", 13)
         )
         input_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
 
@@ -1409,8 +1467,9 @@ class ModernImageAnalyzerGUI:
             input_folder_frame,
             text="参照",
             command=self.browse_academic_input,
-            width=80,
-            height=35,
+            width=90,
+            height=45,
+            font=("Arial", 14),
             fg_color="#9b59b6",
             hover_color="#7d3c98"
         )
@@ -1418,14 +1477,14 @@ class ModernImageAnalyzerGUI:
 
         # 出力フォルダ
         output_folder_label = ctk.CTkLabel(
-            bicubic_frame,
+            bicubic_accordion.content_frame,
             text="出力フォルダ（低解像度LR、例: 500px × 15,000枚）:",
-            font=("Arial", 11),
+            font=("Arial", 13),
             text_color="#cccccc"
         )
         output_folder_label.pack(anchor="w", padx=15, pady=(5, 5))
 
-        output_folder_frame = ctk.CTkFrame(bicubic_frame, fg_color="transparent")
+        output_folder_frame = ctk.CTkFrame(bicubic_accordion.content_frame, fg_color="transparent")
         output_folder_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
 
         self.academic_output_dir = tk.StringVar()
@@ -1433,8 +1492,8 @@ class ModernImageAnalyzerGUI:
             output_folder_frame,
             textvariable=self.academic_output_dir,
             placeholder_text="LR画像出力先フォルダを選択...",
-            height=35,
-            font=("Arial", 11)
+            height=45,
+            font=("Arial", 13)
         )
         output_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
 
@@ -1442,8 +1501,9 @@ class ModernImageAnalyzerGUI:
             output_folder_frame,
             text="参照",
             command=self.browse_academic_output,
-            width=80,
-            height=35,
+            width=90,
+            height=45,
+            font=("Arial", 14),
             fg_color="#9b59b6",
             hover_color="#7d3c98"
         )
@@ -1451,65 +1511,62 @@ class ModernImageAnalyzerGUI:
 
         # 縮小倍率
         scale_label = ctk.CTkLabel(
-            bicubic_frame,
+            bicubic_accordion.content_frame,
             text="縮小倍率:",
-            font=("Arial", 11),
+            font=("Arial", 13),
             text_color="#cccccc"
         )
         scale_label.pack(anchor="w", padx=15, pady=(5, 5))
 
-        scale_frame = ctk.CTkFrame(bicubic_frame, fg_color="transparent")
+        scale_frame = ctk.CTkFrame(bicubic_accordion.content_frame, fg_color="transparent")
         scale_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
 
         self.academic_scale = tk.StringVar(value="0.5")
         scale_entry = ctk.CTkEntry(
             scale_frame,
             textvariable=self.academic_scale,
-            width=100,
-            height=35,
-            font=("Arial", 11)
+            width=120,
+            height=40,
+            font=("Arial", 13)
         )
         scale_entry.pack(side=tk.LEFT, padx=(0, 10))
 
         scale_note = ctk.CTkLabel(
             scale_frame,
             text="（0.5 = ×2 SR用、0.25 = ×4 SR用）",
-            font=("Arial", 9),
+            font=("Arial", 11),
             text_color="#888888"
         )
         scale_note.pack(side=tk.LEFT)
 
         # 実行ボタン
         bicubic_btn = ctk.CTkButton(
-            bicubic_frame,
+            bicubic_accordion.content_frame,
             text="🔬 バッチBicubic縮小を実行",
             command=self.run_batch_bicubic_downscale,
-            height=45,
+            height=50,
             corner_radius=10,
-            font=("Arial", 13, "bold"),
+            font=("Arial", 15, "bold"),
             fg_color="#9b59b6",
             text_color="#ffffff",
             hover_color="#7d3c98"
         )
         bicubic_btn.pack(fill=tk.X, padx=15, pady=(5, 15))
 
-        # 設定セクション
-        config_frame = ctk.CTkFrame(self.academic_mode_frame, fg_color="#1e2740", corner_radius=10)
-        config_frame.pack(fill=tk.X, pady=(0, 15))
-
-        config_title = ctk.CTkLabel(
-            config_frame,
-            text="⚙️ 評価設定（学術評価モード固定）",
-            font=("Arial", 14, "bold"),
-            text_color="#9b59b6"
+        # === アコーディオン: 評価設定 ===
+        config_accordion = AccordionSection(
+            self.academic_mode_frame,
+            "⚙️ 評価設定（学術評価モード固定）",
+            bg_color="#1e2740",
+            title_color="#9b59b6",
+            font_size=18
         )
-        config_title.pack(anchor="w", padx=15, pady=(15, 10))
 
         # 評価モード固定表示
         mode_info = ctk.CTkLabel(
-            config_frame,
+            config_accordion.content_frame,
             text="📊 評価モード: 学術評価モード（Bicubic縮小・×2スケール標準評価）",
-            font=("Arial", 12, "bold"),
+            font=("Arial", 14, "bold"),
             text_color="#9b59b6"
         )
         mode_info.pack(anchor="w", padx=15, pady=(10, 15))
@@ -1517,22 +1574,22 @@ class ModernImageAnalyzerGUI:
         # 元画像フォルダ
         self.academic_original_dir = tk.StringVar()
         original_label = ctk.CTkLabel(
-            config_frame,
-            text="📁 元画像フォルダ（高解像度画像・15,000枚推奨）",
-            font=("Arial", 12, "bold"),
-            text_color="#ffffff"
+            config_accordion.content_frame,
+            text="📁 元画像フォルダ（必須・高解像度画像・15,000枚推奨）",
+            font=("Arial", 14, "bold"),
+            text_color="#00ff88"
         )
         original_label.pack(anchor="w", padx=15, pady=(10, 5))
 
-        original_frame = ctk.CTkFrame(config_frame, fg_color="transparent")
+        original_frame = ctk.CTkFrame(config_accordion.content_frame, fg_color="transparent")
         original_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
 
         original_entry = ctk.CTkEntry(
             original_frame,
             textvariable=self.academic_original_dir,
             placeholder_text="dataset/original/",
-            height=35,
-            font=("Arial", 11)
+            height=45,
+            font=("Arial", 13)
         )
         original_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
 
@@ -1540,8 +1597,9 @@ class ModernImageAnalyzerGUI:
             original_frame,
             text="参照",
             command=self.browse_academic_original,
-            width=80,
-            height=35,
+            width=90,
+            height=45,
+            font=("Arial", 14),
             fg_color="#9b59b6",
             text_color="#FFFFFF",
             hover_color="#7d3c98"
@@ -1550,9 +1608,9 @@ class ModernImageAnalyzerGUI:
 
         # 超解像モデルフォルダ（最大5つ）
         models_label = ctk.CTkLabel(
-            config_frame,
-            text="🤖 超解像モデルフォルダ（複数モデル比較可能）",
-            font=("Arial", 12, "bold"),
+            config_accordion.content_frame,
+            text="🤖 超解像モデルフォルダ（必須・最低1つ、最大5個）",
+            font=("Arial", 14, "bold"),
             text_color="#ffffff"
         )
         models_label.pack(anchor="w", padx=15, pady=(10, 5))
@@ -1561,7 +1619,7 @@ class ModernImageAnalyzerGUI:
         self.academic_model_name_vars = []
 
         for i in range(5):
-            model_frame = ctk.CTkFrame(config_frame, fg_color="transparent")
+            model_frame = ctk.CTkFrame(config_accordion.content_frame, fg_color="transparent")
             model_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
 
             name_var = tk.StringVar()
@@ -1571,9 +1629,9 @@ class ModernImageAnalyzerGUI:
                 model_frame,
                 textvariable=name_var,
                 placeholder_text=f"モデル{i+1}名",
-                width=120,
-                height=35,
-                font=("Arial", 11)
+                width=140,
+                height=40,
+                font=("Arial", 12)
             )
             name_entry.pack(side=tk.LEFT, padx=(0, 10))
 
@@ -1584,8 +1642,8 @@ class ModernImageAnalyzerGUI:
                 model_frame,
                 textvariable=path_var,
                 placeholder_text=f"dataset/model{i+1}/",
-                height=35,
-                font=("Arial", 11)
+                height=40,
+                font=("Arial", 12)
             )
             path_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
 
@@ -1593,8 +1651,9 @@ class ModernImageAnalyzerGUI:
                 model_frame,
                 text="参照",
                 command=lambda idx=i: self.browse_academic_model(idx),
-                width=80,
-                height=35,
+                width=90,
+                height=40,
+                font=("Arial", 13),
                 fg_color="#9b59b6",
                 text_color="#FFFFFF",
                 hover_color="#7d3c98"
@@ -1603,26 +1662,26 @@ class ModernImageAnalyzerGUI:
 
         # 出力設定
         output_label = ctk.CTkLabel(
-            config_frame,
+            config_accordion.content_frame,
             text="💾 出力設定",
-            font=("Arial", 12, "bold"),
+            font=("Arial", 14, "bold"),
             text_color="#ffffff"
         )
         output_label.pack(anchor="w", padx=15, pady=(15, 5))
 
         # CSV出力パス
-        csv_frame = ctk.CTkFrame(config_frame, fg_color="transparent")
+        csv_frame = ctk.CTkFrame(config_accordion.content_frame, fg_color="transparent")
         csv_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
 
-        csv_label = ctk.CTkLabel(csv_frame, text="CSV:", width=80, anchor="w", font=("Arial", 11))
+        csv_label = ctk.CTkLabel(csv_frame, text="CSV:", width=80, anchor="w", font=("Arial", 13))
         csv_label.pack(side=tk.LEFT, padx=(0, 10))
 
         self.academic_output_csv = tk.StringVar(value="batch_results_academic.csv")
         csv_entry = ctk.CTkEntry(
             csv_frame,
             textvariable=self.academic_output_csv,
-            height=35,
-            font=("Arial", 11)
+            height=40,
+            font=("Arial", 12)
         )
         csv_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
 
@@ -1630,8 +1689,9 @@ class ModernImageAnalyzerGUI:
             csv_frame,
             text="参照",
             command=self.browse_academic_csv_output,
-            width=80,
-            height=35,
+            width=90,
+            height=40,
+            font=("Arial", 13),
             fg_color="#9b59b6",
             text_color="#FFFFFF",
             hover_color="#7d3c98"
@@ -1639,18 +1699,18 @@ class ModernImageAnalyzerGUI:
         csv_btn.pack(side=tk.RIGHT)
 
         # 詳細出力フォルダ
-        detail_frame = ctk.CTkFrame(config_frame, fg_color="transparent")
+        detail_frame = ctk.CTkFrame(config_accordion.content_frame, fg_color="transparent")
         detail_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
 
-        detail_label = ctk.CTkLabel(detail_frame, text="詳細:", width=80, anchor="w", font=("Arial", 11))
+        detail_label = ctk.CTkLabel(detail_frame, text="詳細:", width=80, anchor="w", font=("Arial", 13))
         detail_label.pack(side=tk.LEFT, padx=(0, 10))
 
         self.academic_output_detail = tk.StringVar(value="batch_results_detail_academic")
         detail_entry = ctk.CTkEntry(
             detail_frame,
             textvariable=self.academic_output_detail,
-            height=35,
-            font=("Arial", 11)
+            height=40,
+            font=("Arial", 12)
         )
         detail_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
 
@@ -1658,8 +1718,9 @@ class ModernImageAnalyzerGUI:
             detail_frame,
             text="参照",
             command=self.browse_academic_detail_output,
-            width=80,
-            height=35,
+            width=90,
+            height=40,
+            font=("Arial", 13),
             fg_color="#9b59b6",
             text_color="#FFFFFF",
             hover_color="#7d3c98"
@@ -1667,15 +1728,15 @@ class ModernImageAnalyzerGUI:
         detail_btn.pack(side=tk.RIGHT)
 
         # 処理枚数制限
-        limit_frame = ctk.CTkFrame(config_frame, fg_color="transparent")
+        limit_frame = ctk.CTkFrame(config_accordion.content_frame, fg_color="transparent")
         limit_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
 
         limit_label = ctk.CTkLabel(
             limit_frame,
             text="📊 処理枚数:",
-            width=80,
+            width=100,
             anchor="w",
-            font=("Arial", 11)
+            font=("Arial", 13)
         )
         limit_label.pack(side=tk.LEFT, padx=(0, 10))
 
@@ -1683,22 +1744,22 @@ class ModernImageAnalyzerGUI:
         limit_entry = ctk.CTkEntry(
             limit_frame,
             textvariable=self.academic_limit,
-            width=100,
-            height=35,
-            font=("Arial", 11)
+            width=120,
+            height=40,
+            font=("Arial", 13)
         )
         limit_entry.pack(side=tk.LEFT)
 
         limit_hint = ctk.CTkLabel(
             limit_frame,
             text="（0=全画像処理、論文用は15,000枚推奨）",
-            font=("Arial", 10),
+            font=("Arial", 12),
             text_color="#888888"
         )
         limit_hint.pack(side=tk.LEFT, padx=(10, 0))
 
         # 追加モード
-        append_frame = ctk.CTkFrame(config_frame, fg_color="transparent")
+        append_frame = ctk.CTkFrame(config_accordion.content_frame, fg_color="transparent")
         append_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
 
         self.academic_append_mode = tk.BooleanVar(value=False)
@@ -1706,7 +1767,7 @@ class ModernImageAnalyzerGUI:
             append_frame,
             text="既存CSVに追記（チェック=追加、未チェック=上書き）",
             variable=self.academic_append_mode,
-            font=("Arial", 11),
+            font=("Arial", 13),
             text_color="#ffffff",
             fg_color="#9b59b6",
             hover_color="#7d3c98"
@@ -1718,39 +1779,36 @@ class ModernImageAnalyzerGUI:
             self.academic_mode_frame,
             text="🚀 論文用ベンチマーク評価開始",
             command=self.start_academic_analysis,
-            height=50,
+            height=60,
             corner_radius=10,
-            font=("Arial", 16, "bold"),
+            font=("Arial", 18, "bold"),
             fg_color="#9b59b6",
             text_color="#FFFFFF",
             hover_color="#7d3c98"
         )
         self.academic_analyze_btn.pack(fill=tk.X, pady=(0, 15))
 
-        # 統計分析セクション
-        stats_frame = ctk.CTkFrame(self.academic_mode_frame, fg_color="#1e2740", corner_radius=10)
-        stats_frame.pack(fill=tk.X, pady=(0, 15))
-
-        stats_title = ctk.CTkLabel(
-            stats_frame,
-            text="📊 統計分析・プロット生成（必須ステップ）",
-            font=("Arial", 14, "bold"),
-            text_color="#ff6b6b"
+        # === アコーディオン: 統計分析 ===
+        academic_stats_accordion = AccordionSection(
+            self.academic_mode_frame,
+            "📊 統計分析・プロット生成（必須ステップ）",
+            bg_color="#1e2740",
+            title_color="#ff6b6b",
+            font_size=18
         )
-        stats_title.pack(anchor="w", padx=15, pady=(15, 10))
 
         stats_info = ctk.CTkLabel(
-            stats_frame,
+            academic_stats_accordion.content_frame,
             text="⚠️ バッチ処理完了後、必ずこの統計分析を実行してください。\n"
                  "26パターンハルシネーション検出とdetection_countが生成されます。\n"
                  "このdetection_countが深層学習のラベルになります！",
-            font=("Arial", 11),
+            font=("Arial", 13),
             text_color="#ffcc00",
             justify="left"
         )
-        stats_info.pack(anchor="w", padx=15, pady=(0, 10))
+        stats_info.pack(anchor="w", padx=15, pady=(10, 10))
 
-        stats_csv_frame = ctk.CTkFrame(stats_frame, fg_color="transparent")
+        stats_csv_frame = ctk.CTkFrame(academic_stats_accordion.content_frame, fg_color="transparent")
         stats_csv_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
 
         stats_csv_label = ctk.CTkLabel(
@@ -1758,7 +1816,7 @@ class ModernImageAnalyzerGUI:
             text="CSV:",
             width=80,
             anchor="w",
-            font=("Arial", 11)
+            font=("Arial", 13)
         )
         stats_csv_label.pack(side=tk.LEFT, padx=(0, 10))
 
@@ -1767,8 +1825,8 @@ class ModernImageAnalyzerGUI:
             stats_csv_frame,
             textvariable=self.academic_stats_csv_path,
             placeholder_text="batch_results_academic.csv",
-            height=35,
-            font=("Arial", 11)
+            height=45,
+            font=("Arial", 13)
         )
         stats_csv_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
 
@@ -1776,8 +1834,9 @@ class ModernImageAnalyzerGUI:
             stats_csv_frame,
             text="参照",
             command=self.browse_academic_stats_csv,
-            width=80,
-            height=35,
+            width=90,
+            height=45,
+            font=("Arial", 14),
             fg_color="#9b59b6",
             text_color="#FFFFFF",
             hover_color="#7d3c98"
@@ -1785,12 +1844,12 @@ class ModernImageAnalyzerGUI:
         stats_csv_btn.pack(side=tk.RIGHT)
 
         self.academic_stats_analyze_btn = ctk.CTkButton(
-            stats_frame,
+            academic_stats_accordion.content_frame,
             text="📈 統計分析・25種類プロット生成",
             command=self.start_academic_stats_analysis,
-            height=45,
+            height=55,
             corner_radius=10,
-            font=("Arial", 14, "bold"),
+            font=("Arial", 16, "bold"),
             fg_color="#ff6b6b",
             text_color="#FFFFFF",
             hover_color="#ff4444"
@@ -1874,25 +1933,35 @@ class ModernImageAnalyzerGUI:
 
     def start_academic_analysis(self):
         """論文用ベンチマーク評価開始"""
-        # バリデーション
+        # バリデーション：元画像フォルダ（必須）
         if not self.academic_original_dir.get():
-            messagebox.showerror("エラー", "元画像フォルダを選択してください")
+            messagebox.showerror("エラー", "元画像フォルダ（GT画像）を選択してください")
             return
 
-        # 有効なモデルフォルダをカウント
+        if not os.path.exists(self.academic_original_dir.get()):
+            messagebox.showerror("エラー", f"元画像フォルダが見つかりません:\n{self.academic_original_dir.get()}")
+            return
+
+        # バリデーション：有効なモデルフォルダをカウント
         valid_models = {}
         for i in range(5):
             model_name = self.academic_model_name_vars[i].get().strip()
             model_path = self.academic_model_vars[i].get().strip()
 
             if model_path:
+                # モデル名が空の場合
                 if not model_name:
                     messagebox.showerror("エラー", f"モデル{i+1}の名前を入力してください")
                     return
+                # フォルダが存在しない場合
+                if not os.path.exists(model_path):
+                    messagebox.showerror("エラー", f"モデル{i+1}のフォルダが見つかりません:\n{model_path}")
+                    return
                 valid_models[model_name] = model_path
 
+        # 最低1つは必須（画像1に相当）
         if len(valid_models) == 0:
-            messagebox.showerror("エラー", "少なくとも1つの超解像モデルフォルダを選択してください")
+            messagebox.showerror("エラー", "少なくとも1つの超解像モデルフォルダ（AI処理結果）を選択してください")
             return
 
         # 設定ファイル作成（評価モード固定：academic）
@@ -2279,25 +2348,35 @@ class ModernImageAnalyzerGUI:
 
     def start_batch_analysis(self):
         """バッチ処理開始"""
-        # バリデーション
+        # バリデーション：元画像フォルダ（必須）
         if not self.batch_original_dir.get():
-            messagebox.showerror("エラー", "元画像フォルダを選択してください")
+            messagebox.showerror("エラー", "元画像フォルダ（GT画像）を選択してください")
             return
 
-        # 有効なモデルフォルダをカウント
+        if not os.path.exists(self.batch_original_dir.get()):
+            messagebox.showerror("エラー", f"元画像フォルダが見つかりません:\n{self.batch_original_dir.get()}")
+            return
+
+        # バリデーション：有効なモデルフォルダをカウント
         valid_models = {}
         for i in range(5):
             model_name = self.batch_model_name_vars[i].get().strip()
             model_path = self.batch_model_vars[i].get().strip()
 
             if model_path:
+                # モデル名が空の場合
                 if not model_name:
                     messagebox.showerror("エラー", f"モデル{i+1}の名前を入力してください")
                     return
+                # フォルダが存在しない場合
+                if not os.path.exists(model_path):
+                    messagebox.showerror("エラー", f"モデル{i+1}のフォルダが見つかりません:\n{model_path}")
+                    return
                 valid_models[model_name] = model_path
 
+        # 最低1つは必須（画像1に相当）
         if len(valid_models) == 0:
-            messagebox.showerror("エラー", "少なくとも1つの超解像モデルフォルダを選択してください")
+            messagebox.showerror("エラー", "少なくとも1つの超解像モデルフォルダ（AI処理結果）を選択してください")
             return
 
         # 設定ファイル作成
@@ -3215,6 +3294,39 @@ class ModernImageAnalyzerGUI:
             self.img2_path.set(filename)
             self.load_preview_image2(filename)
 
+    def browse_image3(self):
+        filename = filedialog.askopenfilename(
+            title="画像3を選択",
+            filetypes=[
+                ("画像ファイル", "*.png *.jpg *.jpeg *.bmp *.tiff *.webp"),
+                ("すべてのファイル", "*.*")
+            ]
+        )
+        if filename:
+            self.img3_path.set(filename)
+
+    def browse_image4(self):
+        filename = filedialog.askopenfilename(
+            title="画像4を選択",
+            filetypes=[
+                ("画像ファイル", "*.png *.jpg *.jpeg *.bmp *.tiff *.webp"),
+                ("すべてのファイル", "*.*")
+            ]
+        )
+        if filename:
+            self.img4_path.set(filename)
+
+    def browse_image5(self):
+        filename = filedialog.askopenfilename(
+            title="画像5を選択",
+            filetypes=[
+                ("画像ファイル", "*.png *.jpg *.jpeg *.bmp *.tiff *.webp"),
+                ("すべてのファイル", "*.*")
+            ]
+        )
+        if filename:
+            self.img5_path.set(filename)
+
     def browse_original(self):
         filename = filedialog.askopenfilename(
             title="元画像を選択（処理前/Before）",
@@ -3332,17 +3444,29 @@ class ModernImageAnalyzerGUI:
             )
 
     def start_analysis(self):
-        if not self.img1_path.get() or not self.img2_path.get():
-            messagebox.showerror("エラー", "2つの画像を選択してください")
+        # 元画像（GT画像）は必須
+        if not self.original_path.get():
+            messagebox.showerror("エラー", "元画像（GT画像）を選択してください")
+            return
+
+        if not os.path.exists(self.original_path.get()):
+            messagebox.showerror("エラー", f"元画像が見つかりません:\n{self.original_path.get()}")
+            return
+
+        # 画像1は必須
+        if not self.img1_path.get():
+            messagebox.showerror("エラー", "少なくとも画像1（AI処理結果）を選択してください")
             return
 
         if not os.path.exists(self.img1_path.get()):
             messagebox.showerror("エラー", f"画像1が見つかりません:\n{self.img1_path.get()}")
             return
 
-        if not os.path.exists(self.img2_path.get()):
-            messagebox.showerror("エラー", f"画像2が見つかりません:\n{self.img2_path.get()}")
-            return
+        # 画像2-5はオプション（存在チェックのみ）
+        for i, path_var in enumerate([self.img2_path, self.img3_path, self.img4_path, self.img5_path], 2):
+            if path_var.get() and not os.path.exists(path_var.get()):
+                messagebox.showerror("エラー", f"画像{i}が見つかりません:\n{path_var.get()}")
+                return
 
         # UIを無効化
         self.analyze_btn.configure(state='disabled')
@@ -3394,25 +3518,89 @@ class ModernImageAnalyzerGUI:
 
             sys.stdout = captured_output = ProgressCapture(self)
 
-            results = analyze_images(
-                self.img1_path.get(),
-                self.img2_path.get(),
-                self.output_dir.get(),
-                self.original_path.get() if self.original_path.get() else None,
-                evaluation_mode=self.evaluation_mode.get()  # 評価モードを渡す
-            )
+            # 複数画像対応
+            all_results = []
+            image_paths = []
+
+            # 画像1-5のパスを収集
+            for i, path_var in enumerate([self.img1_path, self.img2_path, self.img3_path, self.img4_path, self.img5_path], 1):
+                if path_var.get():
+                    image_paths.append((i, path_var.get()))
+
+            # 元画像（GT）と各AI処理結果を比較
+            gt_path = self.original_path.get()
+
+            for img_num, img_path in image_paths:
+                self.current_step = f"画像{img_num}の精度を評価中..."
+
+                # 出力ディレクトリを画像番号ごとに分ける
+                output_subdir = os.path.join(self.output_dir.get(), f"image_{img_num}")
+
+                results = analyze_images(
+                    gt_path,  # 元画像（GT）
+                    img_path,  # AI処理結果
+                    output_subdir,
+                    None,  # original_pathはNone
+                    evaluation_mode=self.evaluation_mode.get()
+                )
+
+                # 画像番号を結果に追加
+                results['image_number'] = img_num
+                results['image_name'] = os.path.basename(img_path)
+                all_results.append(results)
 
             sys.stdout = old_stdout
             output = captured_output.getvalue()
 
-            self.analysis_results = results
-            self.root.after(0, self.display_results, output, results)
+            self.analysis_results = all_results
+            self.root.after(0, self.display_multi_results, output, all_results)
 
         except Exception as e:
             sys.stdout = old_stdout
             self.root.after(0, self.display_error, str(e))
 
+    def display_multi_results(self, output, all_results):
+        """複数画像の結果を表示"""
+        self.progress.stop()
+        self.progress.set(1)
+        self.analyze_btn.configure(state='normal')
+
+        # 詳細データタブに結果表示
+        self.result_text.delete("1.0", tk.END)
+        self.result_text.insert("1.0", f"=== 精度評価（元画像 vs AI処理結果） - {len(all_results)}件の比較 ===\n\n")
+        self.result_text.insert(tk.END, output)
+
+        # わかりやすい解釈タブに複数結果を表示
+        self.interpretation_text.delete("1.0", tk.END)
+        self.interpretation_text.insert("1.0", "=== 精度評価（元画像 vs AI処理結果） ===\n\n")
+        self.interpretation_text.insert(tk.END, "各AI処理結果を元画像（GT）と比較し、精度を評価しています。\n\n")
+
+        for idx, results in enumerate(all_results, 1):
+            img_num = results.get('image_number', idx)
+            img_name = results.get('image_name', f'画像{img_num}')
+
+            self.interpretation_text.insert(tk.END, f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
+            self.interpretation_text.insert(tk.END, f"📸 画像 {img_num}: {img_name}\n")
+            self.interpretation_text.insert(tk.END, f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n")
+
+            if results and 'interpretation' in results:
+                from result_interpreter import format_interpretation_text
+                interpretation_text = format_interpretation_text(results['interpretation'])
+                self.interpretation_text.insert(tk.END, interpretation_text)
+                self.interpretation_text.insert(tk.END, "\n\n")
+
+        # ステータス更新
+        self.status_label.configure(text=f"✅ 精度評価 - {len(all_results)}件完了", text_color="#00ff88")
+
+        messagebox.showinfo(
+            "完了",
+            f"精度評価が完了しました。\n"
+            f"{len(all_results)}件の比較が完了しました。\n\n"
+            f"結果は '{self.output_dir.get()}' フォルダに保存されました。"
+        )
+
     def display_results(self, output, results):
+        """単一結果表示（互換性のため残す）"""
         self.progress.stop()
         self.progress.set(1)
         self.analyze_btn.configure(state='normal')
