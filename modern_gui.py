@@ -4,6 +4,7 @@ import threading
 import os
 from advanced_image_analyzer import analyze_images
 import json
+from datetime import datetime
 from PIL import Image, ImageTk, ImageDraw
 import customtkinter as ctk
 
@@ -18,6 +19,12 @@ except ImportError:
 # CustomTkinter設定
 ctk.set_appearance_mode("dark")  # ダークモード
 ctk.set_default_color_theme("blue")  # カラーテーマ
+
+def get_timestamp_filename(base_name, extension=".csv"):
+    """タイムスタンプ付きファイル名を生成"""
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    name_without_ext = base_name.replace(extension, "")
+    return f"{name_without_ext}_{timestamp}{extension}"
 
 class AccordionSection:
     """アコーディオンセクション（クリックで開閉）"""
@@ -1086,8 +1093,8 @@ class ModernImageAnalyzerGUI:
             font_size=18
         )
 
-        self.batch_output_csv = tk.StringVar(value="results/batch_analysis.csv")
-        self.batch_output_detail = tk.StringVar(value="results/detailed/")
+        self.batch_output_csv = tk.StringVar(value=f"results/{get_timestamp_filename('batch_analysis', '.csv')}")
+        self.batch_output_detail = tk.StringVar(value=f"results/detailed_{datetime.now().strftime('%Y%m%d_%H%M%S')}/")
         self.batch_limit = tk.IntVar(value=0)  # 0 = 全て
         self.batch_append_mode = tk.BooleanVar(value=True)  # True = 追加（デフォルト）, False = 上書き
 
@@ -1676,7 +1683,7 @@ class ModernImageAnalyzerGUI:
         csv_label = ctk.CTkLabel(csv_frame, text="CSV:", width=80, anchor="w", font=("Arial", 13))
         csv_label.pack(side=tk.LEFT, padx=(0, 10))
 
-        self.academic_output_csv = tk.StringVar(value="batch_results_academic.csv")
+        self.academic_output_csv = tk.StringVar(value=get_timestamp_filename("batch_results_academic", ".csv"))
         csv_entry = ctk.CTkEntry(
             csv_frame,
             textvariable=self.academic_output_csv,
@@ -1705,7 +1712,7 @@ class ModernImageAnalyzerGUI:
         detail_label = ctk.CTkLabel(detail_frame, text="詳細:", width=80, anchor="w", font=("Arial", 13))
         detail_label.pack(side=tk.LEFT, padx=(0, 10))
 
-        self.academic_output_detail = tk.StringVar(value="batch_results_detail_academic")
+        self.academic_output_detail = tk.StringVar(value=f"batch_results_detail_academic_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
         detail_entry = ctk.CTkEntry(
             detail_frame,
             textvariable=self.academic_output_detail,
@@ -1871,7 +1878,7 @@ class ModernImageAnalyzerGUI:
             title="CSV出力先を選択",
             defaultextension=".csv",
             filetypes=[("CSV", "*.csv"), ("すべてのファイル", "*.*")],
-            initialfile="batch_analysis.csv"
+            initialfile=get_timestamp_filename("batch_analysis", ".csv")
         )
         if filename:
             self.batch_output_csv.set(filename)
@@ -1911,7 +1918,7 @@ class ModernImageAnalyzerGUI:
             title="CSV出力先を選択",
             defaultextension=".csv",
             filetypes=[("CSV", "*.csv"), ("すべてのファイル", "*.*")],
-            initialfile="batch_results_academic.csv"
+            initialfile=get_timestamp_filename("batch_results_academic", ".csv")
         )
         if filename:
             self.academic_output_csv.set(filename)
