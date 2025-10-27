@@ -138,22 +138,48 @@ class ModernImageAnalyzerGUI:
         except:
             pass
 
-        # タイトル
-        title_label = ctk.CTkLabel(
+        # タイトル（翻訳対応）
+        self.title_label = ctk.CTkLabel(
             header_frame,
-            text="AI Image Analyzer Pro",
+            text=self.i18n.t('app.title'),
             font=("Arial", 32, "bold"),
             text_color="#4A90E2"
         )
-        title_label.place(x=130, y=25)
+        self.title_label.place(x=130, y=25)
 
-        subtitle_label = ctk.CTkLabel(
+        # サブタイトル（翻訳対応）
+        self.subtitle_label = ctk.CTkLabel(
             header_frame,
-            text="高解像度画像品質分析システム",
+            text=self.i18n.t('app.subtitle'),
             font=("Arial", 14),
             text_color="#888888"
         )
-        subtitle_label.place(x=130, y=70)
+        self.subtitle_label.place(x=130, y=70)
+
+        # 言語切り替えボタン（右上、システムモニターの左）
+        lang_frame = ctk.CTkFrame(header_frame, fg_color="transparent")
+        lang_frame.place(x=700, y=30)
+
+        lang_label = ctk.CTkLabel(
+            lang_frame,
+            text="🌍",
+            font=("Arial", 20),
+            text_color="#4A90E2"
+        )
+        lang_label.pack(side=tk.LEFT, padx=(0, 10))
+
+        self.lang_button = ctk.CTkButton(
+            lang_frame,
+            text="🇯🇵 日本語",
+            command=self.toggle_language,
+            width=120,
+            height=35,
+            corner_radius=8,
+            font=("Arial", 12, "bold"),
+            fg_color="#2d3748",
+            hover_color="#4A90E2"
+        )
+        self.lang_button.pack(side=tk.LEFT)
 
         # システムモニター（右上）
         if MONITORING_AVAILABLE:
@@ -225,7 +251,7 @@ class ModernImageAnalyzerGUI:
 
         self.single_mode_btn = ctk.CTkButton(
             button_container,
-            text="📸 単一画像分析",
+            text=f"📸 {self.i18n.t('tabs.single_analysis')}",
             command=self.switch_to_single_mode,
             height=40,
             width=180,
@@ -239,7 +265,7 @@ class ModernImageAnalyzerGUI:
 
         self.batch_mode_btn = ctk.CTkButton(
             button_container,
-            text="🔬 バッチ処理",
+            text=f"🔬 {self.i18n.t('tabs.batch_processing')}",
             command=self.switch_to_batch_mode,
             height=40,
             width=180,
@@ -253,7 +279,7 @@ class ModernImageAnalyzerGUI:
 
         self.academic_mode_btn = ctk.CTkButton(
             button_container,
-            text="📚 論文用ベンチマーク評価",
+            text=f"📚 {self.i18n.t('tabs.academic_benchmark')}",
             command=self.switch_to_academic_mode,
             height=40,
             width=220,
@@ -3818,6 +3844,36 @@ class ModernImageAnalyzerGUI:
         self.single_right_frame.pack_forget()
         self.batch_right_frame.pack_forget()
         self.academic_right_frame.pack(fill=tk.BOTH, expand=True)
+
+    def toggle_language(self):
+        """言語を切り替え"""
+        # 言語を切り替え
+        if self.current_language == 'ja':
+            self.current_language = 'en'
+            self.i18n.set_language('en')
+            self.lang_button.configure(text="🇬🇧 English")
+        else:
+            self.current_language = 'ja'
+            self.i18n.set_language('ja')
+            self.lang_button.configure(text="🇯🇵 日本語")
+
+        # UI全体を更新
+        self.update_ui_language()
+
+    def update_ui_language(self):
+        """UI全体の言語を更新"""
+        # ヘッダー
+        self.root.title(self.i18n.t('app.title'))
+        self.title_label.configure(text=self.i18n.t('app.title'))
+        self.subtitle_label.configure(text=self.i18n.t('app.subtitle'))
+
+        # メインタブボタン
+        self.single_mode_btn.configure(text=f"📸 {self.i18n.t('tabs.single_analysis')}")
+        self.batch_mode_btn.configure(text=f"🔬 {self.i18n.t('tabs.batch_processing')}")
+        self.academic_mode_btn.configure(text=f"📚 {self.i18n.t('tabs.academic_benchmark')}")
+
+        # ステータスメッセージ更新（必要に応じて）
+        # その他のUI要素も必要に応じて更新
 
 def main():
     root = ctk.CTk()
