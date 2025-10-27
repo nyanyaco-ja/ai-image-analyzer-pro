@@ -10,10 +10,13 @@
     "academic_benchmark": "Academic Benchmark Evaluation"
   },
   "modes": {
-    "image": "Image Mode",
-    "document": "Document Mode",
+    "image": "Image (X-ray, Endoscopy, Photos, etc.)",
+    "document": "Document (Medical Records, Contracts, Receipts, etc.)",
     "academic": "Academic Evaluation Mode",
-    "developer": "Developer Mode"
+    "developer": "Developer Mode (Bug Testing & Debugging)",
+    "image_desc": "└─ CLIP Threshold: 0.70, All metrics, Auto-detect diagnostic text",
+    "document_desc": "└─ CLIP Threshold: 0.90 (Strict), Text MAE focused",
+    "developer_desc": "└─ Full metric details, Processing time measurement"
   },
   "buttons": {
     "browse": "Browse",

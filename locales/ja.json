@@ -10,10 +10,13 @@
     "academic_benchmark": "論文用ベンチマーク評価"
   },
   "modes": {
-    "image": "画像モード",
-    "document": "文書モード",
+    "image": "画像（レントゲン、内視鏡、写真など）",
+    "document": "文書（医療カルテ、契約書、レシートなど）",
     "academic": "学術評価モード",
-    "developer": "開発者モード"
+    "developer": "開発者モード（バグテスト・デバッグ用）",
+    "image_desc": "└─ CLIP基準: 0.70、全指標使用、診断テキスト自動検出",
+    "document_desc": "└─ CLIP基準: 0.90（厳格）、テキストMAE重視",
+    "developer_desc": "└─ 全メトリクス詳細出力、処理時間計測"
   },
   "buttons": {
     "browse": "参照",

@@ -345,10 +345,10 @@ class ModernImageAnalyzerGUI:
         # 評価モード変数
         self.evaluation_mode = tk.StringVar(value="image")
 
-        # 画像モード
-        mode_image = ctk.CTkRadioButton(
+        # 画像モード（翻訳対応）
+        self.mode_image = ctk.CTkRadioButton(
             mode_frame,
-            text="画像（レントゲン、内視鏡、写真など）",
+            text=self.i18n.t('modes.image'),
             variable=self.evaluation_mode,
             value="image",
             font=("Arial", 14),
@@ -356,20 +356,20 @@ class ModernImageAnalyzerGUI:
             fg_color="#4A90E2",
             hover_color="#357ABD"
         )
-        mode_image.pack(anchor="w", padx=30, pady=(15, 8))
+        self.mode_image.pack(anchor="w", padx=30, pady=(15, 8))
 
-        mode_image_desc = ctk.CTkLabel(
+        self.mode_image_desc = ctk.CTkLabel(
             mode_frame,
-            text="  └─ CLIP基準: 0.70、全指標使用、診断テキスト自動検出",
+            text=f"  {self.i18n.t('modes.image_desc')}",
             font=("Arial", 12),
             text_color="#888888"
         )
-        mode_image_desc.pack(anchor="w", padx=30, pady=(0, 10))
+        self.mode_image_desc.pack(anchor="w", padx=30, pady=(0, 10))
 
-        # 文書モード
-        mode_document = ctk.CTkRadioButton(
+        # 文書モード（翻訳対応）
+        self.mode_document = ctk.CTkRadioButton(
             mode_frame,
-            text="文書（医療カルテ、契約書、レシートなど）",
+            text=self.i18n.t('modes.document'),
             variable=self.evaluation_mode,
             value="document",
             font=("Arial", 14),
@@ -377,20 +377,20 @@ class ModernImageAnalyzerGUI:
             fg_color="#4A90E2",
             hover_color="#357ABD"
         )
-        mode_document.pack(anchor="w", padx=30, pady=(0, 8))
+        self.mode_document.pack(anchor="w", padx=30, pady=(0, 8))
 
-        mode_document_desc = ctk.CTkLabel(
+        self.mode_document_desc = ctk.CTkLabel(
             mode_frame,
-            text="  └─ CLIP基準: 0.90（厳格）、テキストMAE重視",
+            text=f"  {self.i18n.t('modes.document_desc')}",
             font=("Arial", 12),
             text_color="#888888"
         )
-        mode_document_desc.pack(anchor="w", padx=30, pady=(0, 10))
+        self.mode_document_desc.pack(anchor="w", padx=30, pady=(0, 10))
 
-        # 開発者モード
-        mode_developer = ctk.CTkRadioButton(
+        # 開発者モード（翻訳対応）
+        self.mode_developer = ctk.CTkRadioButton(
             mode_frame,
-            text="開発者モード（バグテスト・デバッグ用）",
+            text=self.i18n.t('modes.developer'),
             variable=self.evaluation_mode,
             value="developer",
             font=("Arial", 14),
@@ -398,15 +398,15 @@ class ModernImageAnalyzerGUI:
             fg_color="#ffa500",
             hover_color="#cc8400"
         )
-        mode_developer.pack(anchor="w", padx=30, pady=(0, 8))
+        self.mode_developer.pack(anchor="w", padx=30, pady=(0, 8))
 
-        mode_developer_desc = ctk.CTkLabel(
+        self.mode_developer_desc = ctk.CTkLabel(
             mode_frame,
-            text="  └─ 評価不能判定なし、すべての警告を表示",
+            text=f"  {self.i18n.t('modes.developer_desc')}",
             font=("Arial", 12),
             text_color="#888888"
         )
-        mode_developer_desc.pack(anchor="w", padx=30, pady=(0, 15))
+        self.mode_developer_desc.pack(anchor="w", padx=30, pady=(0, 15))
 
         # 元画像（必須）
         original_accordion = AccordionSection(input_section, "🎯 元画像（必須・GT画像）", bg_color="#1b3d1b", title_color="#00ff88", font_size=18)
@@ -965,10 +965,10 @@ class ModernImageAnalyzerGUI:
         mode_select_frame = ctk.CTkFrame(eval_accordion.content_frame, fg_color="transparent")
         mode_select_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
 
-        # 画像モード
-        batch_mode_image = ctk.CTkRadioButton(
+        # 画像モード（翻訳対応）
+        self.batch_mode_image = ctk.CTkRadioButton(
             mode_select_frame,
-            text="画像（レントゲン、内視鏡、写真など）",
+            text=self.i18n.t('modes.image'),
             variable=self.batch_evaluation_mode,
             value="image",
             font=("Arial", 14),
@@ -976,20 +976,20 @@ class ModernImageAnalyzerGUI:
             fg_color="#4A90E2",
             hover_color="#357ABD"
         )
-        batch_mode_image.pack(anchor="w", padx=30, pady=(0, 8))
+        self.batch_mode_image.pack(anchor="w", padx=30, pady=(0, 8))
 
-        batch_mode_image_desc = ctk.CTkLabel(
+        self.batch_mode_image_desc = ctk.CTkLabel(
             mode_select_frame,
-            text="  └─ CLIP基準: 0.70、全指標使用、診断テキスト自動検出",
+            text=f"  {self.i18n.t('modes.image_desc')}",
             font=("Arial", 12),
             text_color="#888888"
         )
-        batch_mode_image_desc.pack(anchor="w", padx=30, pady=(0, 10))
+        self.batch_mode_image_desc.pack(anchor="w", padx=30, pady=(0, 10))
 
-        # 文書モード
-        batch_mode_document = ctk.CTkRadioButton(
+        # 文書モード（翻訳対応）
+        self.batch_mode_document = ctk.CTkRadioButton(
             mode_select_frame,
-            text="文書（医療カルテ、契約書、レシートなど）",
+            text=self.i18n.t('modes.document'),
             variable=self.batch_evaluation_mode,
             value="document",
             font=("Arial", 14),
@@ -997,20 +997,20 @@ class ModernImageAnalyzerGUI:
             fg_color="#4A90E2",
             hover_color="#357ABD"
         )
-        batch_mode_document.pack(anchor="w", padx=30, pady=(0, 8))
+        self.batch_mode_document.pack(anchor="w", padx=30, pady=(0, 8))
 
-        batch_mode_document_desc = ctk.CTkLabel(
+        self.batch_mode_document_desc = ctk.CTkLabel(
             mode_select_frame,
-            text="  └─ CLIP基準: 0.90（厳格）、テキストMAE重視",
+            text=f"  {self.i18n.t('modes.document_desc')}",
             font=("Arial", 12),
             text_color="#888888"
         )
-        batch_mode_document_desc.pack(anchor="w", padx=30, pady=(0, 10))
+        self.batch_mode_document_desc.pack(anchor="w", padx=30, pady=(0, 10))
 
-        # 開発者モード
-        batch_mode_developer = ctk.CTkRadioButton(
+        # 開発者モード（翻訳対応）
+        self.batch_mode_developer = ctk.CTkRadioButton(
             mode_select_frame,
-            text="開発者モード（バグテスト・デバッグ用）",
+            text=self.i18n.t('modes.developer'),
             variable=self.batch_evaluation_mode,
             value="developer",
             font=("Arial", 14),
@@ -1018,15 +1018,15 @@ class ModernImageAnalyzerGUI:
             fg_color="#ffa500",
             hover_color="#cc8400"
         )
-        batch_mode_developer.pack(anchor="w", padx=30, pady=(0, 8))
+        self.batch_mode_developer.pack(anchor="w", padx=30, pady=(0, 8))
 
-        batch_mode_developer_desc = ctk.CTkLabel(
+        self.batch_mode_developer_desc = ctk.CTkLabel(
             mode_select_frame,
-            text="  └─ 評価不能判定なし、すべての警告を表示",
+            text=f"  {self.i18n.t('modes.developer_desc')}",
             font=("Arial", 12),
             text_color="#888888"
         )
-        batch_mode_developer_desc.pack(anchor="w", padx=30, pady=(0, 10))
+        self.batch_mode_developer_desc.pack(anchor="w", padx=30, pady=(0, 10))
 
         # === アコーディオン: フォルダ設定 ===
         folder_accordion = AccordionSection(
@@ -3883,6 +3883,22 @@ class ModernImageAnalyzerGUI:
         # 論文用ベンチマーク評価
         self.academic_analyze_btn.configure(text=f"🚀 {self.i18n.t('buttons.analyze_academic')}")
         self.academic_stats_analyze_btn.configure(text=f"📈 {self.i18n.t('buttons.analyze_stats')}")
+
+        # 評価モード（単一画像分析タブ）
+        self.mode_image.configure(text=self.i18n.t('modes.image'))
+        self.mode_image_desc.configure(text=f"  {self.i18n.t('modes.image_desc')}")
+        self.mode_document.configure(text=self.i18n.t('modes.document'))
+        self.mode_document_desc.configure(text=f"  {self.i18n.t('modes.document_desc')}")
+        self.mode_developer.configure(text=self.i18n.t('modes.developer'))
+        self.mode_developer_desc.configure(text=f"  {self.i18n.t('modes.developer_desc')}")
+
+        # 評価モード（バッチ処理タブ）
+        self.batch_mode_image.configure(text=self.i18n.t('modes.image'))
+        self.batch_mode_image_desc.configure(text=f"  {self.i18n.t('modes.image_desc')}")
+        self.batch_mode_document.configure(text=self.i18n.t('modes.document'))
+        self.batch_mode_document_desc.configure(text=f"  {self.i18n.t('modes.document_desc')}")
+        self.batch_mode_developer.configure(text=self.i18n.t('modes.developer'))
+        self.batch_mode_developer_desc.configure(text=f"  {self.i18n.t('modes.developer_desc')}")
 
 def main():
     root = ctk.CTk()
