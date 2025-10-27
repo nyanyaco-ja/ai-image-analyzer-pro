@@ -19,6 +19,7 @@
     "browse": "参照",
     "analyze": "分析開始",
     "analyze_batch": "バッチ処理開始",
+    "analyze_academic": "論文用ベンチマーク評価開始",
     "analyze_stats": "統計分析開始（25プロット生成）",
     "export_csv": "CSV出力",
     "export_report": "詳細レポート出力",

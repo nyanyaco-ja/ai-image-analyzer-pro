@@ -19,6 +19,7 @@
     "browse": "Browse",
     "analyze": "Start Analysis",
     "analyze_batch": "Start Batch Processing",
+    "analyze_academic": "Start Academic Benchmark Evaluation",
     "analyze_stats": "Start Statistical Analysis (Generate 25 Plots)",
     "export_csv": "Export CSV",
     "export_report": "Export Detailed Report",

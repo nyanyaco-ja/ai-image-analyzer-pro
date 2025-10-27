@@ -620,10 +620,10 @@ class ModernImageAnalyzerGUI:
         )
         output_btn.pack(fill=tk.X, padx=15, pady=(0, 15))
 
-        # 分析開始ボタン（大きく目立つ）
+        # 分析開始ボタン（大きく目立つ）（翻訳対応）
         self.analyze_btn = ctk.CTkButton(
             input_section,
-            text="🚀 分析開始",
+            text=f"🚀 {self.i18n.t('buttons.analyze')}",
             command=self.start_analysis,
             height=70,
             corner_radius=15,
@@ -1314,10 +1314,10 @@ class ModernImageAnalyzerGUI:
         self.batch_limit.trace_add("write", self.update_limit_label)
 
         # === 通常のバッチ処理セクション ===
-        # 実行ボタン
+        # 実行ボタン（翻訳対応）
         self.batch_analyze_btn = ctk.CTkButton(
             self.batch_mode_frame,
-            text="🚀 バッチ処理開始",
+            text=f"🚀 {self.i18n.t('buttons.analyze_batch')}",
             command=self.start_batch_analysis,
             height=60,
             corner_radius=10,
@@ -1381,7 +1381,7 @@ class ModernImageAnalyzerGUI:
         # 統計分析実行ボタン
         self.stats_analyze_btn = ctk.CTkButton(
             button_frame,
-            text="📈 統計分析＋プロット生成（25種類）",
+            text=f"📈 {self.i18n.t('buttons.analyze_stats')}",
             command=self.start_stats_analysis,
             height=55,
             corner_radius=10,
@@ -1847,7 +1847,7 @@ class ModernImageAnalyzerGUI:
         # 実行ボタン
         self.academic_analyze_btn = ctk.CTkButton(
             self.academic_mode_frame,
-            text="🚀 論文用ベンチマーク評価開始",
+            text=f"🚀 {self.i18n.t('buttons.analyze_academic')}",
             command=self.start_academic_analysis,
             height=60,
             corner_radius=10,
@@ -1915,7 +1915,7 @@ class ModernImageAnalyzerGUI:
 
         self.academic_stats_analyze_btn = ctk.CTkButton(
             academic_stats_accordion.content_frame,
-            text="📈 統計分析・25種類プロット生成",
+            text=f"📈 {self.i18n.t('buttons.analyze_stats')}",
             command=self.start_academic_stats_analysis,
             height=55,
             corner_radius=10,
@@ -3872,8 +3872,17 @@ class ModernImageAnalyzerGUI:
         self.batch_mode_btn.configure(text=f"🔬 {self.i18n.t('tabs.batch_processing')}")
         self.academic_mode_btn.configure(text=f"📚 {self.i18n.t('tabs.academic_benchmark')}")
 
-        # ステータスメッセージ更新（必要に応じて）
-        # その他のUI要素も必要に応じて更新
+        # 主要ボタン
+        # 単一画像分析
+        self.analyze_btn.configure(text=f"🚀 {self.i18n.t('buttons.analyze')}")
+
+        # バッチ処理
+        self.batch_analyze_btn.configure(text=f"🚀 {self.i18n.t('buttons.analyze_batch')}")
+        self.stats_analyze_btn.configure(text=f"📈 {self.i18n.t('buttons.analyze_stats')}")
+
+        # 論文用ベンチマーク評価
+        self.academic_analyze_btn.configure(text=f"🚀 {self.i18n.t('buttons.analyze_academic')}")
+        self.academic_stats_analyze_btn.configure(text=f"📈 {self.i18n.t('buttons.analyze_stats')}")
 
 def main():
     root = ctk.CTk()
