@@ -41,6 +41,15 @@
     "append_mode": "追加モード（既存CSV追記）",
     "evaluation_mode": "評価モード"
   },
+  "sections": {
+    "original_image_required": "🎯 元画像（必須・GT画像）",
+    "upscaled_images": "🔍 超解像画像（比較対象・最大5枚）",
+    "output_folder": "💾 出力フォルダ",
+    "evaluation_settings": "⚙️ 評価設定",
+    "folder_settings": "📁 フォルダ設定",
+    "csv_settings": "💾 CSV出力設定",
+    "stats_analysis": "📊 統計分析・プロット生成"
+  },
   "warnings": {
     "png_recommended": "⚠️ PNG形式推奨（JPGは非可逆圧縮で劣化済み）"
   },

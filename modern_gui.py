@@ -413,14 +413,14 @@ class ModernImageAnalyzerGUI:
         # デフォルトで開く（閉じない）
         original_frame = original_accordion.get_content_frame()
 
-        # PNG推奨警告
-        single_png_warning = ctk.CTkLabel(
+        # PNG推奨警告（翻訳対応）
+        self.single_png_warning = ctk.CTkLabel(
             original_frame,
-            text="⚠️ PNG形式推奨（JPGは非可逆圧縮で劣化済み）",
+            text=self.i18n.t('warnings.png_recommended'),
             font=("Arial", 12, "bold"),
             text_color="#ff6b6b"
         )
-        single_png_warning.pack(anchor="w", padx=15, pady=(15, 5))
+        self.single_png_warning.pack(anchor="w", padx=15, pady=(15, 5))
 
         original_sublabel = ctk.CTkLabel(
             original_frame,
@@ -442,9 +442,9 @@ class ModernImageAnalyzerGUI:
         )
         original_entry.pack(fill=tk.X, padx=15, pady=(0, 10))
 
-        original_btn = ctk.CTkButton(
+        self.original_browse_btn = ctk.CTkButton(
             original_frame,
-            text="参照",
+            text=self.i18n.t('buttons.browse'),
             command=self.browse_original,
             height=45,
             width=200,
@@ -454,7 +454,7 @@ class ModernImageAnalyzerGUI:
             text_color="#000000",
             hover_color="#00cc66"
         )
-        original_btn.pack(padx=15, pady=(0, 15), anchor="w")
+        self.original_browse_btn.pack(padx=15, pady=(0, 15), anchor="w")
 
         # 画像1（必須）
         img1_accordion = AccordionSection(input_section, "📸 画像 1（AI処理結果）", font_size=18)
@@ -1068,9 +1068,9 @@ class ModernImageAnalyzerGUI:
         )
         original_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
 
-        original_btn = ctk.CTkButton(
+        self.batch_original_browse_btn = ctk.CTkButton(
             original_frame,
-            text="参照",
+            text=self.i18n.t('buttons.browse'),
             command=self.browse_batch_original,
             width=80,
             height=45,
@@ -1079,7 +1079,7 @@ class ModernImageAnalyzerGUI:
             text_color="#FFFFFF",
             hover_color="#357ABD"
         )
-        original_btn.pack(side=tk.RIGHT)
+        self.batch_original_browse_btn.pack(side=tk.RIGHT)
 
         # 超解像モデルフォルダ（複数）
         upscaled_label = ctk.CTkLabel(
@@ -3899,6 +3899,13 @@ class ModernImageAnalyzerGUI:
         self.batch_mode_document_desc.configure(text=f"  {self.i18n.t('modes.document_desc')}")
         self.batch_mode_developer.configure(text=self.i18n.t('modes.developer'))
         self.batch_mode_developer_desc.configure(text=f"  {self.i18n.t('modes.developer_desc')}")
+
+        # 参照ボタン
+        self.original_browse_btn.configure(text=self.i18n.t('buttons.browse'))
+        self.batch_original_browse_btn.configure(text=self.i18n.t('buttons.browse'))
+
+        # PNG警告
+        self.single_png_warning.configure(text=self.i18n.t('warnings.png_recommended'))
 
 def main():
     root = ctk.CTk()

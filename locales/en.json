@@ -41,6 +41,15 @@
     "append_mode": "Append Mode (Add to existing CSV)",
     "evaluation_mode": "Evaluation Mode"
   },
+  "sections": {
+    "original_image_required": "🎯 Original Image (Required • GT Image)",
+    "upscaled_images": "🔍 Upscaled Images (Comparison • Max 5)",
+    "output_folder": "💾 Output Folder",
+    "evaluation_settings": "⚙️ Evaluation Settings",
+    "folder_settings": "📁 Folder Settings",
+    "csv_settings": "💾 CSV Output Settings",
+    "stats_analysis": "📊 Statistical Analysis & Plot Generation"
+  },
   "warnings": {
     "png_recommended": "⚠️ PNG format recommended (JPEG is lossy and already degraded)"
   },
