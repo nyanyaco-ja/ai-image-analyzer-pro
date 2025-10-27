@@ -3300,14 +3300,14 @@ class ModernImageAnalyzerGUI:
             self.root.after(3000, self.update_system_monitor)
 
     def _improve_scroll_speed(self, scrollable_frame):
-        """CTkScrollableFrameのスクロール速度を改善（シンプル版）"""
+        """CTkScrollableFrameのスクロール速度を改善（適度な速度）"""
         try:
             # CTkScrollableFrameの内部Canvasにアクセス
             canvas = scrollable_frame._parent_canvas
 
             # スクロール速度を上げるための設定
-            # Canvasのyscrollincrement（1回のスクロール量）を大きくする
-            canvas.configure(yscrollincrement=60)  # デフォルトは20程度、3倍に設定
+            # Canvasのyscrollincrement（1回のスクロール量）を調整
+            canvas.configure(yscrollincrement=35)  # デフォルトは20程度、1.75倍に設定（操作しやすい速度）
 
         except Exception as e:
             # デバッグ用
