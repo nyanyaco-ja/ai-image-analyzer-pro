@@ -1497,11 +1497,11 @@ class ModernImageAnalyzerGUI:
             font_size=18
         )
         self.bicubic_accordion.is_open = False
-        self.self.bicubic_accordion.content_frame.pack_forget()
+        self.bicubic_accordion.content_frame.pack_forget()
         self.bicubic_accordion.header_btn.configure(text=f"▶ {self.bicubic_accordion.title}")
 
         bicubic_desc = ctk.CTkLabel(
-            self.self.bicubic_accordion.content_frame,
+            self.bicubic_accordion.content_frame,
             text="高解像度GT画像から低解像度LR画像を一括生成します（×2 SR評価用）。\n"
                  "既にLR画像がある場合はスキップ可能です。",
             font=("Arial", 12),
@@ -1512,14 +1512,14 @@ class ModernImageAnalyzerGUI:
 
         # 入力フォルダ
         input_folder_label = ctk.CTkLabel(
-            self.self.bicubic_accordion.content_frame,
+            self.bicubic_accordion.content_frame,
             text="入力フォルダ（高解像度GT、例: 1000px × 15,000枚）:",
             font=("Arial", 13),
             text_color="#cccccc"
         )
         input_folder_label.pack(anchor="w", padx=15, pady=(5, 5))
 
-        input_folder_frame = ctk.CTkFrame(self.self.bicubic_accordion.content_frame, fg_color="transparent")
+        input_folder_frame = ctk.CTkFrame(self.bicubic_accordion.content_frame, fg_color="transparent")
         input_folder_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
 
         self.academic_input_dir = tk.StringVar()
@@ -1633,7 +1633,7 @@ class ModernImageAnalyzerGUI:
 
         # 評価モード固定表示
         mode_info = ctk.CTkLabel(
-            self.self.config_accordion.content_frame,
+            self.config_accordion.content_frame,
             text="📊 評価モード: 学術評価モード（Bicubic縮小・×2スケール標準評価）",
             font=("Arial", 14, "bold"),
             text_color="#9b59b6"
@@ -1642,7 +1642,7 @@ class ModernImageAnalyzerGUI:
 
         # PNG推奨の注意書き
         self.academic_png_warning = ctk.CTkLabel(
-            self.self.config_accordion.content_frame,
+            self.config_accordion.content_frame,
             text=self.i18n.t('warnings.png_recommended'),
             font=("Arial", 12, "bold"),
             text_color="#ff6b6b"
@@ -1876,7 +1876,7 @@ class ModernImageAnalyzerGUI:
         )
 
         stats_info = ctk.CTkLabel(
-            self.self.academic_stats_accordion.content_frame,
+            self.academic_stats_accordion.content_frame,
             text="⚠️ バッチ処理完了後、必ずこの統計分析を実行してください。\n"
                  "26パターンハルシネーション検出とdetection_countが生成されます。\n"
                  "このdetection_countが深層学習のラベルになります！",
