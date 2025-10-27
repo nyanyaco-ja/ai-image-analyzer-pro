@@ -44,11 +44,18 @@
   "sections": {
     "original_image_required": "🎯 Original Image (Required • GT Image)",
     "upscaled_images": "🔍 Upscaled Images (Comparison • Max 5)",
+    "upscaled_image_1": "📸 Image 1 (AI Result)",
+    "upscaled_image_2": "📸 Image 2 (AI Result • Optional)",
+    "upscaled_image_3": "📸 Image 3 (AI Result • Optional)",
+    "upscaled_image_4": "📸 Image 4 (AI Result • Optional)",
+    "upscaled_image_5": "📸 Image 5 (AI Result • Optional)",
     "output_folder": "💾 Output Folder",
     "evaluation_settings": "⚙️ Evaluation Settings",
     "folder_settings": "📁 Folder Settings",
     "csv_settings": "💾 CSV Output Settings",
-    "stats_analysis": "📊 Statistical Analysis & Plot Generation"
+    "detail_output": "📄 Detailed Report Output",
+    "stats_analysis": "📊 Statistical Analysis & Plot Generation",
+    "bicubic_info": "🔍 About Bicubic Downscaling"
   },
   "warnings": {
     "png_recommended": "⚠️ PNG format recommended (JPEG is lossy and already degraded)"
