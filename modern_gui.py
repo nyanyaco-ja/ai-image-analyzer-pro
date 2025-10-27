@@ -3300,36 +3300,19 @@ class ModernImageAnalyzerGUI:
             self.root.after(3000, self.update_system_monitor)
 
     def _improve_scroll_speed(self, scrollable_frame):
-        """CTkScrollableFrameのスクロール速度を改善"""
+        """CTkScrollableFrameのスクロール速度を改善（シンプル版）"""
         try:
             # CTkScrollableFrameの内部Canvasにアクセス
             canvas = scrollable_frame._parent_canvas
 
-            # 既存のマウスホイールバインドを解除
-            canvas.unbind_all("<MouseWheel>")
-            canvas.unbind_all("<Button-4>")
-            canvas.unbind_all("<Button-5>")
+            # スクロール速度を上げるための設定
+            # Canvasのyscrollincrement（1回のスクロール量）を大きくする
+            canvas.configure(yscrollincrement=60)  # デフォルトは20程度、3倍に設定
 
-            # マウスホイールのスクロール量を増やす
-            def _on_mousewheel(event):
-                # マウスがCanvas上にある時のみスクロール
-                if event.widget.winfo_containing(event.x_root, event.y_root) == canvas:
-                    # Windowsの場合
-                    if event.delta:
-                        canvas.yview_scroll(int(-1 * (event.delta / 40)), "units")  # 約3倍速
-                    # Linuxの場合
-                    elif event.num == 4:
-                        canvas.yview_scroll(-3, "units")
-                    elif event.num == 5:
-                        canvas.yview_scroll(3, "units")
-
-            # Windows
-            self.root.bind_all("<MouseWheel>", _on_mousewheel, add="+")
-            # Linux
-            self.root.bind_all("<Button-4>", _on_mousewheel, add="+")
-            self.root.bind_all("<Button-5>", _on_mousewheel, add="+")
-        except:
-            pass  # CTkScrollableFrameの内部構造が変わった場合でもエラーにしない
+        except Exception as e:
+            # デバッグ用
+            print(f"スクロール速度改善エラー: {e}")
+            pass
 
     def start_monitoring(self):
         """モニタリング開始"""
