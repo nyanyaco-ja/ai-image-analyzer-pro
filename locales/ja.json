@@ -1,0 +1,105 @@
+{
+  "app": {
+    "title": "AI画像分析ツール Pro",
+    "version": "v1.7.0 - 多言語対応版",
+    "subtitle": "医療AI画質評価・学術論文対応・26パターン異常検出"
+  },
+  "tabs": {
+    "single_analysis": "単一画像分析",
+    "batch_processing": "バッチ処理",
+    "academic_benchmark": "論文用ベンチマーク評価"
+  },
+  "modes": {
+    "image": "画像モード",
+    "document": "文書モード",
+    "academic": "学術評価モード",
+    "developer": "開発者モード"
+  },
+  "buttons": {
+    "browse": "参照",
+    "analyze": "分析開始",
+    "analyze_batch": "バッチ処理開始",
+    "analyze_stats": "統計分析開始（25プロット生成）",
+    "export_csv": "CSV出力",
+    "export_report": "詳細レポート出力",
+    "language": "言語"
+  },
+  "labels": {
+    "original_image": "元画像（Ground Truth）",
+    "upscaled_image": "超解像画像（AI処理結果）",
+    "output_folder": "出力フォルダ",
+    "original_folder": "元画像フォルダ（GT画像）",
+    "model_folder": "超解像モデルフォルダ",
+    "model_name": "モデル名",
+    "csv_output": "出力CSVファイル",
+    "detail_output": "詳細レポート出力先",
+    "limit": "処理枚数制限（0=全て）",
+    "append_mode": "追加モード（既存CSV追記）",
+    "evaluation_mode": "評価モード"
+  },
+  "warnings": {
+    "png_recommended": "⚠️ PNG形式推奨（JPGは非可逆圧縮で劣化済み）"
+  },
+  "metrics": {
+    "ssim": "SSIM（構造類似性）",
+    "ms_ssim": "MS-SSIM（マルチスケール）",
+    "psnr": "PSNR（信号対雑音比）",
+    "lpips": "LPIPS（知覚的類似度）",
+    "sharpness": "シャープネス",
+    "contrast": "コントラスト",
+    "entropy": "エントロピー（情報量）",
+    "noise": "ノイズレベル",
+    "edge_density": "エッジ密度",
+    "artifacts": "アーティファクト",
+    "delta_e": "色差（ΔE）",
+    "high_freq_ratio": "高周波成分比率",
+    "texture_complexity": "テクスチャ複雑度",
+    "local_quality": "局所品質",
+    "histogram_corr": "ヒストグラム相関",
+    "lab_L_mean": "LAB明度",
+    "total_score": "総合スコア"
+  },
+  "messages": {
+    "select_image": "画像を選択してください",
+    "select_folder": "フォルダを選択してください",
+    "processing": "処理中: {current}/{total}",
+    "completed": "✅ 処理完了",
+    "error": "❌ エラーが発生しました",
+    "file_not_found": "ファイルが見つかりません: {path}",
+    "batch_start": "🚀 バッチ処理開始",
+    "batch_complete": "✅ バッチ処理完了！",
+    "checkpoint_saved": "💾 チェックポイント保存: {count}サンプル",
+    "eta": "⏱️ 残り時間: {minutes}分",
+    "parallel_processing": "⚡ 並列処理数: {workers}プロセス"
+  },
+  "errors": {
+    "invalid_path": "無効なパスです",
+    "no_models": "少なくとも1つのモデルフォルダを選択してください",
+    "analysis_failed": "分析に失敗しました: {error}"
+  },
+  "stats": {
+    "model_comparison": "モデル別平均スコア",
+    "total_samples": "総サンプル数",
+    "success_rate": "成功率",
+    "average_score": "平均スコア",
+    "ranking": "🏆 総合スコアランキング"
+  },
+  "patterns": {
+    "P1": "P1: SSIM高×PSNR低（構造保持・周波数損失）",
+    "P2": "P2: シャープ高×ノイズ高（過剰シャープニング）",
+    "P3": "P3: エッジ高×品質低（輪郭強調・内部劣化）",
+    "P4": "P4: Artifacts高（リンギング・ブロックノイズ）",
+    "P5": "P5: 高周波高×テクスチャ低（偽ディテール生成）",
+    "P6": "P6: 品質ばらつき大（局所的処理失敗）",
+    "P7": "P7: Entropy低×高周波高（情報量不足）",
+    "P8": "P8: Contrast異常×Hist相関低（色調破壊）",
+    "P9": "P9: MS-SSIM低×総合低（マルチスケール劣化）"
+  },
+  "help": {
+    "workflow_title": "📖 正しい評価ワークフロー",
+    "workflow_step1": "1. 元画像（GT: 1000×1000px）をBicubic 0.5×で縮小",
+    "workflow_step2": "2. 縮小画像（LR: 500×500px）をAI超解像で2×拡大",
+    "workflow_step3": "3. 超解像結果（SR: 1000×1000px）と元画像（GT）を比較",
+    "common_mistake": "❌ よくある間違い: 縮小画像をGTに、元画像をSRに設定"
+  }
+}

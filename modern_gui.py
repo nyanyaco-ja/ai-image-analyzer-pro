@@ -7,6 +7,7 @@ import json
 from datetime import datetime
 from PIL import Image, ImageTk, ImageDraw
 import customtkinter as ctk
+from i18n import get_i18n
 
 # CPU/GPUモニタリング
 try:
@@ -74,7 +75,12 @@ class AccordionSection:
 class ModernImageAnalyzerGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("AI Image Analyzer Pro")
+
+        # 多言語対応の初期化（最初に実行）
+        self.i18n = get_i18n(default_language='ja')  # デフォルト日本語
+        self.current_language = 'ja'
+
+        self.root.title(self.i18n.t('app.title'))
         self.root.geometry("1200x800")
 
         # 背景色設定（サイバーパンク風）

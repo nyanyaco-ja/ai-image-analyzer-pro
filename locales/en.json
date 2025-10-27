@@ -1,0 +1,105 @@
+{
+  "app": {
+    "title": "AI Image Analyzer Pro",
+    "version": "v1.7.0 - Multilingual Edition",
+    "subtitle": "Medical AI Quality Assessment • Academic Paper Support • 26-Pattern Anomaly Detection"
+  },
+  "tabs": {
+    "single_analysis": "Single Image Analysis",
+    "batch_processing": "Batch Processing",
+    "academic_benchmark": "Academic Benchmark Evaluation"
+  },
+  "modes": {
+    "image": "Image Mode",
+    "document": "Document Mode",
+    "academic": "Academic Evaluation Mode",
+    "developer": "Developer Mode"
+  },
+  "buttons": {
+    "browse": "Browse",
+    "analyze": "Start Analysis",
+    "analyze_batch": "Start Batch Processing",
+    "analyze_stats": "Start Statistical Analysis (Generate 25 Plots)",
+    "export_csv": "Export CSV",
+    "export_report": "Export Detailed Report",
+    "language": "Language"
+  },
+  "labels": {
+    "original_image": "Original Image (Ground Truth)",
+    "upscaled_image": "Upscaled Image (AI Result)",
+    "output_folder": "Output Folder",
+    "original_folder": "Original Image Folder (GT Images)",
+    "model_folder": "Super-Resolution Model Folder",
+    "model_name": "Model Name",
+    "csv_output": "Output CSV File",
+    "detail_output": "Detailed Report Output",
+    "limit": "Sample Limit (0=All)",
+    "append_mode": "Append Mode (Add to existing CSV)",
+    "evaluation_mode": "Evaluation Mode"
+  },
+  "warnings": {
+    "png_recommended": "⚠️ PNG format recommended (JPEG is lossy and already degraded)"
+  },
+  "metrics": {
+    "ssim": "SSIM (Structural Similarity)",
+    "ms_ssim": "MS-SSIM (Multi-Scale)",
+    "psnr": "PSNR (Peak Signal-to-Noise Ratio)",
+    "lpips": "LPIPS (Learned Perceptual Image Patch Similarity)",
+    "sharpness": "Sharpness",
+    "contrast": "Contrast",
+    "entropy": "Entropy (Information Content)",
+    "noise": "Noise Level",
+    "edge_density": "Edge Density",
+    "artifacts": "Artifacts",
+    "delta_e": "Color Difference (ΔE)",
+    "high_freq_ratio": "High Frequency Ratio",
+    "texture_complexity": "Texture Complexity",
+    "local_quality": "Local Quality",
+    "histogram_corr": "Histogram Correlation",
+    "lab_L_mean": "LAB Lightness",
+    "total_score": "Total Score"
+  },
+  "messages": {
+    "select_image": "Please select an image",
+    "select_folder": "Please select a folder",
+    "processing": "Processing: {current}/{total}",
+    "completed": "✅ Processing completed",
+    "error": "❌ An error occurred",
+    "file_not_found": "File not found: {path}",
+    "batch_start": "🚀 Batch processing started",
+    "batch_complete": "✅ Batch processing completed!",
+    "checkpoint_saved": "💾 Checkpoint saved: {count} samples",
+    "eta": "⏱️ Time remaining: {minutes} min",
+    "parallel_processing": "⚡ Parallel processes: {workers}"
+  },
+  "errors": {
+    "invalid_path": "Invalid path",
+    "no_models": "Please select at least one model folder",
+    "analysis_failed": "Analysis failed: {error}"
+  },
+  "stats": {
+    "model_comparison": "Average Scores by Model",
+    "total_samples": "Total Samples",
+    "success_rate": "Success Rate",
+    "average_score": "Average Score",
+    "ranking": "🏆 Overall Score Ranking"
+  },
+  "patterns": {
+    "P1": "P1: High SSIM × Low PSNR (Structure preserved, frequency loss)",
+    "P2": "P2: High Sharpness × High Noise (Over-sharpening)",
+    "P3": "P3: High Edge × Low Quality (Edge enhancement, internal degradation)",
+    "P4": "P4: High Artifacts (Ringing, block noise)",
+    "P5": "P5: High Freq × Low Texture (False detail generation)",
+    "P6": "P6: High Quality Variance (Localized processing failure)",
+    "P7": "P7: Low Entropy × High Freq (Information deficit)",
+    "P8": "P8: Abnormal Contrast × Low Hist Corr (Color distortion)",
+    "P9": "P9: Low MS-SSIM × Low Total (Multi-scale degradation)"
+  },
+  "help": {
+    "workflow_title": "📖 Correct Evaluation Workflow",
+    "workflow_step1": "1. Downscale original (GT: 1000×1000px) by 0.5× using bicubic",
+    "workflow_step2": "2. Upscale downscaled image (LR: 500×500px) by 2× using AI SR",
+    "workflow_step3": "3. Compare SR result (SR: 1000×1000px) with original (GT)",
+    "common_mistake": "❌ Common mistake: Setting downscaled as GT and original as SR"
+  }
+}
