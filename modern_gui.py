@@ -2003,6 +2003,7 @@ class ModernImageAnalyzerGUI:
             return
 
         # 設定ファイル作成（評価モード固定：academic）
+        from multiprocessing import cpu_count
         config = {
             "original_dir": self.academic_original_dir.get(),
             "upscaled_dirs": valid_models,
@@ -2010,7 +2011,9 @@ class ModernImageAnalyzerGUI:
             "output_detail_dir": self.academic_output_detail.get(),
             "limit": self.academic_limit.get(),
             "append_mode": self.academic_append_mode.get(),
-            "evaluation_mode": "academic"  # 学術評価モード固定
+            "evaluation_mode": "academic",  # 学術評価モード固定
+            "num_workers": max(1, cpu_count() - 1),  # 並列処理数（自動設定：CPU数-1）
+            "checkpoint_interval": 1000  # チェックポイント間隔（1000サンプルごと）
         }
 
         # UIを無効化
@@ -2418,6 +2421,7 @@ class ModernImageAnalyzerGUI:
             return
 
         # 設定ファイル作成
+        from multiprocessing import cpu_count
         config = {
             "original_dir": self.batch_original_dir.get(),
             "upscaled_dirs": valid_models,
@@ -2425,7 +2429,9 @@ class ModernImageAnalyzerGUI:
             "output_detail_dir": self.batch_output_detail.get(),
             "limit": self.batch_limit.get(),  # 処理枚数制限
             "append_mode": self.batch_append_mode.get(),  # 追加モード
-            "evaluation_mode": self.batch_evaluation_mode.get()  # 評価モード（バッチ処理タブの設定）
+            "evaluation_mode": self.batch_evaluation_mode.get(),  # 評価モード（バッチ処理タブの設定）
+            "num_workers": max(1, cpu_count() - 1),  # 並列処理数（自動設定：CPU数-1）
+            "checkpoint_interval": 1000  # チェックポイント間隔（1000サンプルごと）
         }
 
         # UIを無効化
@@ -3307,7 +3313,7 @@ class ModernImageAnalyzerGUI:
 
             # スクロール速度を上げるための設定
             # Canvasのyscrollincrement（1回のスクロール量）を調整
-            canvas.configure(yscrollincrement=35)  # デフォルトは20程度、1.75倍に設定（操作しやすい速度）
+            canvas.configure(yscrollincrement=25)  # デフォルトは20程度、1.75倍に設定（操作しやすい速度）
 
         except Exception as e:
             # デバッグ用

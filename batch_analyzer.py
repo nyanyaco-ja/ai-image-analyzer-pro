@@ -14,10 +14,83 @@
 import os
 import csv
 import json
+import gc
+import time
 from pathlib import Path
 from tqdm import tqdm
 import pandas as pd
+from multiprocessing import Pool, cpu_count
+from functools import partial
 from advanced_image_analyzer import analyze_images
+
+def process_single_pair(args):
+    """
+    単一の画像ペアを処理（並列処理用）
+
+    Args:
+        args: (orig_img_path, model_name, upscaled_dir, output_detail_dir, evaluation_mode)
+
+    Returns:
+        (success, result_or_error_message)
+    """
+    orig_img_path, model_name, upscaled_dir, output_detail_dir, evaluation_mode = args
+
+    image_id = orig_img_path.stem
+
+    try:
+        # 超解像画像のパスを探す（PNG/JPG両対応、サフィックス対応）
+        upscaled_path = None
+
+        # まず完全一致を試す
+        for ext in ['.png', '.jpg', '.jpeg']:
+            candidate = upscaled_dir / f"{image_id}{ext}"
+            if candidate.exists():
+                upscaled_path = candidate
+                break
+
+        # 見つからない場合、サフィックス付きファイルを検索
+        if upscaled_path is None:
+            for ext in ['.png', '.jpg', '.jpeg']:
+                # image_id で始まるファイルを検索
+                pattern = f"{image_id}*{ext}"
+                matches = list(upscaled_dir.glob(pattern))
+                if matches:
+                    upscaled_path = matches[0]  # 最初にマッチしたものを使用
+                    break
+
+        if upscaled_path is None:
+            error_msg = f"⚠️  超解像画像が見つかりません: {model_name}/{image_id}"
+            return (False, error_msg)
+
+        # 分析実行
+        output_subdir = output_detail_dir / model_name / image_id
+
+        results = analyze_images(
+            str(orig_img_path),
+            str(upscaled_path),
+            str(output_subdir),
+            str(orig_img_path),
+            evaluation_mode
+        )
+
+        # 17項目のスコアを抽出
+        row = extract_metrics_for_csv(
+            image_id,
+            model_name,
+            results,
+            str(orig_img_path),
+            str(upscaled_path)
+        )
+
+        # メモリ解放
+        del results
+        gc.collect()
+
+        return (True, row)
+
+    except Exception as e:
+        error_msg = f"❌ エラー: {image_id} - {model_name}: {str(e)}"
+        return (False, error_msg)
 
 def batch_analyze(config_file, progress_callback=None):
     """
@@ -39,6 +112,9 @@ def batch_analyze(config_file, progress_callback=None):
     limit = config.get('limit', 0)  # 0 = 全て処理
     append_mode = config.get('append_mode', False)  # False = 上書き, True = 追加
     evaluation_mode = config.get('evaluation_mode', 'image')  # デフォルトは画像モード
+    num_workers = config.get('num_workers', max(1, cpu_count() - 1))  # 並列処理数（デフォルト: CPU数-1）
+    checkpoint_interval = config.get('checkpoint_interval', 1000)  # チェックポイント保存間隔
+    checkpoint_file = Path(output_csv).parent / f"checkpoint_{Path(output_csv).stem}.csv"
 
     # 出力ディレクトリ作成
     output_detail_dir.mkdir(parents=True, exist_ok=True)
@@ -97,6 +173,8 @@ def batch_analyze(config_file, progress_callback=None):
         print(f"   - {model_name}")
     print(f"💾 出力CSV: {output_csv}")
     print(f"⚙️  評価モード: {mode_names.get(evaluation_mode, evaluation_mode)}")
+    print(f"⚡ 並列処理数: {num_workers}プロセス")
+    print(f"💾 チェックポイント間隔: {checkpoint_interval}サンプルごと")
     print(f"{'='*60}\n")
 
     # 超解像モデルフォルダのJPG検出
@@ -123,72 +201,63 @@ def batch_analyze(config_file, progress_callback=None):
     processed = 0
     errors = 0
 
-    # 各元画像に対して処理
-    for idx, orig_img_path in enumerate(tqdm(original_images, desc="元画像処理中")):
-        image_id = orig_img_path.stem
-
-        # 各超解像モデルの結果と比較
+    # 処理タスクのリストを作成（全ての画像×モデルの組み合わせ）
+    tasks = []
+    for orig_img_path in original_images:
         for model_name, upscaled_dir in upscaled_dirs.items():
-            # 超解像画像のパスを探す（PNG/JPG両対応）
-            upscaled_path = None
-            tried_extensions = []
-            for ext in ['.png', '.jpg', '.jpeg']:
-                candidate = upscaled_dir / f"{image_id}{ext}"
-                tried_extensions.append(str(candidate))
-                if candidate.exists():
-                    upscaled_path = candidate
-                    break
+            tasks.append((orig_img_path, model_name, upscaled_dir, output_detail_dir, evaluation_mode))
 
-            if upscaled_path is None:
-                msg = f"⚠️  超解像画像が見つかりません: {model_name}/{image_id}"
-                print(msg)
-                print(f"   探索したパス:")
-                for tried_path in tried_extensions:
-                    print(f"     - {tried_path}")
-                errors += 1
-                # 進捗通知（エラーもカウント）
-                if progress_callback:
-                    progress_callback(processed + errors, total_pairs, msg)
-                continue
+    print(f"📋 処理タスク数: {len(tasks)}")
+    print(f"⏱️  推定処理時間: {len(tasks) * 15 / num_workers / 60:.1f}分 (1サンプル15秒想定)")
+    print(f"{'='*60}\n")
 
-            # 分析実行
-            output_subdir = output_detail_dir / model_name / image_id
+    # 開始時刻記録
+    start_time = time.time()
 
-            try:
-                # analyze_images(元画像, 超解像画像, 出力先, 低解像度元画像, 評価モード)
-                # ここでは元画像=低解像度として使用
-                results = analyze_images(
-                    str(orig_img_path),      # 画像1: 元画像（基準）
-                    str(upscaled_path),      # 画像2: AI超解像
-                    str(output_subdir),      # 出力先
-                    str(orig_img_path),      # 元画像（original_path）として同じものを使用
-                    evaluation_mode          # 評価モード（GUIから渡される）
-                )
+    # 並列処理で実行
+    print(f"⚡ {num_workers}プロセスで並列処理開始...\n")
 
-                # 17項目のスコアを抽出
-                row = extract_metrics_for_csv(
-                    image_id,
-                    model_name,
-                    results,
-                    str(orig_img_path),
-                    str(upscaled_path)
-                )
+    with Pool(processes=num_workers) as pool:
+        # imapを使って逐次的に結果を取得（メモリ効率化）
+        results_iter = pool.imap(process_single_pair, tasks)
 
-                all_results.append(row)
+        # プログレスバー付きで処理
+        for idx, (success, result) in enumerate(tqdm(results_iter, total=len(tasks), desc="バッチ処理中"), 1):
+            if success:
+                all_results.append(result)
                 processed += 1
 
-                # 進捗通知（処理完了後）
+                # 進捗通知
                 if progress_callback:
-                    progress_callback(processed, total_pairs, f"完了: {image_id} - {model_name}")
-
-            except Exception as e:
-                msg = f"❌ エラー: {image_id} - {model_name}: {str(e)}"
-                print(f"\n{msg}")
+                    progress_callback(processed, total_pairs, f"完了: {result['image_id']} - {result['model']}")
+            else:
+                # エラーメッセージを表示
+                print(f"\n{result}")
                 errors += 1
-                # 進捗通知（エラーもカウント）
+
+                # 進捗通知
                 if progress_callback:
-                    progress_callback(processed + errors, total_pairs, msg)
-                continue
+                    progress_callback(processed + errors, total_pairs, result)
+
+            # チェックポイント保存
+            if idx % checkpoint_interval == 0 and len(all_results) > 0:
+                elapsed_time = time.time() - start_time
+                avg_time_per_sample = elapsed_time / idx
+                eta_seconds = avg_time_per_sample * (len(tasks) - idx)
+
+                print(f"\n{'='*60}")
+                print(f"💾 チェックポイント保存中... ({idx}/{len(tasks)})")
+                print(f"⏱️  経過時間: {elapsed_time/60:.1f}分")
+                print(f"⏱️  残り時間: {eta_seconds/60:.1f}分")
+                print(f"✔️  成功: {processed}, ❌ エラー: {errors}")
+                print(f"{'='*60}\n")
+
+                save_results_to_csv(all_results, str(checkpoint_file), append_mode=False)
+                print(f"💾 チェックポイント保存完了: {checkpoint_file}\n")
+
+    # 処理時間計算
+    total_time = time.time() - start_time
+    avg_time_per_sample = total_time / len(tasks) if len(tasks) > 0 else 0
 
     # 結果をCSV保存
     if len(all_results) > 0:
@@ -205,15 +274,25 @@ def batch_analyze(config_file, progress_callback=None):
         print(f"{'='*60}")
         print(f"✔️  成功: {processed} / {total_pairs}")
         print(f"❌ エラー: {errors} / {total_pairs}")
+        print(f"⏱️  総処理時間: {total_time/60:.1f}分 ({total_time/3600:.2f}時間)")
+        print(f"⚡ 平均処理速度: {avg_time_per_sample:.2f}秒/サンプル")
+        print(f"🚀 並列化効率: {num_workers}プロセス使用")
         print(f"\n📊 モデル別処理件数:")
         for model, count in model_counts.items():
             print(f"   {model}: {count}件")
         print(f"\n📄 結果CSV: {output_csv}")
         print(f"📊 詳細レポート: {output_detail_dir}")
+        if checkpoint_file.exists():
+            print(f"💾 チェックポイント: {checkpoint_file}")
         print(f"{'='*60}\n")
 
         # 簡易統計を表示
         display_summary_statistics(all_results)
+
+        # チェックポイントファイルを削除（正常終了時）
+        if checkpoint_file.exists():
+            checkpoint_file.unlink()
+            print(f"\n💾 チェックポイントファイル削除済み（正常終了）")
     else:
         print(f"\n❌ 処理可能な画像がありませんでした")
 
@@ -396,6 +475,10 @@ def create_config_template():
     設定ファイルのテンプレートを作成
     """
 
+    # CPU数を取得
+    num_cpus = cpu_count()
+    recommended_workers = max(1, num_cpus - 1)
+
     template = {
         "original_dir": "dataset/original/",
         "upscaled_dirs": {
@@ -406,7 +489,10 @@ def create_config_template():
             "chainer_combo2": "dataset/chainer_combo2/"
         },
         "output_csv": "results/batch_analysis.csv",
-        "output_detail_dir": "results/detailed/"
+        "output_detail_dir": "results/detailed/",
+        "num_workers": recommended_workers,
+        "checkpoint_interval": 1000,
+        "evaluation_mode": "academic"
     }
 
     config_path = 'batch_config.json'
@@ -421,7 +507,13 @@ def create_config_template():
     print(f"\n💡 ヒント:")
     print(f"   - original_dir: 元画像（1000px）のフォルダ")
     print(f"   - upscaled_dirs: 各モデルの超解像結果フォルダ")
-    print(f"   - 同じファイル名（image001.png等）で対応付けされます\n")
+    print(f"   - num_workers: 並列処理数（現在のCPU: {num_cpus}コア、推奨: {recommended_workers}）")
+    print(f"   - checkpoint_interval: チェックポイント保存間隔（デフォルト: 1000サンプル）")
+    print(f"   - evaluation_mode: 評価モード（image/document/academic/developer）")
+    print(f"   - 同じファイル名（image001.png等）で対応付けされます")
+    print(f"\n⚡ 15000サンプル処理の場合:")
+    print(f"   - 推定時間: 約{15000 * 15 / recommended_workers / 3600:.1f}時間 (1サンプル15秒想定)")
+    print(f"   - チェックポイントで中断・再開可能\n")
 
 
 if __name__ == '__main__':
