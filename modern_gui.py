@@ -1321,6 +1321,72 @@ class ModernImageAnalyzerGUI:
         # 値変更時のコールバック
         self.batch_limit.trace_add("write", self.update_limit_label)
 
+        # === 並列処理設定 ===
+        parallel_info = ctk.CTkLabel(
+            self.detail_accordion.content_frame,
+            text="⚡ 並列処理設定（1000枚以上で効果的、少量は逆に遅くなります）",
+            font=("Arial", 11),
+            text_color="#888888",
+            justify="left"
+        )
+        parallel_info.pack(anchor="w", padx=15, pady=(20, 5))
+
+        # 並列処理フレーム
+        parallel_frame = ctk.CTkFrame(self.detail_accordion.content_frame, fg_color="transparent")
+        parallel_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
+
+        # 並列処理ON/OFFチェックボックス
+        self.use_parallel = tk.BooleanVar(value=False)  # デフォルトOFF
+        parallel_checkbox = ctk.CTkCheckBox(
+            parallel_frame,
+            text="並列処理を使用",
+            variable=self.use_parallel,
+            command=self.toggle_parallel_settings,
+            font=("Arial", 13),
+            text_color="#4A90E2",
+            fg_color="#4A90E2",
+            hover_color="#357ABD"
+        )
+        parallel_checkbox.pack(anchor="w", pady=(0, 10))
+
+        # プロセス数設定フレーム
+        workers_frame = ctk.CTkFrame(parallel_frame, fg_color="transparent")
+        workers_frame.pack(fill=tk.X)
+
+        workers_label = ctk.CTkLabel(
+            workers_frame,
+            text="プロセス数:",
+            font=("Arial", 12),
+            text_color="#888888",
+            anchor="w"
+        )
+        workers_label.pack(side=tk.LEFT, padx=(20, 10))
+
+        from multiprocessing import cpu_count
+        max_workers = max(1, cpu_count())
+        self.num_workers = tk.IntVar(value=max(1, cpu_count() - 1))
+
+        self.workers_spinbox = ctk.CTkEntry(
+            workers_frame,
+            width=80,
+            height=35,
+            font=("Arial", 13),
+            textvariable=self.num_workers,
+            state='disabled',  # デフォルトで無効
+            fg_color="#2d3748",
+            border_color="#4A90E2",
+            text_color="#ffffff"
+        )
+        self.workers_spinbox.pack(side=tk.LEFT, padx=(0, 10))
+
+        workers_info = ctk.CTkLabel(
+            workers_frame,
+            text=f"（推奨: {max(1, cpu_count() - 1)}, 最大: {max_workers}）",
+            font=("Arial", 11),
+            text_color="#666666"
+        )
+        workers_info.pack(side=tk.LEFT)
+
         # === 通常のバッチ処理セクション ===
         # 実行ボタン（翻訳対応）
         self.batch_analyze_btn = ctk.CTkButton(
@@ -2427,6 +2493,15 @@ class ModernImageAnalyzerGUI:
         else:
             self.limit_value_label.configure(text=f"{limit}枚", text_color="#00ffff")
 
+    def toggle_parallel_settings(self):
+        """並列処理ON/OFF時の処理"""
+        if self.use_parallel.get():
+            # 並列処理ON: プロセス数入力を有効化
+            self.workers_spinbox.configure(state='normal')
+        else:
+            # 並列処理OFF: プロセス数入力を無効化
+            self.workers_spinbox.configure(state='disabled')
+
     def start_batch_analysis(self):
         """バッチ処理開始"""
         # バリデーション：元画像フォルダ（必須）
@@ -2462,6 +2537,15 @@ class ModernImageAnalyzerGUI:
 
         # 設定ファイル作成
         from multiprocessing import cpu_count
+
+        # 並列処理数の決定
+        if self.use_parallel.get():
+            # 並列処理ON: ユーザー指定のプロセス数を使用
+            num_workers = max(1, min(self.num_workers.get(), cpu_count()))
+        else:
+            # 並列処理OFF: 1プロセス（並列なし）
+            num_workers = 1
+
         config = {
             "original_dir": self.batch_original_dir.get(),
             "upscaled_dirs": valid_models,
@@ -2470,7 +2554,7 @@ class ModernImageAnalyzerGUI:
             "limit": self.batch_limit.get(),  # 処理枚数制限
             "append_mode": self.batch_append_mode.get(),  # 追加モード
             "evaluation_mode": self.batch_evaluation_mode.get(),  # 評価モード（バッチ処理タブの設定）
-            "num_workers": max(1, cpu_count() - 1),  # 並列処理数（自動設定：CPU数-1）
+            "num_workers": num_workers,  # 並列処理数（ユーザー設定）
             "checkpoint_interval": 1000  # チェックポイント間隔（1000サンプルごと）
         }
 
