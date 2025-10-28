@@ -2295,8 +2295,8 @@ class ModernImageAnalyzerGUI:
         try:
             for i, img_path in enumerate(image_files, 1):
                 try:
-                    # 画像読み込み
-                    img = cv2.imread(img_path)
+                    # 画像読み込み（ビット深度・カラー形式を保持）
+                    img = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
                     if img is None:
                         error_count += 1
                         error_files.append(os.path.basename(img_path))
@@ -3455,8 +3455,8 @@ class ModernImageAnalyzerGUI:
             return
 
         try:
-            # 画像読み込み
-            img = cv2.imread(original_path)
+            # 画像読み込み（ビット深度・カラー形式を保持）
+            img = cv2.imread(original_path, cv2.IMREAD_UNCHANGED)
             if img is None:
                 messagebox.showerror("エラー", "画像の読み込みに失敗しました")
                 return
