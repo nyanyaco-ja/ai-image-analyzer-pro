@@ -1918,6 +1918,71 @@ class ModernImageAnalyzerGUI:
         )
         append_check.pack(anchor="w")
 
+        # === 並列処理設定（論文用） ===
+        parallel_info = ctk.CTkLabel(
+            self.config_accordion.content_frame,
+            text="⚡ 並列処理設定（15,000枚推奨、少量は逆に遅くなります）",
+            font=("Arial", 11),
+            text_color="#888888",
+            justify="left"
+        )
+        parallel_info.pack(anchor="w", padx=15, pady=(20, 5))
+
+        parallel_frame = ctk.CTkFrame(self.config_accordion.content_frame, fg_color="transparent")
+        parallel_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
+
+        # 並列処理ON/OFF
+        self.academic_use_parallel = tk.BooleanVar(value=False)  # デフォルトOFF
+        academic_parallel_checkbox = ctk.CTkCheckBox(
+            parallel_frame,
+            text="並列処理を使用",
+            variable=self.academic_use_parallel,
+            command=self.toggle_academic_parallel_settings,
+            font=("Arial", 13),
+            text_color="#9b59b6",
+            fg_color="#9b59b6",
+            hover_color="#7d3c98"
+        )
+        academic_parallel_checkbox.pack(anchor="w", pady=(0, 10))
+
+        # プロセス数設定
+        academic_workers_frame = ctk.CTkFrame(parallel_frame, fg_color="transparent")
+        academic_workers_frame.pack(fill=tk.X)
+
+        academic_workers_label = ctk.CTkLabel(
+            academic_workers_frame,
+            text="プロセス数:",
+            font=("Arial", 12),
+            text_color="#888888",
+            anchor="w"
+        )
+        academic_workers_label.pack(side=tk.LEFT, padx=(20, 10))
+
+        from multiprocessing import cpu_count
+        max_workers = max(1, cpu_count())
+        self.academic_num_workers = tk.IntVar(value=max(1, cpu_count() - 1))
+
+        self.academic_workers_spinbox = ctk.CTkEntry(
+            academic_workers_frame,
+            width=80,
+            height=35,
+            font=("Arial", 13),
+            textvariable=self.academic_num_workers,
+            state='disabled',  # デフォルトで無効
+            fg_color="#2d3748",
+            border_color="#9b59b6",
+            text_color="#ffffff"
+        )
+        self.academic_workers_spinbox.pack(side=tk.LEFT, padx=(0, 10))
+
+        academic_workers_info = ctk.CTkLabel(
+            academic_workers_frame,
+            text=f"（推奨: {max(1, cpu_count() - 1)}, 最大: {max_workers}）",
+            font=("Arial", 11),
+            text_color="#666666"
+        )
+        academic_workers_info.pack(side=tk.LEFT)
+
         # 実行ボタン
         self.academic_analyze_btn = ctk.CTkButton(
             self.academic_mode_frame,
@@ -2110,6 +2175,15 @@ class ModernImageAnalyzerGUI:
 
         # 設定ファイル作成（評価モード固定：academic）
         from multiprocessing import cpu_count
+
+        # 並列処理数の決定
+        if self.academic_use_parallel.get():
+            # 並列処理ON: ユーザー指定のプロセス数を使用
+            num_workers = max(1, min(self.academic_num_workers.get(), cpu_count()))
+        else:
+            # 並列処理OFF: 1プロセス（並列なし）
+            num_workers = 1
+
         config = {
             "original_dir": self.academic_original_dir.get(),
             "upscaled_dirs": valid_models,
@@ -2118,7 +2192,7 @@ class ModernImageAnalyzerGUI:
             "limit": self.academic_limit.get(),
             "append_mode": self.academic_append_mode.get(),
             "evaluation_mode": "academic",  # 学術評価モード固定
-            "num_workers": max(1, cpu_count() - 1),  # 並列処理数（自動設定：CPU数-1）
+            "num_workers": num_workers,  # 並列処理数（ユーザー設定）
             "checkpoint_interval": 1000  # チェックポイント間隔（1000サンプルごと）
         }
 
@@ -2494,13 +2568,22 @@ class ModernImageAnalyzerGUI:
             self.limit_value_label.configure(text=f"{limit}枚", text_color="#00ffff")
 
     def toggle_parallel_settings(self):
-        """並列処理ON/OFF時の処理"""
+        """並列処理ON/OFF時の処理（バッチ処理タブ）"""
         if self.use_parallel.get():
             # 並列処理ON: プロセス数入力を有効化
             self.workers_spinbox.configure(state='normal')
         else:
             # 並列処理OFF: プロセス数入力を無効化
             self.workers_spinbox.configure(state='disabled')
+
+    def toggle_academic_parallel_settings(self):
+        """並列処理ON/OFF時の処理（論文用タブ）"""
+        if self.academic_use_parallel.get():
+            # 並列処理ON: プロセス数入力を有効化
+            self.academic_workers_spinbox.configure(state='normal')
+        else:
+            # 並列処理OFF: プロセス数入力を無効化
+            self.academic_workers_spinbox.configure(state='disabled')
 
     def start_batch_analysis(self):
         """バッチ処理開始"""
