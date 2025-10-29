@@ -478,9 +478,9 @@ clean_dataset_20251010_123357/
 
 **📦 データ公開:**
 - ✅ **300枚統合CSV**: `data/batch_analysis_300images.csv`（本リポジトリに含む）
-- 📊 **クリーンデータセット（767MB）**: Zenodoで公開中 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17309563.svg)](https://doi.org/10.5281/zenodo.17309563)
-  - 168枚の元画像 + 247枚の正常超解像画像
-  - metadata.csv（AI学習用メタデータ）
+- 📊 **品質評価メタデータセット（30KB）**: Zenodoで公開中 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17309563.svg)](https://doi.org/10.5281/zenodo.17309563)
+  - metadata.csv（247ペアの評価結果: SSIM、PSNR等17項目）
+  - README.txt（NIH ChestX-ray14データセットとの組み合わせ方法）
   - AI学習・転移学習・ベンチマーク用途に最適
 
 ---
