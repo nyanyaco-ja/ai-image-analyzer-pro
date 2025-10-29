@@ -54,4 +54,8 @@ docs/論文投稿戦略_n1000_deep_learning.md
 
 # セッション記録（非公開、戦略情報含む）
 session_notes_*.md
+
+# リリースノート（非公開、将来計画含む）
+RELEASE_NOTES_*.md
+
 0.20.0
