@@ -58,4 +58,8 @@ session_notes_*.md
 # リリースノート（非公開、将来計画含む）
 RELEASE_NOTES_*.md
 
+# 全てのマークダウンファイル（README.md除く）
+*.md
+!README.md
+
 0.20.0
