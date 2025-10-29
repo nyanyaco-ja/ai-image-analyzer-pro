@@ -58,6 +58,7 @@ The following uses require a commercial license:
 ❌ **Manufacturing QA systems** (production line integration)
 ❌ **Commercial services** (SaaS, consulting, paid services)
 ❌ **Internal business operations** (quality control, workflow automation)
+❌ **Industry-academia collaborations by for-profit companies**
 
 ### Commercial Licensing:
 
@@ -68,6 +69,34 @@ If you wish to use this software or its derivatives for commercial purposes, you
 3. Agree to appropriate compensation terms
 
 Unauthorized commercial use is strictly prohibited and will be subject to legal action.
+
+### Industry-Academia Collaboration Requirements:
+
+**For industry-academia collaborations by for-profit companies:**
+
+When for-profit companies wish to use this tool's functionality in industry-academia collaborative research, free use is NOT permitted. The ONLY condition for use is to meet the following requirements:
+
+1. **Include the developer (mohumohu neco) as a co-researcher**
+   - The developer must be invited as a co-researcher in the collaborative research project
+
+2. **Pay appropriate compensation**
+   - Provide appropriate compensation commensurate with the contribution (research funds, personnel costs, technical consulting fees, etc.)
+
+This is a legitimate requirement under the CC BY-NC 4.0 license and follows international open-source standards (similar to MongoDB, Qt, Elasticsearch).
+
+Free industry-academia collaboration use is NOT permitted. The developer's contributions must be properly evaluated and compensated as a mandatory condition.
+
+**産学連携研究の必須条件（日本語）:**
+
+営利企業が本ツールの機能を利用した産学連携研究を希望する場合、無償での利用は認められません。利用の唯一の条件として、以下の事項を必須とします：
+
+1. **開発者（mohumohu neco）を必ず共同研究者として迎え入れること**
+   - 産学連携研究プロジェクトにおいて、開発者を共同研究者として招聘すること
+
+2. **適切な対価を支払うこと**
+   - 貢献に見合った適切な対価（研究費、人件費、技術指導料等）を提供すること
+
+CC BY-NC 4.0ライセンスに基づく正当な権利として明記。無償での産学連携利用は認めず、開発者の貢献に対する適切な評価と対価支払いを必須条件とします。
 
 ---
 
