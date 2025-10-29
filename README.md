@@ -56,7 +56,6 @@ The following are **allowed without commercial license:**
 - ✅ Non-profit organizations (NPO, NGO)
 - ✅ Government research institutions
 - ✅ Open-source project contributions
-- ✅ Academic collaborations with industry partners (if results are publicly published)
 
 ### 📞 **Commercial Licensing Contact**
 
@@ -119,7 +118,6 @@ Wang, X., Peng, Y., Lu, L., Lu, Z., Bagheri, M., & Summers, R. M. (2017). ChestX
 - ✅ 非営利組織（NPO、NGO）
 - ✅ 政府研究機関
 - ✅ オープンソースプロジェクトへの貢献
-- ✅ 産学連携研究（結果を公開する場合）
 
 ### 📞 **商用ライセンスのお問い合わせ**
 
@@ -661,8 +659,15 @@ pip install kornia
 
 - ✅ 非営利目的での使用・改変・再配布は自由
 - ✅ クレジット表記必須（"mohumohu neco"の名前を残すこと）
-- ⚠️ **営利目的での使用は事前許可が必要**
-- 📧 商用利用のお問い合わせ: s.shiny.n.works@gmail.com
+- ⚠️ **（企業利用、製品選定、品質保証、産学連携研究を含む）での使用は、有償の商用ライセンスまたは共同研究契約が必要です。**
+- 📧 共同研究に関するご相談を含む、営利目的での全てのお問い合わせ: s.shiny.n.works@gmail.com
+
+## 産学連携研究の必須条件
+営利企業が本ツールの機能を利用した産学連携研究を希望する場合、無償での利用は認められません。利用の唯一の条件として、以下の事項を必須とします。
+
+本ツールの開発者（mohumohu neco）を必ず共同研究者として迎え入れること。
+
+開発者に対し、**貢献に見合った適切な対価（研究費、人件費、技術指導料等）**を支払うこと。
 
 詳細: [LICENSE](LICENSE) ファイルを参照
 
