@@ -49,8 +49,8 @@ transformers_cache/
 # Note記事下書き（非公開）
 note_article_draft.md
 
-# 論文投稿戦略メモ（非公開）
-docs/論文投稿戦略_n1000_deep_learning.md
+# docsフォルダ全体（非公開、戦略情報・未実装機能含む）
+docs/
 
 # セッション記録（非公開、戦略情報含む）
 session_notes_*.md
