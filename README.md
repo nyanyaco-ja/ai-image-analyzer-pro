@@ -51,7 +51,7 @@ Wang, X., Peng, Y., Lu, L., Lu, Z., Bagheri, M., & Summers, R. M. (2017). ChestX
 - `data/batch_analysis_100images.csv`: 初回100枚データ
 - **300枚統合データ**: 全900データポイント（300枚 × 3モデル）の包括的分析
 - `analysis_output/` フォルダ: 23種類の統計分析プロット + サマリCSV
-- **Zenodo (DOI: 10.5281/zenodo.17282715)**: 永久保存版データアーカイブ
+- **Zenodo (DOI: 10.5281/zenodo.17470655)**: 永久保存版データアーカイブ
   - [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17470655.svg)](https://doi.org/10.5281/zenodo.17470655)
 
 **主な発見（Upscayl 300枚データ）:**
