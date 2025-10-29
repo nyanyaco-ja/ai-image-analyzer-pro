@@ -41,7 +41,7 @@ Wang, X., Peng, Y., Lu, L., Lu, Z., Bagheri, M., & Summers, R. M. (2017). ChestX
 
 ---
 
-## 🔬 300枚分析プロジェクト公開中（v1.5対応）
+## 🔬 300枚分析プロジェクト公開中（v1.5.1対応）
 
 **NIH ChestX-ray14データセット**を使用した**Upscayl 3モデル × 300枚（計900データポイント）**の定量評価を実施しました。
 
@@ -478,11 +478,11 @@ clean_dataset_20251010_123357/
 
 **📦 データ公開:**
 - ✅ **300枚統合CSV**: `data/batch_analysis_300images.csv`（本リポジトリに含む）
-- 📊 **品質評価メタデータセット（30KB）**: Zenodoで公開中 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17309563.svg)](https://doi.org/10.5281/zenodo.17309563)
+- 📊 **品質評価メタデータセット（30KB）**: Zenodoで公開中 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17470655.svg)](https://doi.org/10.5281/zenodo.17470655)
   - metadata.csv（247ペアの評価結果: SSIM、PSNR等17項目）
   - README.txt（NIH ChestX-ray14データセットとの組み合わせ方法）
   - AI学習・転移学習・ベンチマーク用途に最適
-
+10.5281/zenodo.17470655
 ---
 
 ## トラブルシューティング
