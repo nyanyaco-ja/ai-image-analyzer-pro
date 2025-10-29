@@ -183,7 +183,6 @@ CLIP > 0.85 & LPIPS < 0.2 → ✅ 幻覚なし・高品質
 
 **⚠️ CLIP機能を使うには PyTorch 2.6.0+ が必須です**
 - セキュリティ脆弱性（CVE-2025-32434）対応のため
-- 詳細: [UPGRADE_GUIDE.md](UPGRADE_GUIDE.md)
 
 ---
 
