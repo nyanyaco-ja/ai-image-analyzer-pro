@@ -21,47 +21,11 @@ The calculation logic, results, and application **may contain computational erro
 
 ---
 
-## 📜 License and Usage Terms
+## ⚠️ 重要な免責事項（日本語）
 
-[![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
+本稿で公開する**『AI Image Analyzer Pro』は、AIの安全性と品質評価手法に関する学術研究ツール**を目的としており、臨床診断、医療行為、重要インフラの意思決定、または企業・組織における最終的な製品選定基準として利用することを想定していません。
 
-This project is licensed under **CC BY-NC 4.0 (Creative Commons Attribution-NonCommercial 4.0 International)** with the following clarifications:
-
-### ✅ **Free Use (研究・教育目的の無償利用)**
-
-**Permitted users:**
-- 🎓 **Academic institutions** (universities, research labs)
-- 👤 **Individual researchers** (personal research projects)
-- 🏫 **Educational purposes** (teaching, learning, coursework)
-
-**Permitted activities:**
-- Research and academic publications
-- Educational materials and teaching
-- Personal projects and experimentation
-- Open-source contributions
-
-### ❌ **Commercial Use Prohibited (企業利用は有償)**
-
-**Requires commercial license:**
-- 🏢 **Corporate/Enterprise use** (for-profit companies)
-- 🏭 **Manufacturing QA systems** (production line integration)
-- 💼 **Commercial services** (SaaS, consulting)
-- 📊 **Internal business operations** (quality control, workflow automation)
-
-**For commercial licensing inquiries, please contact the author.**
-
-### 🤝 **Special Exemptions (特例)**
-
-The following are **allowed without commercial license:**
-- ✅ Non-profit organizations (NPO, NGO)
-- ✅ Government research institutions
-- ✅ Open-source project contributions
-
-### 📞 **Commercial Licensing Contact**
-
-For commercial use inquiries:
-- **GitHub Issues**: [Create an issue with [COMMERCIAL LICENSE] tag]
-- **Email**: [Contact via GitHub profile]
+本ツールの計算ロジック、結果、およびアプリには、**計算誤差やバグが含まれている可能性**があり、その正確性や妥当性について、開発者は一切の保証と責任を負いません。**重要な判断を行う前に、必ず専門家による検証を実施してください。**
 
 ---
 
@@ -74,56 +38,6 @@ This project uses the **NIH ChestX-ray14 Dataset (ChestX-ray8)** provided by the
 Wang, X., Peng, Y., Lu, L., Lu, Z., Bagheri, M., & Summers, R. M. (2017). ChestX-ray8: Hospital-scale Chest X-ray Database and Benchmarks on Weakly-Supervised Classification and Localization of Common Thorax Diseases. *Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)*, 3462-3471.
 
 **Dataset Download:** https://nihcc.app.box.com/v/ChestXray-NIHCC
-
----
-
-## ⚠️ 重要な免責事項（日本語）
-
-本稿で公開する**『AI Image Analyzer Pro』は、AIの安全性と品質評価手法に関する学術研究ツール**を目的としており、臨床診断、医療行為、重要インフラの意思決定、または企業・組織における最終的な製品選定基準として利用することを想定していません。
-
-本ツールの計算ロジック、結果、およびアプリには、**計算誤差やバグが含まれている可能性**があり、その正確性や妥当性について、開発者は一切の保証と責任を負いません。**重要な判断を行う前に、必ず専門家による検証を実施してください。**
-
----
-
-## 📜 ライセンスと利用規約（日本語）
-
-本プロジェクトは**CC BY-NC 4.0（クリエイティブ・コモンズ 表示-非営利 4.0 国際）**ライセンスの下で公開されています。
-
-### ✅ **無償利用が可能な対象**
-
-**利用可能なユーザー:**
-- 🎓 **教育機関**（大学、研究機関）
-- 👤 **個人研究者**（個人の研究プロジェクト）
-- 🏫 **教育目的**（授業、学習、課題）
-
-**許可される用途:**
-- 学術研究・論文執筆
-- 教育教材・授業での使用
-- 個人プロジェクト・実験
-- オープンソースへの貢献
-
-### ❌ **企業利用には商用ライセンスが必要**
-
-**商用ライセンスが必要な場合:**
-- 🏢 **営利企業での利用**（企業内での使用）
-- 🏭 **製造業QAシステム**（生産ラインへの組み込み）
-- 💼 **商業サービス**（SaaS、コンサルティング）
-- 📊 **社内業務での利用**（品質管理、ワークフロー自動化）
-
-**商用ライセンスに関するお問い合わせは、作者にご連絡ください。**
-
-### 🤝 **特例（商用ライセンス不要）**
-
-以下の場合は**商用ライセンス不要**で利用可能:
-- ✅ 非営利組織（NPO、NGO）
-- ✅ 政府研究機関
-- ✅ オープンソースプロジェクトへの貢献
-
-### 📞 **商用ライセンスのお問い合わせ**
-
-企業利用・商用ライセンスに関するお問い合わせ:
-- **GitHub Issues**: [[COMMERCIAL LICENSE] タグで Issue作成]
-- **Email**: [GitHub プロフィール経由でご連絡ください]
 
 ---
 
@@ -676,21 +590,61 @@ pip install kornia
 
 ---
 
-## ライセンス
+## 📜 License / ライセンス
+
+[![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
 
 **CC BY-NC 4.0 (Creative Commons Attribution-NonCommercial 4.0 International)**
 
-- ✅ 非営利目的での使用・改変・再配布は自由
-- ✅ クレジット表記必須（"mohumohu neco"の名前を残すこと）
-- ⚠️ **（企業利用、製品選定、品質保証、産学連携研究を含む）での使用は、有償の商用ライセンスまたは共同研究契約が必要です。**
-- 📧 共同研究に関するご相談を含む、営利目的での全てのお問い合わせ: s.shiny.n.works@gmail.com
+### ✅ Free Use (非営利利用は無償)
 
-## 産学連携研究の必須条件
-営利企業が本ツールの機能を利用した産学連携研究を希望する場合、無償での利用は認められません。利用の唯一の条件として、以下の事項を必須とします。
+**Permitted users / 利用可能なユーザー:**
+- 🎓 Academic institutions (universities, research labs) / 教育機関（大学、研究機関）
+- 👤 Individual researchers (personal research projects) / 個人研究者（個人の研究プロジェクト）
+- 🏫 Educational purposes (teaching, learning, coursework) / 教育目的（授業、学習、課題）
 
-本ツールの開発者（mohumohu neco）を必ず共同研究者として迎え入れること。
+**Permitted activities / 許可される用途:**
+- Research and academic publications / 学術研究・論文執筆
+- Educational materials and teaching / 教育教材・授業での使用
+- Personal projects and experimentation / 個人プロジェクト・実験
+- Open-source contributions / オープンソースへの貢献
 
-開発者に対し、**貢献に見合った適切な対価（研究費、人件費、技術指導料等）**を支払うこと。
+### ❌ Commercial Use Prohibited (企業利用は有償)
+
+**Requires commercial license / 商用ライセンスが必要な場合:**
+- 🏢 Corporate/Enterprise use (for-profit companies) / 営利企業での利用（企業内での使用）
+- 🏭 Manufacturing QA systems (production line integration) / 製造業QAシステム（生産ラインへの組み込み）
+- 💼 Commercial services (SaaS, consulting) / 商業サービス（SaaS、コンサルティング）
+- 📊 Internal business operations (quality control, workflow automation) / 社内業務での利用（品質管理、ワークフロー自動化）
+- 🤝 **Industry-academia collaborations by for-profit companies / 営利企業による産学連携研究**
+
+### 🤝 Special Exemptions (特例)
+
+The following are **allowed without commercial license** / 以下の場合は**商用ライセンス不要**:
+- ✅ Non-profit organizations (NPO, NGO) / 非営利組織（NPO、NGO）
+- ✅ Government research institutions / 政府研究機関
+- ✅ Open-source project contributions / オープンソースプロジェクトへの貢献
+
+### 🏢 Industry-Academia Collaboration Requirements / 産学連携研究の必須条件
+
+**For industry-academia collaborations by for-profit companies:**
+
+営利企業が本ツールの機能を利用した産学連携研究を希望する場合、無償での利用は認められません。利用の唯一の条件として、以下の事項を必須とします：
+
+1. **Include the developer (mohumohu neco) as a co-researcher** / 本ツールの開発者（mohumohu neco）を必ず共同研究者として迎え入れること
+2. **Pay appropriate compensation** (research funds, personnel costs, technical consulting fees, etc.) / 開発者に対し、**貢献に見合った適切な対価（研究費、人件費、技術指導料等）**を支払うこと
+
+This is a legitimate requirement under CC BY-NC 4.0 license and international open-source standards (similar to MongoDB, Qt, Elasticsearch).
+
+CC BY-NC 4.0ライセンスに基づく正当な権利として明記。無償での産学連携利用は認めず、開発者の貢献に対する適切な評価と対価支払いを必須条件とします。
+
+### 📞 Commercial Licensing Contact / お問い合わせ
+
+For commercial use and industry-academia collaboration inquiries:
+
+企業利用・産学連携研究に関するお問い合わせ:
+- **Email**: s.shiny.n.works@gmail.com
+- **GitHub Issues**: [Create an issue with [COMMERCIAL LICENSE] tag / [COMMERCIAL LICENSE] タグで Issue作成]
 
 詳細: [LICENSE](LICENSE) ファイルを参照
 
