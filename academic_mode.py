@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, scrolledtext
 import threading
 import os
+from datetime import datetime
 from ui_components import AccordionSection, get_timestamp_filename
 import customtkinter as ctk
 from PIL import Image
