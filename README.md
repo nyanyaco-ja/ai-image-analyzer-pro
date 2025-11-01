@@ -1,6 +1,6 @@
-# AI Image Analyzer Pro
+# AI Image Analyzer Pro (v1.6.1: P6法則の確立)
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17282715.svg)](https://doi.org/10.5281/zenodo.17282715)
+[![DOI: v1.6.1](https://zenodo.org/badge/DOI/10.5281/zenodo.17498299.svg)](https://doi.org/10.5281/zenodo.17498299)
 [![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
 
 > **Universal AI Super-Resolution Quality Evaluation Tool** with 18 metrics (CLIP, LPIPS, SSIM, PSNR...) for cross-domain hallucination detection. Medical, Satellite, Microscopy, Anime, and more. GPU-accelerated with detailed statistical reports.
@@ -518,7 +518,15 @@ pip install kornia
 
 ## 更新履歴
 
-### v1.6（現在）
+### v1.6.1（現在）（現行バージョン: P6構造的欠陥の法則の確立）
+- 🚀 **核心的発見: P6構造的欠陥の法則の確立**
+  - **基礎的証拠の追加**: P6の法則（構造的欠陥率 **85.2%** および閾値 **5.28**）を裏付ける**拡張された200サンプル分析データセット**を含有。
+  - **新しい方法論**: このデータにより、永続的な構造的欠陥に対処するための**新しいドメイン固有のコンテンツベースのデータフィルタリング方法論**の必要性が確立されました。
+- 🛡️ **ライセンスの更新**: このバージョンに特化して、ライセンスをCC BY 4.0から**CC BY-NC 4.0（非商用）**へ更新しました。これは、新しく確立されたP6構造的欠陥の法則と関連する方法論の**商業的権利を保護**するためです。
+- ✅ **新規DOI登録**: v1.6.1データは永久保存のため、新しいDOIで登録・アーカイブされました。
+---
+
+### v1.6
 - ✅ **多言語対応実装**（日本語/英語）
   - GUIで言語切り替え機能追加（設定タブ）
   - 全アコーディオン、ボタン、メッセージの完全翻訳対応
