@@ -885,3 +885,73 @@ class BatchModeMixin:
             )
             messagebox.showerror("エラー", f"バッチ処理中にエラーが発生しました:\n{output}")
 
+
+    def on_slider_change(self, value):
+        """スライダー変更時のコールバック"""
+        int_value = int(value)
+        self.batch_limit.set(int_value)
+
+        # 数値入力フィールドも更新
+        self.limit_entry.delete(0, tk.END)
+        self.limit_entry.insert(0, str(int_value))
+
+        # ラベル更新
+        if int_value == 0:
+            self.limit_value_label.configure(text="全て", text_color="#00ff88")
+        else:
+            self.limit_value_label.configure(text=f"{int_value}枚", text_color="#00ffff")
+
+    def on_entry_typing(self, event=None):
+        """入力中のリアルタイムフィードバック"""
+        try:
+            value = self.limit_entry.get().strip()
+            if value == "" or value == "0":
+                self.limit_value_label.configure(text="全て", text_color="#00ff88")
+            else:
+                int_value = int(value)
+                if int_value > 0:
+                    self.limit_value_label.configure(text=f"{int_value}枚", text_color="#00ffff")
+        except ValueError:
+            pass  # 入力中は無視
+
+    def on_entry_change(self, event=None):
+        """数値入力フィールド確定時のコールバック（Enter or フォーカスアウト）"""
+        try:
+            value = self.limit_entry.get().strip()
+            if value == "":
+                int_value = 0
+            else:
+                int_value = int(value)
+
+            # 負の値は0にする
+            if int_value < 0:
+                int_value = 0
+                self.limit_entry.delete(0, tk.END)
+                self.limit_entry.insert(0, "0")
+
+            self.batch_limit.set(int_value)
+
+            # スライダーも更新（500以下の場合のみ）
+            if int_value <= 500:
+                self.limit_slider.set(int_value)
+
+            # ラベル更新
+            if int_value == 0:
+                self.limit_value_label.configure(text="全て", text_color="#00ff88")
+            else:
+                self.limit_value_label.configure(text=f"{int_value}枚", text_color="#00ffff")
+
+        except ValueError:
+            # 無効な入力の場合は0にリセット
+            self.limit_entry.delete(0, tk.END)
+            self.limit_entry.insert(0, "0")
+            self.batch_limit.set(0)
+            self.limit_value_label.configure(text="全て", text_color="#00ff88")
+
+    def update_limit_label(self, *args):
+        """処理枚数ラベル更新（trace用）"""
+        limit = self.batch_limit.get()
+        if limit == 0:
+            self.limit_value_label.configure(text="全て", text_color="#00ff88")
+        else:
+            self.limit_value_label.configure(text=f"{limit}枚", text_color="#00ffff")
