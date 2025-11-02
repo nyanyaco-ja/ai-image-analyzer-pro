@@ -28,12 +28,12 @@ def process_single_pair(args):
     単一の画像ペアを処理（並列処理用）
 
     Args:
-        args: (orig_img_path, model_name, upscaled_dir, output_detail_dir, evaluation_mode)
+        args: (orig_img_path, model_name, upscaled_dir, output_detail_dir, evaluation_mode, patch_size)
 
     Returns:
         (success, result_or_error_message)
     """
-    orig_img_path, model_name, upscaled_dir, output_detail_dir, evaluation_mode = args
+    orig_img_path, model_name, upscaled_dir, output_detail_dir, evaluation_mode, patch_size = args
 
     image_id = orig_img_path.stem
 
@@ -59,7 +59,7 @@ def process_single_pair(args):
                     break
 
         if upscaled_path is None:
-            error_msg = f"⚠️  超解像画像が見つかりません: {model_name}/{image_id}"
+            error_msg = f"[WARNING] 超解像画像が見つかりません: {model_name}/{image_id}"
             return (False, error_msg)
 
         # 分析実行
@@ -70,7 +70,9 @@ def process_single_pair(args):
             str(upscaled_path),
             str(output_subdir),
             str(orig_img_path),
-            evaluation_mode
+            evaluation_mode,
+            comparison_mode='evaluation',
+            patch_size=patch_size
         )
 
         # 17項目のスコアを抽出
@@ -89,7 +91,7 @@ def process_single_pair(args):
         return (True, row)
 
     except Exception as e:
-        error_msg = f"❌ エラー: {image_id} - {model_name}: {str(e)}"
+        error_msg = f"[ERROR] {image_id} - {model_name}: {str(e)}"
         return (False, error_msg)
 
 def batch_analyze(config_file, progress_callback=None):
@@ -112,6 +114,7 @@ def batch_analyze(config_file, progress_callback=None):
     limit = config.get('limit', 0)  # 0 = 全て処理
     append_mode = config.get('append_mode', False)  # False = 上書き, True = 追加
     evaluation_mode = config.get('evaluation_mode', 'image')  # デフォルトは画像モード
+    patch_size = config.get('patch_size', 16)  # P6ヒートマップのパッチサイズ（デフォルト: 16×16、論文標準）
     num_workers = config.get('num_workers', max(1, cpu_count() - 1))  # 並列処理数（デフォルト: CPU数-1）
     checkpoint_interval = config.get('checkpoint_interval', 1000)  # チェックポイント保存間隔
     checkpoint_file = Path(output_csv).parent / f"checkpoint_{Path(output_csv).stem}.csv"
@@ -127,7 +130,7 @@ def batch_analyze(config_file, progress_callback=None):
     # JPG画像がある場合は警告
     if len(jpg_images) > 0:
         print(f"\n{'='*60}")
-        print(f"⚠️  警告: JPGファイルが検出されました ({len(jpg_images)}枚)")
+        print(f"[WARNING] JPGファイルが検出されました ({len(jpg_images)}枚)")
         print(f"{'='*60}")
         print(f"JPGは非可逆圧縮形式のため、すでに画質が劣化しています。")
         print(f"正確な評価のためには、元データからPNG形式で再出力することを強く推奨します。")
@@ -149,32 +152,32 @@ def batch_analyze(config_file, progress_callback=None):
     # 処理枚数制限
     if limit > 0 and limit < len(original_images):
         original_images = original_images[:limit]
-        print(f"⚠️  分割実行モード: 最初の{limit}枚のみ処理します")
+        print(f"[INFO] 分割実行モード: 最初の{limit}枚のみ処理します")
 
     if len(original_images) == 0:
-        print(f"❌ エラー: 元画像が見つかりません: {original_dir}")
+        print(f"[ERROR] 元画像が見つかりません: {original_dir}")
         return
 
     # 評価モード表示用辞書
     mode_names = {
-        'image': '📸 画像モード（医療画像・写真など）',
-        'document': '📄 文書モード（カルテ・契約書など）',
-        'academic': '📚 学術評価モード（論文用・標準ベンチマーク互換）',
-        'developer': '🔧 開発者モード（デバッグ用）'
+        'image': '画像モード（医療画像・写真など）',
+        'document': '文書モード（カルテ・契約書など）',
+        'academic': '学術評価モード（論文用・標準ベンチマーク互換）',
+        'developer': '開発者モード（デバッグ用）'
     }
 
     print(f"\n{'='*60}")
-    print(f"🚀 バッチ処理開始")
+    print(f"バッチ処理開始")
     print(f"{'='*60}")
-    print(f"📁 元画像ディレクトリ: {original_dir}")
-    print(f"🖼️  元画像数: {len(original_images)}枚")
-    print(f"🤖 超解像モデル数: {len(upscaled_dirs)}種類")
+    print(f"元画像ディレクトリ: {original_dir}")
+    print(f"元画像数: {len(original_images)}枚")
+    print(f"超解像モデル数: {len(upscaled_dirs)}種類")
     for model_name in upscaled_dirs.keys():
         print(f"   - {model_name}")
-    print(f"💾 出力CSV: {output_csv}")
-    print(f"⚙️  評価モード: {mode_names.get(evaluation_mode, evaluation_mode)}")
-    print(f"⚡ 並列処理数: {num_workers}プロセス")
-    print(f"💾 チェックポイント間隔: {checkpoint_interval}サンプルごと")
+    print(f"出力CSV: {output_csv}")
+    print(f"評価モード: {mode_names.get(evaluation_mode, evaluation_mode)}")
+    print(f"並列処理数: {num_workers}プロセス")
+    print(f"チェックポイント間隔: {checkpoint_interval}サンプルごと")
     print(f"{'='*60}\n")
 
     # 超解像モデルフォルダのJPG検出
@@ -186,7 +189,7 @@ def batch_analyze(config_file, progress_callback=None):
 
     if len(jpg_detected_models) > 0:
         print(f"\n{'='*60}")
-        print(f"⚠️  警告: 超解像結果にJPGファイルが検出されました")
+        print(f"[WARNING] 超解像結果にJPGファイルが検出されました")
         print(f"{'='*60}")
         for model_name, jpg_count in jpg_detected_models:
             print(f"  - {model_name}: {jpg_count}枚のJPGファイル")
@@ -205,17 +208,17 @@ def batch_analyze(config_file, progress_callback=None):
     tasks = []
     for orig_img_path in original_images:
         for model_name, upscaled_dir in upscaled_dirs.items():
-            tasks.append((orig_img_path, model_name, upscaled_dir, output_detail_dir, evaluation_mode))
+            tasks.append((orig_img_path, model_name, upscaled_dir, output_detail_dir, evaluation_mode, patch_size))
 
-    print(f"📋 処理タスク数: {len(tasks)}")
-    print(f"⏱️  推定処理時間: {len(tasks) * 15 / num_workers / 60:.1f}分 (1サンプル15秒想定)")
+    print(f"処理タスク数: {len(tasks)}")
+    print(f"推定処理時間: {len(tasks) * 15 / num_workers / 60:.1f}分 (1サンプル15秒想定)")
     print(f"{'='*60}\n")
 
     # 開始時刻記録
     start_time = time.time()
 
     # 並列処理で実行
-    print(f"⚡ {num_workers}プロセスで並列処理開始...\n")
+    print(f"{num_workers}プロセスで並列処理開始...\n")
 
     with Pool(processes=num_workers) as pool:
         # imapを使って逐次的に結果を取得（メモリ効率化）
@@ -246,14 +249,14 @@ def batch_analyze(config_file, progress_callback=None):
                 eta_seconds = avg_time_per_sample * (len(tasks) - idx)
 
                 print(f"\n{'='*60}")
-                print(f"💾 チェックポイント保存中... ({idx}/{len(tasks)})")
-                print(f"⏱️  経過時間: {elapsed_time/60:.1f}分")
-                print(f"⏱️  残り時間: {eta_seconds/60:.1f}分")
-                print(f"✔️  成功: {processed}, ❌ エラー: {errors}")
+                print(f"[INFO] チェックポイント保存中... ({idx}/{len(tasks)})")
+                print(f"  経過時間: {elapsed_time/60:.1f}分")
+                print(f"  残り時間: {eta_seconds/60:.1f}分")
+                print(f"  成功: {processed}, エラー: {errors}")
                 print(f"{'='*60}\n")
 
                 save_results_to_csv(all_results, str(checkpoint_file), append_mode=False)
-                print(f"💾 チェックポイント保存完了: {checkpoint_file}\n")
+                print(f"[INFO] チェックポイント保存完了: {checkpoint_file}\n")
 
     # 処理時間計算
     total_time = time.time() - start_time
@@ -270,20 +273,20 @@ def batch_analyze(config_file, progress_callback=None):
             model_counts[model] = model_counts.get(model, 0) + 1
 
         print(f"\n{'='*60}")
-        print(f"✅ バッチ処理完了！")
+        print(f"[COMPLETED] バッチ処理完了！")
         print(f"{'='*60}")
-        print(f"✔️  成功: {processed} / {total_pairs}")
-        print(f"❌ エラー: {errors} / {total_pairs}")
-        print(f"⏱️  総処理時間: {total_time/60:.1f}分 ({total_time/3600:.2f}時間)")
-        print(f"⚡ 平均処理速度: {avg_time_per_sample:.2f}秒/サンプル")
-        print(f"🚀 並列化効率: {num_workers}プロセス使用")
-        print(f"\n📊 モデル別処理件数:")
+        print(f"  成功: {processed} / {total_pairs}")
+        print(f"  エラー: {errors} / {total_pairs}")
+        print(f"  総処理時間: {total_time/60:.1f}分 ({total_time/3600:.2f}時間)")
+        print(f"  平均処理速度: {avg_time_per_sample:.2f}秒/サンプル")
+        print(f"  並列化効率: {num_workers}プロセス使用")
+        print(f"\nモデル別処理件数:")
         for model, count in model_counts.items():
             print(f"   {model}: {count}件")
-        print(f"\n📄 結果CSV: {output_csv}")
-        print(f"📊 詳細レポート: {output_detail_dir}")
+        print(f"\n結果CSV: {output_csv}")
+        print(f"詳細レポート: {output_detail_dir}")
         if checkpoint_file.exists():
-            print(f"💾 チェックポイント: {checkpoint_file}")
+            print(f"チェックポイント: {checkpoint_file}")
         print(f"{'='*60}\n")
 
         # 簡易統計を表示
@@ -292,9 +295,9 @@ def batch_analyze(config_file, progress_callback=None):
         # チェックポイントファイルを削除（正常終了時）
         if checkpoint_file.exists():
             checkpoint_file.unlink()
-            print(f"\n💾 チェックポイントファイル削除済み（正常終了）")
+            print(f"\n[INFO] チェックポイントファイル削除済み（正常終了）")
     else:
-        print(f"\n❌ 処理可能な画像がありませんでした")
+        print(f"\n[ERROR] 処理可能な画像がありませんでした")
 
 
 def extract_metrics_for_csv(image_id, model_name, results, original_path, upscaled_path):
@@ -405,7 +408,7 @@ def save_results_to_csv(all_results, output_csv, append_mode=False):
 
     if append_mode and Path(output_csv).exists():
         # 追加モード: 既存CSVを読み込んで結合
-        print(f"\n📊 追加モードで保存中...")
+        print(f"\n[INFO] 追加モードで保存中...")
         df_existing = pd.read_csv(output_csv, encoding='utf-8-sig')
 
         # 重複チェック（同じimage_id + modelの場合は新データで上書き）
@@ -423,9 +426,9 @@ def save_results_to_csv(all_results, output_csv, append_mode=False):
     else:
         # 上書きモード
         if append_mode:
-            print(f"\n📊 追加モードですが既存CSVがないため新規作成します")
+            print(f"\n[INFO] 追加モードですが既存CSVがないため新規作成します")
         else:
-            print(f"\n📊 上書きモードで保存中...")
+            print(f"\n[INFO] 上書きモードで保存中...")
 
         df_new.to_csv(output_csv, index=False, encoding='utf-8-sig')
 
@@ -442,7 +445,7 @@ def display_summary_statistics(all_results):
 
     df = pd.DataFrame(all_results)
 
-    print(f"\n📈 モデル別平均スコア:")
+    print(f"\nモデル別平均スコア:")
     print(f"{'='*80}")
 
     # 主要指標でグループ化
@@ -465,7 +468,7 @@ def display_summary_statistics(all_results):
     print(f"{'='*80}\n")
 
     # ランキング
-    print(f"🏆 総合スコアランキング:")
+    print(f"総合スコアランキング:")
     for i, (model, score) in enumerate(grouped['総合スコア'].items(), 1):
         print(f"   {i}位: {model:20s} - {score:.2f}点")
 
@@ -492,7 +495,8 @@ def create_config_template():
         "output_detail_dir": "results/detailed/",
         "num_workers": recommended_workers,
         "checkpoint_interval": 1000,
-        "evaluation_mode": "academic"
+        "evaluation_mode": "academic",
+        "patch_size": 16
     }
 
     config_path = 'batch_config.json'
@@ -500,18 +504,19 @@ def create_config_template():
     with open(config_path, 'w', encoding='utf-8') as f:
         json.dump(template, f, indent=2, ensure_ascii=False)
 
-    print(f"\n✅ 設定ファイルテンプレート作成完了: {config_path}")
-    print(f"\n📝 次のステップ:")
+    print(f"\n[OK] 設定ファイルテンプレート作成完了: {config_path}")
+    print(f"\n次のステップ:")
     print(f"   1. {config_path} を編集してフォルダパスを設定")
     print(f"   2. python batch_analyzer.py {config_path} を実行")
-    print(f"\n💡 ヒント:")
+    print(f"\nヒント:")
     print(f"   - original_dir: 元画像（1000px）のフォルダ")
     print(f"   - upscaled_dirs: 各モデルの超解像結果フォルダ")
     print(f"   - num_workers: 並列処理数（現在のCPU: {num_cpus}コア、推奨: {recommended_workers}）")
     print(f"   - checkpoint_interval: チェックポイント保存間隔（デフォルト: 1000サンプル）")
     print(f"   - evaluation_mode: 評価モード（image/document/academic/developer）")
+    print(f"   - patch_size: P6ヒートマップのパッチサイズ（8/16/32/64、デフォルト: 16）")
     print(f"   - 同じファイル名（image001.png等）で対応付けされます")
-    print(f"\n⚡ 15000サンプル処理の場合:")
+    print(f"\n15000サンプル処理の場合:")
     print(f"   - 推定時間: 約{15000 * 15 / recommended_workers / 3600:.1f}時間 (1サンプル15秒想定)")
     print(f"   - チェックポイントで中断・再開可能\n")
 
@@ -523,9 +528,9 @@ if __name__ == '__main__':
         print(f"\n{'='*60}")
         print(f"バッチ処理スクリプト - 使い方")
         print(f"{'='*60}")
-        print(f"\n📋 設定ファイルテンプレートを作成:")
+        print(f"\n設定ファイルテンプレートを作成:")
         print(f"   python batch_analyzer.py --create-config")
-        print(f"\n🚀 バッチ処理を実行:")
+        print(f"\nバッチ処理を実行:")
         print(f"   python batch_analyzer.py batch_config.json")
         print(f"\n{'='*60}\n")
         sys.exit(1)
@@ -535,6 +540,6 @@ if __name__ == '__main__':
     else:
         config_file = sys.argv[1]
         if not os.path.exists(config_file):
-            print(f"❌ エラー: 設定ファイルが見つかりません: {config_file}")
+            print(f"[ERROR] 設定ファイルが見つかりません: {config_file}")
             sys.exit(1)
         batch_analyze(config_file)

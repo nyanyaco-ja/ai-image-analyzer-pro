@@ -21,7 +21,7 @@ class AcademicModeMixin:
 
         info_title = ctk.CTkLabel(
             info_frame,
-            text="📚 論文用ベンチマーク評価について",
+            text="[ACAD] 論文用ベンチマーク評価について",
             font=("Arial", 18, "bold"),
             text_color="#9b59b6"
         )
@@ -182,7 +182,7 @@ class AcademicModeMixin:
         # 実行ボタン
         bicubic_btn = ctk.CTkButton(
             self.bicubic_accordion.content_frame,
-            text="🔬 バッチBicubic縮小を実行",
+            text="[BATCH] バッチBicubic縮小を実行",
             command=self.run_batch_bicubic_downscale,
             height=50,
             corner_radius=10,
@@ -205,7 +205,7 @@ class AcademicModeMixin:
         # 評価モード固定表示
         mode_info = ctk.CTkLabel(
             self.config_accordion.content_frame,
-            text="📊 評価モード: 学術評価モード（Bicubic縮小・×2スケール標準評価）",
+            text="[STATS] 評価モード: 学術評価モード（Bicubic縮小・×2スケール標準評価）",
             font=("Arial", 14, "bold"),
             text_color="#9b59b6"
         )
@@ -224,7 +224,7 @@ class AcademicModeMixin:
         self.academic_original_dir = tk.StringVar()
         original_label = ctk.CTkLabel(
             self.config_accordion.content_frame,
-            text="📁 元画像フォルダ（必須・高解像度画像・PNG推奨）",
+            text="[FOLDER] 元画像フォルダ（必須・高解像度画像・PNG推奨）",
             font=("Arial", 14, "bold"),
             text_color="#00ff88"
         )
@@ -258,7 +258,7 @@ class AcademicModeMixin:
         # 超解像モデルフォルダ（最大5つ）
         models_label = ctk.CTkLabel(
             self.config_accordion.content_frame,
-            text="🤖 超解像モデルフォルダ（必須・最低1つ、最大5個）",
+            text="[MODEL] 超解像モデルフォルダ（必須・最低1つ、最大5個）",
             font=("Arial", 14, "bold"),
             text_color="#ffffff"
         )
@@ -312,7 +312,7 @@ class AcademicModeMixin:
         # 出力設定
         output_label = ctk.CTkLabel(
             self.config_accordion.content_frame,
-            text="💾 出力設定",
+            text="[SAVE] 出力設定",
             font=("Arial", 14, "bold"),
             text_color="#ffffff"
         )
@@ -382,7 +382,7 @@ class AcademicModeMixin:
 
         limit_label = ctk.CTkLabel(
             limit_frame,
-            text="📊 処理枚数:",
+            text="[STATS] 処理枚数:",
             width=100,
             anchor="w",
             font=("Arial", 13)
@@ -426,7 +426,7 @@ class AcademicModeMixin:
         # === 並列処理設定（論文用） ===
         parallel_info = ctk.CTkLabel(
             self.config_accordion.content_frame,
-            text="⚡ 並列処理設定（15,000枚推奨、少量は逆に遅くなります）",
+            text="[PARALLEL] 並列処理設定（15,000枚推奨、少量は逆に遅くなります）",
             font=("Arial", 11),
             text_color="#888888",
             justify="left"
@@ -488,10 +488,74 @@ class AcademicModeMixin:
         )
         academic_workers_info.pack(side=tk.LEFT)
 
+        # P6パッチサイズ選択
+        patch_info = ctk.CTkLabel(
+            self.config_accordion.content_frame,
+            text="P6ヒートマップ精度（パッチサイズ）:",
+            font=("Arial", 13, "bold"),
+            text_color="#9b59b6",
+            justify="left"
+        )
+        patch_info.pack(anchor="w", padx=15, pady=(20, 5))
+
+        patch_desc = ctk.CTkLabel(
+            self.config_accordion.content_frame,
+            text="論文品質の場合は16×16（標準）または8×8（超高精度）を推奨",
+            font=("Arial", 11),
+            text_color="#888888",
+            justify="left"
+        )
+        patch_desc.pack(anchor="w", padx=15, pady=(0, 5))
+
+        # パッチサイズ変数（デフォルト16）
+        self.academic_patch_size = tk.IntVar(value=16)
+
+        patch_frame = ctk.CTkFrame(self.config_accordion.content_frame, fg_color="transparent")
+        patch_frame.pack(fill=tk.X, padx=15, pady=(5, 15))
+
+        # 8×8オプション
+        patch_8 = ctk.CTkRadioButton(
+            patch_frame,
+            text="8×8（超高精度、医療画像・最高品質論文用）",
+            variable=self.academic_patch_size,
+            value=8,
+            font=("Arial", 12),
+            text_color="#ffffff",
+            fg_color="#ff6b6b",
+            hover_color="#ee5555"
+        )
+        patch_8.pack(anchor="w", pady=(0, 5))
+
+        # 16×16オプション（推奨）
+        patch_16 = ctk.CTkRadioButton(
+            patch_frame,
+            text="16×16（標準精度、論文標準）⭐ 推奨",
+            variable=self.academic_patch_size,
+            value=16,
+            font=("Arial", 12),
+            text_color="#ffffff",
+            fg_color="#9b59b6",
+            hover_color="#7d3c98"
+        )
+        patch_16.pack(anchor="w", pady=(0, 5))
+
+        # 32×32オプション
+        patch_32 = ctk.CTkRadioButton(
+            patch_frame,
+            text="32×32（高速、概要把握用）",
+            variable=self.academic_patch_size,
+            value=32,
+            font=("Arial", 12),
+            text_color="#ffffff",
+            fg_color="#4ecdc4",
+            hover_color="#3db8af"
+        )
+        patch_32.pack(anchor="w")
+
         # 実行ボタン
         self.academic_analyze_btn = ctk.CTkButton(
             self.academic_mode_frame,
-            text=f"🚀 {self.i18n.t('buttons.analyze_academic')}",
+            text=f"[RUN] {self.i18n.t('buttons.analyze_academic')}",
             command=self.start_academic_analysis,
             height=60,
             corner_radius=10,
@@ -513,7 +577,7 @@ class AcademicModeMixin:
 
         stats_info = ctk.CTkLabel(
             self.academic_stats_accordion.content_frame,
-            text="⚠️ バッチ処理完了後、必ずこの統計分析を実行してください。\n"
+            text="[WARNING] バッチ処理完了後、必ずこの統計分析を実行してください。\n"
                  "26パターンハルシネーション検出とdetection_countが生成されます。\n"
                  "このdetection_countが深層学習のラベルになります！",
             font=("Arial", 13),
@@ -559,7 +623,7 @@ class AcademicModeMixin:
 
         self.academic_stats_analyze_btn = ctk.CTkButton(
             self.academic_stats_accordion.content_frame,
-            text=f"📈 {self.i18n.t('buttons.analyze_stats')}",
+            text=f"[ANALYZE] {self.i18n.t('buttons.analyze_stats')}",
             command=self.start_academic_stats_analysis,
             height=55,
             corner_radius=10,
@@ -673,7 +737,8 @@ class AcademicModeMixin:
             "append_mode": self.academic_append_mode.get(),
             "evaluation_mode": "academic",  # 学術評価モード固定
             "num_workers": num_workers,  # 並列処理数（ユーザー設定）
-            "checkpoint_interval": 1000  # チェックポイント間隔（1000サンプルごと）
+            "checkpoint_interval": 1000,  # チェックポイント間隔（1000サンプルごと）
+            "patch_size": self.academic_patch_size.get()  # P6ヒートマップのパッチサイズ
         }
 
         # UIを無効化
@@ -743,7 +808,7 @@ class AcademicModeMixin:
 
         if success:
             self.academic_status_label.configure(
-                text=f"✅ 論文用評価完了！次は統計分析を実行してください",
+                text=f"[OK] 論文用評価完了！次は統計分析を実行してください",
                 text_color="#00ff88"
             )
 
@@ -760,7 +825,7 @@ class AcademicModeMixin:
             )
         else:
             self.academic_status_label.configure(
-                text="❌ 評価エラー",
+                text="[ERROR] 評価エラー",
                 text_color="#ff4444"
             )
             messagebox.showerror("エラー", f"評価中にエラーが発生しました:\n{output}")
@@ -825,16 +890,16 @@ class AcademicModeMixin:
 
         if success:
             self.academic_status_label.configure(
-                text="✅ 統計分析完了！detection_countが生成されました",
+                text="[OK] 統計分析完了！detection_countが生成されました",
                 text_color="#00ff88"
             )
 
             messagebox.showinfo(
                 "完了",
                 "統計分析が完了しました。\n\n"
-                "✅ 25種類のプロットが生成されました\n"
-                "✅ 26パターンハルシネーション検出完了\n"
-                "✅ detection_countがCSVに追加されました\n\n"
+                "[OK] 25種類のプロットが生成されました\n"
+                "[OK] 26パターンハルシネーション検出完了\n"
+                "[OK] detection_countがCSVに追加されました\n\n"
                 "出力先: analysis_output/\n\n"
                 "次のステップ:\n"
                 "results_with_26pattern_detection.csv を確認し、\n"
@@ -842,7 +907,7 @@ class AcademicModeMixin:
             )
         else:
             self.academic_status_label.configure(
-                text="❌ 統計分析エラー",
+                text="[ERROR] 統計分析エラー",
                 text_color="#ff4444"
             )
             messagebox.showerror("エラー", f"統計分析中にエラーが発生しました:\n{output}")
@@ -897,7 +962,7 @@ class AcademicModeMixin:
             # 成功メッセージ
             messagebox.showinfo(
                 "生成完了",
-                f"✅ 低解像度画像を生成しました\n\n"
+                f"[OK] 低解像度画像を生成しました\n\n"
                 f"元画像: {w}×{h}px\n"
                 f"生成画像: {w//2}×{h//2}px (×0.5 Bicubic)\n\n"
                 f"保存先:\n{output_path}\n\n"

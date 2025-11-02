@@ -229,7 +229,7 @@ def is_document_image(img_rgb):
                      (lab_l_mean > 200 and color_std < 70)
 
         # デバッグ用：判定情報を常に表示
-        print(f"    文書判定 - 明背景: {bright_ratio*100:.1f}%, 白背景: {white_ratio*100:.1f}%, 色分散: {color_std:.1f}, グレー率: {gray_ratio*100:.1f}%, 平均輝度: {lab_l_mean:.1f} → {'📄文書' if is_document else '🖼️自然画像'}")
+        print(f"    文書判定 - 明背景: {bright_ratio*100:.1f}%, 白背景: {white_ratio*100:.1f}%, 色分散: {color_std:.1f}, グレー率: {gray_ratio*100:.1f}%, 平均輝度: {lab_l_mean:.1f} → {'文書' if is_document else '️自然画像'}")
 
         return is_document
 
@@ -563,21 +563,45 @@ def calculate_ms_ssim(img1_rgb, img2_rgb):
         print(f"MS-SSIM計算エラー: {e}")
         return None
 
-def analyze_local_quality(img1, img2, patch_size=64):
-    """局所的な品質分析 - パッチ単位でSSIMを計算"""
-    h, w = img1.shape[:2]
-    ssim_map = []
+def analyze_local_quality(img1, img2, patch_size=16):
+    """局所的な品質分析 - パッチ単位でSSIMを計算
 
+    Args:
+        img1, img2: 比較する画像
+        patch_size: パッチサイズ（デフォルト16×16、論文標準）
+                   - 8×8: 非常に細かい分析（医療画像推奨）
+                   - 16×16: 標準的な精度（推奨）
+                   - 32×32: 高速だが粗い
+                   - 64×64: 概要把握用
+
+    Returns:
+        ssim_1d: 1D配列（統計計算用、後方互換性）
+        ssim_2d: 2Dマップ（ヒートマップ用）
+        patch_grid: (rows, cols) パッチのグリッドサイズ
+    """
+    h, w = img1.shape[:2]
+    ssim_list = []
+
+    # パッチのグリッドサイズを計算
+    rows = (h - patch_size) // patch_size + 1
+    cols = (w - patch_size) // patch_size + 1
+    ssim_2d = np.zeros((rows, cols))
+
+    row_idx = 0
     for y in range(0, h - patch_size, patch_size):
+        col_idx = 0
         for x in range(0, w - patch_size, patch_size):
             patch1 = img1[y:y+patch_size, x:x+patch_size]
             patch2 = img2[y:y+patch_size, x:x+patch_size]
 
             if patch1.shape[:2] == (patch_size, patch_size):
                 local_ssim = ssim(patch1, patch2, channel_axis=2)
-                ssim_map.append(local_ssim)
+                ssim_list.append(local_ssim)
+                ssim_2d[row_idx, col_idx] = local_ssim
+                col_idx += 1
+        row_idx += 1
 
-    return np.array(ssim_map)
+    return np.array(ssim_list), ssim_2d, (rows, cols)
 
 def detect_artifacts(image_gray):
     """アーティファクト検出 - ブロックノイズやリンギング"""
@@ -602,6 +626,131 @@ def detect_artifacts(image_gray):
     ringing = np.std(edge_pixels) if len(edge_pixels) > 0 else 0
 
     return block_noise, ringing
+
+def generate_p6_heatmap(ssim_2d, original_img, output_path, patch_size=16):
+    """P6（局所品質ばらつき）ヒートマップを生成
+
+    Args:
+        ssim_2d: 2D SSIM マップ (rows x cols)
+        original_img: 元画像（サイズ参照用）
+        output_path: 保存先パス
+        patch_size: パッチサイズ（デフォルト16、論文標準）
+
+    Returns:
+        heatmap_path: 保存されたヒートマップのパス
+    """
+    import matplotlib.pyplot as plt
+    from matplotlib.colors import LinearSegmentedColormap
+
+    # デバッグ: output_pathの値を確認
+    if output_path is None:
+        raise ValueError("output_path が None です。保存先パスを指定してください。")
+
+    # パスを文字列に変換（Path オブジェクトの場合）
+    output_path = str(output_path)
+
+    # 保存先ディレクトリが存在するか確認
+    output_dir_path = os.path.dirname(output_path)
+    if output_dir_path and not os.path.exists(output_dir_path):
+        os.makedirs(output_dir_path, exist_ok=True)
+        print(f"  [DEBUG] ディレクトリを作成: {output_dir_path}")
+
+    print(f"  [DEBUG] P6ヒートマップ保存先: {output_path}")
+    print(f"  [DEBUG] 保存先ディレクトリ: {output_dir_path}")
+    print(f"  [DEBUG] ディレクトリ存在確認: {os.path.exists(output_dir_path)}")
+
+    # カスタムカラーマップ作成（赤→黄→緑→青）
+    # 0.0-0.6: 赤（ハルシネーション疑い）
+    # 0.6-0.7: 橙（品質低下）
+    # 0.7-0.8: 黄（やや低下）
+    # 0.8-0.9: 緑（良好）
+    # 0.9-1.0: 青（元画像に忠実）
+    colors = ['#FF0000', '#FF6600', '#FFDD00', '#00DD00', '#0066FF']
+    n_bins = 100
+    cmap = LinearSegmentedColormap.from_list('p6_heatmap', colors, N=n_bins)
+
+    # プロット作成
+    fig, ax = plt.subplots(figsize=(12, 10))
+
+    # ヒートマップ描画
+    im = ax.imshow(ssim_2d, cmap=cmap, vmin=0.0, vmax=1.0, aspect='auto')
+
+    # カラーバー追加
+    cbar = plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+    cbar.set_label('局所SSIM (パッチ単位)', fontsize=12)
+
+    # カラーバーに品質ラベルを追加
+    cbar.ax.text(1.5, 0.95, '忠実', transform=cbar.ax.transAxes,
+                 fontsize=10, va='center')
+    cbar.ax.text(1.5, 0.75, '良好', transform=cbar.ax.transAxes,
+                 fontsize=10, va='center')
+    cbar.ax.text(1.5, 0.55, 'やや低下', transform=cbar.ax.transAxes,
+                 fontsize=10, va='center')
+    cbar.ax.text(1.5, 0.35, '低下', transform=cbar.ax.transAxes,
+                 fontsize=10, va='center')
+    cbar.ax.text(1.5, 0.15, 'ハルシネ\nーション疑', transform=cbar.ax.transAxes,
+                 fontsize=9, va='center')
+
+    # タイトル設定
+    ax.set_title('P6: 局所品質ばらつき検出ヒートマップ\n(64×64パッチ単位のSSIM分布)',
+                 fontsize=14, pad=15)
+
+    # 軸ラベル
+    ax.set_xlabel(f'パッチ列 (各パッチ={patch_size}px)', fontsize=11)
+    ax.set_ylabel(f'パッチ行 (各パッチ={patch_size}px)', fontsize=11)
+
+    # グリッド追加
+    ax.grid(True, alpha=0.3, linewidth=0.5)
+
+    # 統計情報を表示
+    mean_ssim = np.mean(ssim_2d)
+    std_ssim = np.std(ssim_2d)
+    min_ssim = np.min(ssim_2d)
+    max_ssim = np.max(ssim_2d)
+
+    stats_text = f'統計情報:\n'
+    stats_text += f'平均SSIM: {mean_ssim:.4f}\n'
+    stats_text += f'標準偏差: {std_ssim:.4f}\n'
+    stats_text += f'最小値: {min_ssim:.4f}\n'
+    stats_text += f'最大値: {max_ssim:.4f}\n'
+    stats_text += f'\nパッチサイズ: {patch_size}×{patch_size}px\n'
+    stats_text += f'グリッド: {ssim_2d.shape[0]}×{ssim_2d.shape[1]}'
+
+    # テキストボックスを右上に配置
+    ax.text(0.98, 0.98, stats_text,
+            transform=ax.transAxes,
+            fontsize=10,
+            verticalalignment='top',
+            horizontalalignment='right',
+            bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+
+    # 低SSIM領域（ハルシネーション疑い）を強調表示
+    threshold = 0.7
+    low_quality_mask = ssim_2d < threshold
+    if np.any(low_quality_mask):
+        rows, cols = np.where(low_quality_mask)
+        for r, c in zip(rows, cols):
+            rect = plt.Rectangle((c-0.5, r-0.5), 1, 1,
+                                fill=False, edgecolor='red', linewidth=2)
+            ax.add_patch(rect)
+
+    plt.tight_layout()
+
+    # 保存前に最終チェック
+    print(f"  [DEBUG] 保存直前の output_path: {output_path}")
+    print(f"  [DEBUG] output_path の型: {type(output_path)}")
+    print(f"  [DEBUG] output_path is None?: {output_path is None}")
+
+    if output_path is None or output_path == '':
+        raise ValueError(f"出力パスが無効です: {output_path}")
+
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    plt.close()
+
+    print(f"  [DEBUG] ファイル保存完了: {output_path}")
+    print(f"  [DEBUG] ファイル存在確認: {os.path.exists(output_path)}")
+
+    return output_path
 
 def analyze_color_distribution(img_rgb):
     """色分布の詳細分析（RGB, HSV, LAB）"""
@@ -793,9 +942,22 @@ def create_detailed_visualizations(img1_rgb, img2_rgb, img1_gray, img2_gray, out
     cb2.ax.tick_params(labelsize=8)
 
     plt.tight_layout()
-    output_path = os.path.join(output_dir, 'detailed_analysis.png')
-    plt.savefig(output_path, dpi=150, bbox_inches='tight')
-    plt.close()
+
+    print(f"[DEBUG] detailed_analysis.png 保存中...")
+    print(f"  output_dir: {repr(output_dir)}")
+
+    try:
+        output_path = os.path.join(output_dir, 'detailed_analysis.png')
+        print(f"  output_path: {output_path}")
+        plt.savefig(output_path, dpi=150, bbox_inches='tight')
+        print(f"  [OK] 保存成功: {output_path}")
+    except Exception as e:
+        print(f"  [ERROR] 保存エラー: {e}")
+        import traceback
+        traceback.print_exc()
+        raise
+    finally:
+        plt.close()
 
 def create_comparison_report(results, img1_name, img2_name, output_dir):
     """比較レポート画像を生成"""
@@ -943,9 +1105,22 @@ PSNR: {psnr_display}
     ax6.grid(axis='y', alpha=0.3)
 
     plt.tight_layout()
-    report_path = os.path.join(output_dir, 'comparison_report.png')
-    plt.savefig(report_path, dpi=150, bbox_inches='tight')
-    plt.close()
+
+    print(f"[DEBUG] comparison_report.png 保存中...")
+    print(f"  output_dir: {repr(output_dir)}")
+
+    try:
+        report_path = os.path.join(output_dir, 'comparison_report.png')
+        print(f"  report_path: {report_path}")
+        plt.savefig(report_path, dpi=150, bbox_inches='tight')
+        print(f"  [OK] 保存成功: {report_path}")
+    except Exception as e:
+        print(f"  [ERROR] 保存エラー: {e}")
+        import traceback
+        traceback.print_exc()
+        raise
+    finally:
+        plt.close()
 
     return report_path
 
@@ -976,7 +1151,7 @@ def imread_unicode(filename):
         print(f"画像読み込みエラー: {e}")
         return None
 
-def analyze_images(img1_path, img2_path, output_dir='analysis_results', original_path=None, evaluation_mode='image'):
+def analyze_images(img1_path, img2_path, output_dir='analysis_results', original_path=None, evaluation_mode='image', comparison_mode='evaluation', patch_size=16):
     """
     元画像とAI処理結果を詳細に比較分析する（精度評価）
 
@@ -986,10 +1161,20 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
     output_dir: 結果保存ディレクトリ
     original_path: 使用しない（後方互換性のため残す）
     evaluation_mode: 評価モード ('image', 'document', 'developer', 'academic')
+    comparison_mode: 比較モード ('evaluation': 品質評価のみ, 'comparison': 2つのAI結果を比較 ※将来実装)
+    patch_size: P6ヒートマップのパッチサイズ (デフォルト16)
+                - 8: 非常に細かい分析（医療画像・論文品質）
+                - 16: 標準的な精度（推奨、論文標準）
+                - 32: 高速だが粗い
+                - 64: 概要把握用
 
     Returns:
     results: 分析結果の辞書
     """
+
+    # 出力ディレクトリのチェックとデフォルト値設定
+    if output_dir is None or output_dir == '':
+        output_dir = 'analysis_results'
 
     # 出力ディレクトリ作成
     os.makedirs(output_dir, exist_ok=True)
@@ -1025,7 +1210,7 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         print("\n" + "=" * 80)
         print("【分析パターン】学術評価モード（Academic Evaluation）")
         print("=" * 80)
-        print("📚 標準ベンチマーク方式: ×2 Scale Super-Resolution")
+        print(" 標準ベンチマーク方式: ×2 Scale Super-Resolution")
         print(f"   Ground Truth（元画像）: {img1.shape[1]}x{img1.shape[0]}px")
         print(f"   AI処理結果: {img2.shape[1]}x{img2.shape[0]}px")
         print("   比較対象: DIV2K, Set5, Set14等との定量比較")
@@ -1034,7 +1219,7 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         print("\n" + "=" * 80)
         print("【分析パターン】精度評価モード（元画像基準）")
         print("=" * 80)
-        print("📌 用途: AI超解像、画質改善、ノイズ除去等の精度評価")
+        print(" 用途: AI超解像、画質改善、ノイズ除去等の精度評価")
         print(f"   元画像: {img1.shape[1]}x{img1.shape[0]}px")
         print(f"   AI処理結果: {img2.shape[1]}x{img2.shape[0]}px")
         print("=" * 80)
@@ -1057,13 +1242,15 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         'image1_path': img1_path,
         'image2_path': img2_path,
         'original_path': original_path,
-        'has_original': img_original_rgb is not None
+        'has_original': img_original_rgb is not None,
+        'evaluation_mode': evaluation_mode,
+        'comparison_mode': comparison_mode
     }
 
     print("=" * 80)
     print("詳細画像比較分析レポート")
     print("=" * 80)
-    print("📌 比較対象: 元画像（処理前/Before） vs AI超解像結果（処理後/After）")
+    print(" 比較対象: 元画像（処理前/Before） vs AI超解像結果（処理後/After）")
     print("=" * 80)
 
     # 1. 基本情報
@@ -1078,7 +1265,9 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
     print(f"サイズ差: {abs(size1 - size2):.2f} MB ({((size2/size1 - 1) * 100):+.1f}%)")
 
     if img_original is not None:
-        size_original = os.path.getsize(original_path) / (1024 * 1024)
+        # original_path が None の場合は img1_path を使用（img1 = 元画像）
+        original_file_path = original_path if original_path else img1_path
+        size_original = os.path.getsize(original_file_path) / (1024 * 1024)
         print(f"元画像（処理前）ファイルサイズ: {size_original:.2f} MB")
 
     # GPU/CPU情報
@@ -1112,15 +1301,33 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
     print_usage_status("SSIM計算開始（GPU使用）" if GPU_AVAILABLE else "SSIM計算開始（CPU使用）")
 
     if img_original_rgb is not None:
-        # 元画像がある場合：それぞれ元画像との類似度を計算
-        ssim_img1_vs_orig = calculate_ssim_gpu(img1_rgb, img_original_rgb)
-        ssim_img2_vs_orig = calculate_ssim_gpu(img2_rgb, img_original_rgb)
-        print(f"画像1 vs 元画像 SSIM: {ssim_img1_vs_orig:.4f}")
-        print(f"画像2 vs 元画像 SSIM: {ssim_img2_vs_orig:.4f}")
-        if ssim_img1_vs_orig > ssim_img2_vs_orig:
-            print(f"→ 元画像の方が元画像に近い (+{(ssim_img1_vs_orig - ssim_img2_vs_orig):.4f})")
+        if comparison_mode == 'evaluation':
+            # 評価モード：超解像画像の品質のみ評価
+            ssim_img2_vs_orig = calculate_ssim_gpu(img2_rgb, img_original_rgb)
+            print(f"超解像画像 vs 元画像 SSIM: {ssim_img2_vs_orig:.4f}")
+
+            # 絶対評価
+            if ssim_img2_vs_orig >= 0.95:
+                print(f"  評価: [OK] 優秀（SSIM ≥ 0.95: 元画像とほぼ同一）")
+            elif ssim_img2_vs_orig >= 0.85:
+                print(f"  評価: [OK] 高品質（SSIM ≥ 0.85: 基準クリア）")
+            elif ssim_img2_vs_orig >= 0.70:
+                print(f"  評価: [WARNING] 許容範囲（SSIM 0.70-0.85: やや低め）")
+            else:
+                print(f"  評価: [ERROR] 低品質（SSIM < 0.70: 基準未達）")
+
+            # resultsには互換性のためimg1も保存（常に1.0）
+            ssim_img1_vs_orig = 1.0
         else:
-            print(f"→ AI処理結果の方が元画像に近い (+{(ssim_img2_vs_orig - ssim_img1_vs_orig):.4f})")
+            # 比較モード（将来実装）：2つのAI結果を比較
+            ssim_img1_vs_orig = calculate_ssim_gpu(img1_rgb, img_original_rgb)
+            ssim_img2_vs_orig = calculate_ssim_gpu(img2_rgb, img_original_rgb)
+            print(f"モデルA vs 元画像 SSIM: {ssim_img1_vs_orig:.4f}")
+            print(f"モデルB vs 元画像 SSIM: {ssim_img2_vs_orig:.4f}")
+            if ssim_img1_vs_orig > ssim_img2_vs_orig:
+                print(f"→ モデルAの方が元画像に近い (+{(ssim_img1_vs_orig - ssim_img2_vs_orig):.4f})")
+            else:
+                print(f"→ モデルBの方が元画像に近い (+{(ssim_img2_vs_orig - ssim_img1_vs_orig):.4f})")
         results['ssim'] = {
             'img1_vs_original': round(ssim_img1_vs_orig, 4),
             'img2_vs_original': round(ssim_img2_vs_orig, 4)
@@ -1160,17 +1367,36 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
     print_usage_status("PSNR計算開始（GPU使用）" if GPU_AVAILABLE else "PSNR計算開始（CPU使用）")
 
     if img_original_rgb is not None:
-        # 元画像がある場合：それぞれ元画像とのPSNRを計算
-        psnr_img1_vs_orig = calculate_psnr_gpu(img1_rgb, img_original_rgb)
-        psnr_img2_vs_orig = calculate_psnr_gpu(img2_rgb, img_original_rgb)
-        print(f"画像1 vs 元画像 PSNR: {psnr_img1_vs_orig:.2f} dB")
-        print(f"画像2 vs 元画像 PSNR: {psnr_img2_vs_orig:.2f} dB")
-        if psnr_img1_vs_orig > psnr_img2_vs_orig:
-            print(f"→ 元画像の方が元画像に近い (+{(psnr_img1_vs_orig - psnr_img2_vs_orig):.2f} dB)")
+        if comparison_mode == 'evaluation':
+            # 評価モード：超解像画像の品質のみ評価
+            psnr_img2_vs_orig = calculate_psnr_gpu(img2_rgb, img_original_rgb)
+            print(f"超解像画像 vs 元画像 PSNR: {psnr_img2_vs_orig:.2f} dB")
+
+            # 絶対評価
+            if psnr_img2_vs_orig >= 40:
+                print(f"  評価: [OK] 優秀（PSNR ≥ 40 dB: 非常に高品質）")
+            elif psnr_img2_vs_orig >= 35:
+                print(f"  評価: [OK] 高品質（PSNR ≥ 35 dB: 基準クリア）")
+            elif psnr_img2_vs_orig >= 30:
+                print(f"  評価: [WARNING] 許容範囲（PSNR ≥ 30 dB: 視覚的にほぼ同一）")
+            else:
+                print(f"  評価: [ERROR] 低品質（PSNR < 30 dB: 基準未達）")
+
+            # resultsには互換性のためimg1も保存（常にinf）
+            psnr_img1_vs_orig = float('inf')
         else:
-            print(f"→ AI処理結果の方が元画像に近い (+{(psnr_img2_vs_orig - psnr_img1_vs_orig):.2f} dB)")
+            # 比較モード（将来実装）：2つのAI結果を比較
+            psnr_img1_vs_orig = calculate_psnr_gpu(img1_rgb, img_original_rgb)
+            psnr_img2_vs_orig = calculate_psnr_gpu(img2_rgb, img_original_rgb)
+            print(f"モデルA vs 元画像 PSNR: {psnr_img1_vs_orig:.2f} dB")
+            print(f"モデルB vs 元画像 PSNR: {psnr_img2_vs_orig:.2f} dB")
+            if psnr_img1_vs_orig > psnr_img2_vs_orig:
+                print(f"→ モデルAの方が元画像に近い (+{(psnr_img1_vs_orig - psnr_img2_vs_orig):.2f} dB)")
+            else:
+                print(f"→ モデルBの方が元画像に近い (+{(psnr_img2_vs_orig - psnr_img1_vs_orig):.2f} dB)")
+
         results['psnr'] = {
-            'img1_vs_original': round(psnr_img1_vs_orig, 2),
+            'img1_vs_original': round(psnr_img1_vs_orig, 2) if psnr_img1_vs_orig != float('inf') else psnr_img1_vs_orig,
             'img2_vs_original': round(psnr_img2_vs_orig, 2)
         }
     else:
@@ -1184,72 +1410,103 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
     print("元画像とのピクセル単位での絶対差分（低いほど近い、0=完全一致）")
 
     if img_original_rgb is not None:
-        # 元画像がある場合：それぞれ元画像との差分を計算
-        diff_img1 = np.abs(img1_rgb.astype(float) - img_original_rgb.astype(float))
-        diff_img2 = np.abs(img2_rgb.astype(float) - img_original_rgb.astype(float))
+        if comparison_mode == 'evaluation':
+            # 評価モード：超解像画像の品質のみ評価
+            diff_img2 = np.abs(img2_rgb.astype(float) - img_original_rgb.astype(float))
+            mae_img2 = np.mean(diff_img2)
 
-        # 全体のMAE
-        mae_img1 = np.mean(diff_img1)
-        mae_img2 = np.mean(diff_img2)
+            print(f" 全体MAE:")
+            print(f"  超解像画像 vs 元画像: {mae_img2:.2f} (差分率: {(mae_img2/255)*100:.1f}%)")
 
-        print(f"📊 全体MAE:")
-        print(f"  超解像結果1（After） vs 元画像（Before）: {mae_img1:.2f} (差分率: {(mae_img1/255)*100:.1f}%)")
-        print(f"  超解像結果2（After） vs 元画像（Before）: {mae_img2:.2f} (差分率: {(mae_img2/255)*100:.1f}%)")
-
-        # テキスト領域のみのMAE（白背景を除外）
-        # RGB平均が200未満のピクセルを「テキスト領域」とみなす
-        text_mask_img1 = np.mean(img1_rgb, axis=2) < 200
-        text_mask_img2 = np.mean(img2_rgb, axis=2) < 200
-        text_mask_original = np.mean(img_original_rgb, axis=2) < 200
-        # 3つの画像のいずれかにテキストがある領域を統合
-        text_mask_combined = text_mask_img1 | text_mask_img2 | text_mask_original
-
-        # テキスト領域のピクセル数を確認
-        text_pixel_count = np.sum(text_mask_combined)
-        total_pixel_count = text_mask_combined.size
-        text_ratio = text_pixel_count / total_pixel_count
-
-        if text_pixel_count > 0:
-            # テキスト領域が存在する場合
-            mae_text_img1 = np.mean(diff_img1[text_mask_combined])
-            mae_text_img2 = np.mean(diff_img2[text_mask_combined])
-
-            print(f"\n📝 テキスト領域MAE（白背景除外、{text_ratio*100:.1f}%の領域）:")
-            print(f"  超解像結果1（After） vs 元画像（Before）: {mae_text_img1:.2f} (差分率: {(mae_text_img1/255)*100:.1f}%)")
-            print(f"  超解像結果2（After） vs 元画像（Before）: {mae_text_img2:.2f} (差分率: {(mae_text_img2/255)*100:.1f}%)")
-        else:
-            # テキスト領域がない場合（純粋な白画像など）
-            mae_text_img1 = None
-            mae_text_img2 = None
-            print(f"\n  ⚠️  テキスト領域が検出されませんでした（白背景のみの画像）")
-
-        # 全体MAEでの比較
-        print(f"\n💡 全体MAE比較:")
-        if mae_img1 < mae_img2:
-            print(f"  → 超解像結果1の方が元画像（Before）に近い (差分差: {mae_img2 - mae_img1:.2f})")
-        else:
-            print(f"  → 超解像結果2の方が元画像（Before）に近い (差分差: {mae_img1 - mae_img2:.2f})")
-
-        # テキストMAEでの比較と評価（より重要）
-        if mae_text_img1 is not None and mae_text_img2 is not None:
-            print(f"\n🎯 テキスト領域MAE比較（重要度：高）:")
-            if mae_text_img1 < mae_text_img2:
-                print(f"  → 超解像結果1の方が元画像（Before）に近い (差分差: {mae_text_img2 - mae_text_img1:.2f})")
+            # 絶対評価
+            if mae_img2 < 2:
+                print(f"  評価: [OK] 優秀（MAE < 2: ほぼ完全一致）")
+            elif mae_img2 < 5:
+                print(f"  評価: [OK] 高品質（MAE < 5: 基準クリア）")
+            elif mae_img2 < 10:
+                print(f"  評価: [WARNING] 許容範囲（MAE < 10: やや差分あり）")
             else:
-                print(f"  → 超解像結果2の方が元画像（Before）に近い (差分差: {mae_text_img1 - mae_text_img2:.2f})")
+                print(f"  評価: [ERROR] 低品質（MAE ≥ 10: 基準未達）")
 
-            # テキスト領域での評価基準（より厳格）
-            print(f"\n  【テキスト領域の評価】")
-            for idx, mae_text_val in enumerate([mae_text_img1, mae_text_img2], 1):
-                if mae_text_val < 10:
-                    eval_str = "ほぼ完全一致（同じ内容）✅"
-                elif mae_text_val < 30:
-                    eval_str = "類似（一部異なる可能性）"
-                elif mae_text_val < 60:
-                    eval_str = "⚠️ 明らかに異なる内容"
+            # テキスト領域のMAE
+            text_mask_img2 = np.mean(img2_rgb, axis=2) < 200
+            text_mask_original = np.mean(img_original_rgb, axis=2) < 200
+            text_mask_combined = text_mask_img2 | text_mask_original
+
+            text_pixel_count = np.sum(text_mask_combined)
+            total_pixel_count = text_mask_combined.size
+            text_ratio = text_pixel_count / total_pixel_count
+
+            if text_pixel_count > 0:
+                mae_text_img2 = np.mean(diff_img2[text_mask_combined])
+                print(f"\n テキスト領域MAE（白背景除外、{text_ratio*100:.1f}%の領域）:")
+                print(f"  超解像画像 vs 元画像: {mae_text_img2:.2f} (差分率: {(mae_text_img2/255)*100:.1f}%)")
+
+                # テキスト領域の絶対評価
+                if mae_text_img2 < 2:
+                    print(f"  評価: [OK] 優秀（テキストMAE < 2: ほぼ完全一致）")
+                elif mae_text_img2 < 5:
+                    print(f"  評価: [OK] 高品質（テキストMAE < 5: 基準クリア）")
+                elif mae_text_img2 < 10:
+                    print(f"  評価: [WARNING] 許容範囲（テキストMAE < 10: やや差分あり）")
                 else:
-                    eval_str = "🚨 全く異なる画像（別の文書/別の患者）"
-                print(f"  超解像結果{idx}: {eval_str}")
+                    print(f"  評価: [ERROR] 低品質（テキストMAE ≥ 10: 基準未達）")
+            else:
+                mae_text_img2 = None
+                print(f"\n  [WARNING]  テキスト領域が検出されませんでした（白背景のみの画像）")
+
+            # resultsには互換性のためimg1も保存（常に0）
+            mae_img1 = 0.0
+            mae_text_img1 = 0.0 if text_pixel_count > 0 else None
+
+        else:
+            # 比較モード（将来実装）：2つのAI結果を比較
+            diff_img1 = np.abs(img1_rgb.astype(float) - img_original_rgb.astype(float))
+            diff_img2 = np.abs(img2_rgb.astype(float) - img_original_rgb.astype(float))
+
+            mae_img1 = np.mean(diff_img1)
+            mae_img2 = np.mean(diff_img2)
+
+            print(f" 全体MAE:")
+            print(f"  モデルA vs 元画像: {mae_img1:.2f} (差分率: {(mae_img1/255)*100:.1f}%)")
+            print(f"  モデルB vs 元画像: {mae_img2:.2f} (差分率: {(mae_img2/255)*100:.1f}%)")
+
+            # テキスト領域のMAE
+            text_mask_img1 = np.mean(img1_rgb, axis=2) < 200
+            text_mask_img2 = np.mean(img2_rgb, axis=2) < 200
+            text_mask_original = np.mean(img_original_rgb, axis=2) < 200
+            text_mask_combined = text_mask_img1 | text_mask_img2 | text_mask_original
+
+            text_pixel_count = np.sum(text_mask_combined)
+            total_pixel_count = text_mask_combined.size
+            text_ratio = text_pixel_count / total_pixel_count
+
+            if text_pixel_count > 0:
+                mae_text_img1 = np.mean(diff_img1[text_mask_combined])
+                mae_text_img2 = np.mean(diff_img2[text_mask_combined])
+
+                print(f"\n テキスト領域MAE（白背景除外、{text_ratio*100:.1f}%の領域）:")
+                print(f"  モデルA vs 元画像: {mae_text_img1:.2f} (差分率: {(mae_text_img1/255)*100:.1f}%)")
+                print(f"  モデルB vs 元画像: {mae_text_img2:.2f} (差分率: {(mae_text_img2/255)*100:.1f}%)")
+            else:
+                mae_text_img1 = None
+                mae_text_img2 = None
+                print(f"\n  [WARNING]  テキスト領域が検出されませんでした（白背景のみの画像）")
+
+            # 比較表示
+            print(f"\n 全体MAE比較:")
+            if mae_img1 < mae_img2:
+                print(f"  → モデルAの方が元画像に近い (差分差: {mae_img2 - mae_img1:.2f})")
+            else:
+                print(f"  → モデルBの方が元画像に近い (差分差: {mae_img1 - mae_img2:.2f})")
+
+        # 比較モード用のテキストMAE比較（評価モードではスキップ）
+        if comparison_mode != 'evaluation' and mae_text_img1 is not None and mae_text_img2 is not None:
+            print(f"\n テキスト領域MAE比較:")
+            if mae_text_img1 < mae_text_img2:
+                print(f"  → モデルAの方が元画像に近い (差分差: {mae_text_img2 - mae_text_img1:.2f})")
+            else:
+                print(f"  → モデルBの方が元画像に近い (差分差: {mae_text_img1 - mae_text_img2:.2f})")
 
         results['mae'] = {
             'img1_vs_original': round(mae_img1, 2),
@@ -1325,73 +1582,123 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
     if evaluation_mode == 'document':
         # 文書モード：強制的に文書として扱う
         is_any_document = True
-        print("📄 評価モード: 文書モード（厳格な基準で評価）")
+        print(" 評価モード: 文書モード（厳格な基準で評価）")
     elif evaluation_mode == 'developer':
         # 開発者モード：自動検出結果を使用
         is_any_document = is_any_document_detected
-        print("🔧 評価モード: 開発者モード（参考情報として表示）")
+        print(" 評価モード: 開発者モード（参考情報として表示）")
     else:
         # 画像モード：自動検出結果を使用
         is_any_document = is_any_document_detected
         if is_any_document:
-            print("📄 文書画像を自動検出（文書モードの使用を推奨）")
+            print(" 文書画像を自動検出（文書モードの使用を推奨）")
 
     if img_original_rgb is not None:
         # 元画像がある場合：それぞれ元画像との類似度を計算
-        clip_img1_vs_orig = calculate_clip_similarity(img1_rgb, img_original_rgb)
-        clip_img2_vs_orig = calculate_clip_similarity(img2_rgb, img_original_rgb)
-        print_usage_status("CLIP計算完了")
+        if comparison_mode == 'evaluation':
+            # 評価モード：超解像画像の品質のみ評価
+            clip_img2_vs_orig = calculate_clip_similarity(img2_rgb, img_original_rgb)
+            print_usage_status("CLIP計算完了")
 
-        if clip_img1_vs_orig is not None and clip_img2_vs_orig is not None:
-            print(f"画像1 vs 元画像 CLIP: {clip_img1_vs_orig:.4f}")
-            print(f"画像2 vs 元画像 CLIP: {clip_img2_vs_orig:.4f}")
-            if GPU_AVAILABLE:
-                print(f"  GPU使用: はい")
-            else:
-                print(f"  GPU使用: いいえ（CPU処理）")
+            if clip_img2_vs_orig is not None:
+                print(f"超解像画像 vs 元画像 CLIP: {clip_img2_vs_orig:.4f}")
+                if GPU_AVAILABLE:
+                    print(f"  GPU使用: はい")
+                else:
+                    print(f"  GPU使用: いいえ（CPU処理）")
 
-            if clip_img1_vs_orig > clip_img2_vs_orig:
-                print(f"→ 元画像の方が元画像に意味的に近い (+{(clip_img1_vs_orig - clip_img2_vs_orig):.4f})")
-            else:
-                print(f"→ AI処理結果の方が元画像に意味的に近い (+{(clip_img2_vs_orig - clip_img1_vs_orig):.4f})")
-
-            # 各画像の評価（文書画像の場合は厳格な基準を適用）
-            if is_any_document:
-                print("  ⚠️  文書/カルテ画像を検出: CLIPは厳格な基準で評価します")
-                # 文書画像用の厳格な閾値
-                for idx, clip_val in enumerate([clip_img1_vs_orig, clip_img2_vs_orig], 1):
-                    if clip_val > 0.98:
-                        eval_str = "意味的にほぼ同一"
-                    elif clip_val > 0.95:
-                        eval_str = "意味的に類似（要注意：文書は構造類似で高スコアになりやすい）"
-                    elif clip_val > 0.90:
-                        eval_str = "⚠️ 構造は類似だが内容は異なる可能性 🔍"
+                # 絶対評価（文書画像の場合は厳格な基準を適用）
+                if is_any_document:
+                    print("  [WARNING]  文書/カルテ画像を検出: CLIPは厳格な基準で評価します")
+                    if clip_img2_vs_orig > 0.98:
+                        print(f"  評価: [OK] 優秀（CLIP > 0.98: 意味的にほぼ同一）")
+                    elif clip_img2_vs_orig > 0.95:
+                        print(f"  評価: [OK] 高品質（CLIP > 0.95: 基準クリア、ただし文書は構造類似で高スコアになりやすい）")
+                    elif clip_img2_vs_orig > 0.90:
+                        print(f"  評価: [WARNING] 許容範囲（CLIP > 0.90: 構造は類似だが内容は異なる可能性）")
                     else:
-                        eval_str = "全く異なる画像（内容が違う）🚨"
-                    print(f"  画像{idx}: {eval_str}")
-            else:
-                # 自然画像用の通常閾値
-                for idx, clip_val in enumerate([clip_img1_vs_orig, clip_img2_vs_orig], 1):
-                    if clip_val > 0.95:
-                        eval_str = "意味的にほぼ同一"
-                    elif clip_val > 0.85:
-                        eval_str = "意味的に非常に類似"
-                    elif clip_val > 0.70:
-                        eval_str = "意味的に類似"
-                    elif clip_val > 0.50:
-                        eval_str = "やや類似"
+                        print(f"  評価: [ERROR] 低品質（CLIP ≤ 0.90: 全く異なる画像）")
+                else:
+                    # 自然画像用の通常閾値
+                    if clip_img2_vs_orig > 0.95:
+                        print(f"  評価: [OK] 優秀（CLIP > 0.95: 意味的にほぼ同一）")
+                    elif clip_img2_vs_orig > 0.85:
+                        print(f"  評価: [OK] 高品質（CLIP > 0.85: 意味的に非常に類似）")
+                    elif clip_img2_vs_orig > 0.70:
+                        print(f"  評価: [WARNING] 許容範囲（CLIP > 0.70: 意味的に類似）")
                     else:
-                        eval_str = "全く異なる画像（内容が違う）🚨"
-                    print(f"  画像{idx}: {eval_str}")
+                        print(f"  評価: [ERROR] 低品質（CLIP ≤ 0.70: 意味的に異なる）")
 
-            results['clip_similarity'] = {
-                'img1_vs_original': round(clip_img1_vs_orig, 4),
-                'img2_vs_original': round(clip_img2_vs_orig, 4),
-                'is_document': is_any_document  # 文書画像フラグを追加
-            }
+                # resultsには互換性のためimg1も保存（常に1.0）
+                clip_img1_vs_orig = 1.0
+                results['clip_similarity'] = {
+                    'img1_vs_original': round(clip_img1_vs_orig, 4),
+                    'img2_vs_original': round(clip_img2_vs_orig, 4),
+                    'is_document': is_any_document
+                }
+            else:
+                clip_img1_vs_orig = None
+                clip_img2_vs_orig = None
+                results['clip_similarity'] = None
+
         else:
-            print("  ※CLIP計算をスキップしました（ライブラリ未インストール）")
-            results['clip_similarity'] = None
+            # 比較モード（将来実装）：2つのAI結果を比較
+            clip_img1_vs_orig = calculate_clip_similarity(img1_rgb, img_original_rgb)
+            clip_img2_vs_orig = calculate_clip_similarity(img2_rgb, img_original_rgb)
+            print_usage_status("CLIP計算完了")
+
+            if clip_img1_vs_orig is not None and clip_img2_vs_orig is not None:
+                print(f"モデルA vs 元画像 CLIP: {clip_img1_vs_orig:.4f}")
+                print(f"モデルB vs 元画像 CLIP: {clip_img2_vs_orig:.4f}")
+                if GPU_AVAILABLE:
+                    print(f"  GPU使用: はい")
+                else:
+                    print(f"  GPU使用: いいえ（CPU処理）")
+
+                if clip_img1_vs_orig > clip_img2_vs_orig:
+                    print(f"→ モデルAの方が元画像に意味的に近い (+{(clip_img1_vs_orig - clip_img2_vs_orig):.4f})")
+                else:
+                    print(f"→ モデルBの方が元画像に意味的に近い (+{(clip_img2_vs_orig - clip_img1_vs_orig):.4f})")
+
+                # 各モデルの評価（文書画像の場合は厳格な基準を適用）
+                if is_any_document:
+                    print("  [WARNING]  文書/カルテ画像を検出: CLIPは厳格な基準で評価します")
+                    # 文書画像用の厳格な閾値
+                    for idx, clip_val in enumerate([clip_img1_vs_orig, clip_img2_vs_orig], 1):
+                        label = "モデルA" if idx == 1 else "モデルB"
+                        if clip_val > 0.98:
+                            eval_str = "意味的にほぼ同一"
+                        elif clip_val > 0.95:
+                            eval_str = "意味的に類似（要注意：文書は構造類似で高スコアになりやすい）"
+                        elif clip_val > 0.90:
+                            eval_str = "[WARNING] 構造は類似だが内容は異なる可能性"
+                        else:
+                            eval_str = "全く異なる画像（内容が違う）"
+                        print(f"  {label}: {eval_str}")
+                else:
+                    # 自然画像用の通常閾値
+                    for idx, clip_val in enumerate([clip_img1_vs_orig, clip_img2_vs_orig], 1):
+                        label = "モデルA" if idx == 1 else "モデルB"
+                        if clip_val > 0.95:
+                            eval_str = "意味的にほぼ同一"
+                        elif clip_val > 0.85:
+                            eval_str = "意味的に非常に類似"
+                        elif clip_val > 0.70:
+                            eval_str = "意味的に類似"
+                        elif clip_val > 0.50:
+                            eval_str = "やや類似"
+                        else:
+                            eval_str = "全く異なる画像（内容が違う）"
+                        print(f"  {label}: {eval_str}")
+
+                results['clip_similarity'] = {
+                    'img1_vs_original': round(clip_img1_vs_orig, 4),
+                    'img2_vs_original': round(clip_img2_vs_orig, 4),
+                    'is_document': is_any_document  # 文書画像フラグを追加
+                }
+            else:
+                print("  ※CLIP計算をスキップしました（ライブラリ未インストール）")
+                results['clip_similarity'] = None
     else:
         # 元画像がない場合：元画像 vs AI処理結果
         clip_similarity = calculate_clip_similarity(img1_rgb, img2_rgb)
@@ -1406,13 +1713,13 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
 
             # 文書画像の場合は厳格な基準を適用
             if is_any_document:
-                print("  ⚠️  文書/カルテ画像を検出: CLIPは厳格な基準で評価します")
+                print("  [WARNING]  文書/カルテ画像を検出: CLIPは厳格な基準で評価します")
                 if clip_similarity > 0.98:
                     print("  評価: 意味的にほぼ同一の画像")
                 elif clip_similarity > 0.95:
                     print("  評価: 意味的に類似（要注意：文書は構造類似で高スコアになりやすい）")
                 elif clip_similarity > 0.90:
-                    print("  評価: ⚠️ 構造は類似だが内容は異なる可能性 🔍")
+                    print("  評価: [WARNING] 構造は類似だが内容は異なる可能性 ")
                 else:
                     print("  評価: 全く異なる画像（内容が違う）")
             else:
@@ -1439,92 +1746,272 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
     # 4. シャープネス（鮮鋭度）
     print("\n【4. シャープネス（鮮鋭度）】")
     print_usage_status("シャープネス計算開始（GPU使用）" if GPU_AVAILABLE else "シャープネス計算開始（CPU使用）")
-    sharpness1 = calculate_sharpness_gpu(img1_gray)
-    sharpness2 = calculate_sharpness_gpu(img2_gray)
-    print(f"画像1シャープネス: {sharpness1:.2f}")
-    print(f"画像2シャープネス: {sharpness2:.2f}")
-    print(f"差: {abs(sharpness1 - sharpness2):.2f} ({((sharpness2/sharpness1 - 1) * 100):+.1f}%)")
 
-    results['sharpness'] = {
-        'img1': round(sharpness1, 2),
-        'img2': round(sharpness2, 2),
-        'difference_pct': round((sharpness2/sharpness1 - 1) * 100, 1)
-    }
+    if comparison_mode == 'evaluation' and img_original_gray is not None:
+        # 評価モード：超解像画像のシャープネス保持率を評価
+        sharpness_orig = calculate_sharpness_gpu(img_original_gray)
+        sharpness_img2 = calculate_sharpness_gpu(img2_gray)
+
+        print(f"元画像シャープネス: {sharpness_orig:.2f}")
+        print(f"超解像画像シャープネス: {sharpness_img2:.2f}")
+
+        preservation_ratio = (sharpness_img2 / sharpness_orig) if sharpness_orig > 0 else 0
+        print(f"保持率: {preservation_ratio:.2%} ({(preservation_ratio - 1) * 100:+.1f}%)")
+
+        # 絶対評価
+        if preservation_ratio >= 1.1:
+            print(f"  評価: [OK] 優秀（シャープネス改善: +{(preservation_ratio - 1) * 100:.1f}%）")
+        elif preservation_ratio >= 0.95:
+            print(f"  評価: [OK] 高品質（シャープネス保持: {preservation_ratio:.2%}）")
+        elif preservation_ratio >= 0.85:
+            print(f"  評価: [WARNING] 許容範囲（やや劣化: {preservation_ratio:.2%}）")
+        else:
+            print(f"  評価: [ERROR] 低品質（大幅劣化: {preservation_ratio:.2%}）")
+
+        results['sharpness'] = {
+            'img1': round(sharpness_orig, 2),  # 互換性のため
+            'img2': round(sharpness_img2, 2),
+            'difference_pct': round((sharpness_img2/sharpness_orig - 1) * 100, 1) if sharpness_orig > 0 else 0,
+            'preservation_ratio': round(preservation_ratio, 3)
+        }
+    else:
+        # 比較モード（将来実装）または元画像なし：2つの画像を比較
+        sharpness1 = calculate_sharpness_gpu(img1_gray)
+        sharpness2 = calculate_sharpness_gpu(img2_gray)
+        print(f"画像1シャープネス: {sharpness1:.2f}")
+        print(f"画像2シャープネス: {sharpness2:.2f}")
+        print(f"差: {abs(sharpness1 - sharpness2):.2f} ({((sharpness2/sharpness1 - 1) * 100):+.1f}%)")
+
+        results['sharpness'] = {
+            'img1': round(sharpness1, 2),
+            'img2': round(sharpness2, 2),
+            'difference_pct': round((sharpness2/sharpness1 - 1) * 100, 1)
+        }
 
     # 5. コントラスト
     print("\n【5. コントラスト】")
-    contrast1 = calculate_contrast(img1_gray)
-    contrast2 = calculate_contrast(img2_gray)
-    print(f"画像1コントラスト: {contrast1:.2f}")
-    print(f"画像2コントラスト: {contrast2:.2f}")
-    print(f"差: {abs(contrast1 - contrast2):.2f} ({((contrast2/contrast1 - 1) * 100):+.1f}%)")
 
-    results['contrast'] = {
-        'img1': round(contrast1, 2),
-        'img2': round(contrast2, 2),
-        'difference_pct': round((contrast2/contrast1 - 1) * 100, 1)
-    }
+    if comparison_mode == 'evaluation' and img_original_gray is not None:
+        # 評価モード：超解像画像のコントラスト保持率を評価
+        contrast_orig = calculate_contrast(img_original_gray)
+        contrast_img2 = calculate_contrast(img2_gray)
+
+        print(f"元画像コントラスト: {contrast_orig:.2f}")
+        print(f"超解像画像コントラスト: {contrast_img2:.2f}")
+
+        preservation_ratio = (contrast_img2 / contrast_orig) if contrast_orig > 0 else 0
+        print(f"保持率: {preservation_ratio:.2%} ({(preservation_ratio - 1) * 100:+.1f}%)")
+
+        # 絶対評価
+        if preservation_ratio >= 1.05:
+            print(f"  評価: [OK] 優秀（コントラスト改善: +{(preservation_ratio - 1) * 100:.1f}%）")
+        elif preservation_ratio >= 0.95:
+            print(f"  評価: [OK] 高品質（コントラスト保持: {preservation_ratio:.2%}）")
+        elif preservation_ratio >= 0.85:
+            print(f"  評価: [WARNING] 許容範囲（やや劣化: {preservation_ratio:.2%}）")
+        else:
+            print(f"  評価: [ERROR] 低品質（大幅劣化: {preservation_ratio:.2%}）")
+
+        results['contrast'] = {
+            'img1': round(contrast_orig, 2),  # 互換性のため
+            'img2': round(contrast_img2, 2),
+            'difference_pct': round((contrast_img2/contrast_orig - 1) * 100, 1) if contrast_orig > 0 else 0,
+            'preservation_ratio': round(preservation_ratio, 3)
+        }
+    else:
+        # 比較モード（将来実装）または元画像なし：2つの画像を比較
+        contrast1 = calculate_contrast(img1_gray)
+        contrast2 = calculate_contrast(img2_gray)
+        print(f"画像1コントラスト: {contrast1:.2f}")
+        print(f"画像2コントラスト: {contrast2:.2f}")
+        print(f"差: {abs(contrast1 - contrast2):.2f} ({((contrast2/contrast1 - 1) * 100):+.1f}%)")
+
+        results['contrast'] = {
+            'img1': round(contrast1, 2),
+            'img2': round(contrast2, 2),
+            'difference_pct': round((contrast2/contrast1 - 1) * 100, 1)
+        }
 
     # 6. エントロピー（情報量）
     print("\n【6. エントロピー（情報量）】")
     print("数値が高いほど情報量が多い（複雑）")
-    entropy1 = calculate_entropy(img1_gray)
-    entropy2 = calculate_entropy(img2_gray)
-    print(f"画像1エントロピー: {entropy1:.3f}")
-    print(f"画像2エントロピー: {entropy2:.3f}")
-    print(f"差: {abs(entropy1 - entropy2):.3f}")
 
-    results['entropy'] = {
-        'img1': round(entropy1, 3),
-        'img2': round(entropy2, 3)
-    }
+    if comparison_mode == 'evaluation' and img_original_gray is not None:
+        # 評価モード：超解像画像のエントロピー保持率を評価
+        entropy_orig = calculate_entropy(img_original_gray)
+        entropy_img2 = calculate_entropy(img2_gray)
+
+        print(f"元画像エントロピー: {entropy_orig:.3f}")
+        print(f"超解像画像エントロピー: {entropy_img2:.3f}")
+        print(f"差: {abs(entropy_orig - entropy_img2):.3f}")
+
+        preservation_ratio = (entropy_img2 / entropy_orig) if entropy_orig > 0 else 0
+        print(f"保持率: {preservation_ratio:.2%}")
+
+        # 絶対評価（エントロピーは情報量の指標、保持が重要）
+        if abs(preservation_ratio - 1.0) <= 0.05:
+            print(f"  評価: [OK] 優秀（情報量保持: {preservation_ratio:.2%}）")
+        elif abs(preservation_ratio - 1.0) <= 0.10:
+            print(f"  評価: [OK] 高品質（情報量ほぼ保持: {preservation_ratio:.2%}）")
+        elif abs(preservation_ratio - 1.0) <= 0.20:
+            print(f"  評価: [WARNING] 許容範囲（やや変化: {preservation_ratio:.2%}）")
+        else:
+            print(f"  評価: [ERROR] 低品質（大幅変化: {preservation_ratio:.2%}）")
+
+        results['entropy'] = {
+            'img1': round(entropy_orig, 3),  # 互換性のため
+            'img2': round(entropy_img2, 3),
+            'preservation_ratio': round(preservation_ratio, 3)
+        }
+    else:
+        # 比較モード（将来実装）または元画像なし：2つの画像を比較
+        entropy1 = calculate_entropy(img1_gray)
+        entropy2 = calculate_entropy(img2_gray)
+        print(f"画像1エントロピー: {entropy1:.3f}")
+        print(f"画像2エントロピー: {entropy2:.3f}")
+        print(f"差: {abs(entropy1 - entropy2):.3f}")
+
+        results['entropy'] = {
+            'img1': round(entropy1, 3),
+            'img2': round(entropy2, 3)
+        }
 
     # 7. ノイズレベル
     print("\n【7. ノイズレベル分析】")
     print_usage_status("ノイズ推定開始（GPU使用）" if GPU_AVAILABLE else "ノイズ推定開始（CPU使用）")
-    noise1 = estimate_noise_gpu(img1_gray)
-    noise2 = estimate_noise_gpu(img2_gray)
-    print(f"画像1ノイズレベル: {noise1:.2f}")
-    print(f"画像2ノイズレベル: {noise2:.2f}")
-    print(f"差: {abs(noise1 - noise2):.2f} ({((noise2/noise1 - 1) * 100 if noise1 != 0 else 0):+.1f}%)")
 
-    results['noise'] = {
-        'img1': round(noise1, 2),
-        'img2': round(noise2, 2)
-    }
+    if comparison_mode == 'evaluation' and img_original_gray is not None:
+        # 評価モード：超解像画像のノイズ除去率を評価
+        noise_orig = estimate_noise_gpu(img_original_gray)
+        noise_img2 = estimate_noise_gpu(img2_gray)
+
+        print(f"元画像ノイズレベル: {noise_orig:.2f}")
+        print(f"超解像画像ノイズレベル: {noise_img2:.2f}")
+        print(f"差: {abs(noise_orig - noise_img2):.2f} ({((noise_img2/noise_orig - 1) * 100 if noise_orig != 0 else 0):+.1f}%)")
+
+        # 絶対評価（ノイズは低い方が良い）
+        if noise_img2 <= noise_orig * 0.8:
+            print(f"  評価: [OK] 優秀（ノイズ除去: -{(1 - noise_img2/noise_orig) * 100:.1f}%）")
+        elif noise_img2 <= noise_orig * 1.05:
+            print(f"  評価: [OK] 高品質（ノイズ保持: {(noise_img2/noise_orig):.2%}）")
+        elif noise_img2 <= noise_orig * 1.2:
+            print(f"  評価: [WARNING] 許容範囲（やや増加: {(noise_img2/noise_orig):.2%}）")
+        else:
+            print(f"  評価: [ERROR] 低品質（ノイズ増加: +{(noise_img2/noise_orig - 1) * 100:.1f}%）")
+
+        results['noise'] = {
+            'img1': round(noise_orig, 2),  # 互換性のため
+            'img2': round(noise_img2, 2),
+            'noise_ratio': round(noise_img2/noise_orig, 3) if noise_orig != 0 else 0
+        }
+    else:
+        # 比較モード（将来実装）または元画像なし：2つの画像を比較
+        noise1 = estimate_noise_gpu(img1_gray)
+        noise2 = estimate_noise_gpu(img2_gray)
+        print(f"画像1ノイズレベル: {noise1:.2f}")
+        print(f"画像2ノイズレベル: {noise2:.2f}")
+        print(f"差: {abs(noise1 - noise2):.2f} ({((noise2/noise1 - 1) * 100 if noise1 != 0 else 0):+.1f}%)")
+
+        results['noise'] = {
+            'img1': round(noise1, 2),
+            'img2': round(noise2, 2)
+        }
 
     # 8. アーティファクト検出
     print("\n【8. アーティファクト検出】")
-    block_noise1, ringing1 = detect_artifacts(img1_gray)
-    block_noise2, ringing2 = detect_artifacts(img2_gray)
 
-    print(f"画像1ブロックノイズ: {block_noise1:.2f}")
-    print(f"画像2ブロックノイズ: {block_noise2:.2f}")
-    print(f"画像1リンギング: {ringing1:.2f}")
-    print(f"画像2リンギング: {ringing2:.2f}")
+    if comparison_mode == 'evaluation' and img_original_gray is not None:
+        # 評価モード：超解像画像のアーティファクト除去率を評価
+        block_noise_orig, ringing_orig = detect_artifacts(img_original_gray)
+        block_noise_img2, ringing_img2 = detect_artifacts(img2_gray)
 
-    results['artifacts'] = {
-        'img1_block_noise': round(block_noise1, 2),
-        'img2_block_noise': round(block_noise2, 2),
-        'img1_ringing': round(ringing1, 2),
-        'img2_ringing': round(ringing2, 2)
-    }
+        print(f"元画像ブロックノイズ: {block_noise_orig:.2f}")
+        print(f"超解像画像ブロックノイズ: {block_noise_img2:.2f}")
+        print(f"元画像リンギング: {ringing_orig:.2f}")
+        print(f"超解像画像リンギング: {ringing_img2:.2f}")
+
+        total_artifact_orig = block_noise_orig + ringing_orig
+        total_artifact_img2 = block_noise_img2 + ringing_img2
+
+        # 絶対評価（アーティファクトは低い方が良い）
+        if total_artifact_img2 <= total_artifact_orig * 0.8:
+            print(f"  評価: [OK] 優秀（アーティファクト除去: -{(1 - total_artifact_img2/total_artifact_orig) * 100:.1f}%）")
+        elif total_artifact_img2 <= total_artifact_orig * 1.1:
+            print(f"  評価: [OK] 高品質（アーティファクト保持: {(total_artifact_img2/total_artifact_orig):.2%}）")
+        elif total_artifact_img2 <= total_artifact_orig * 1.3:
+            print(f"  評価: [WARNING] 許容範囲（やや増加: {(total_artifact_img2/total_artifact_orig):.2%}）")
+        else:
+            print(f"  評価: [ERROR] 低品質（アーティファクト増加: +{(total_artifact_img2/total_artifact_orig - 1) * 100:.1f}%）")
+
+        results['artifacts'] = {
+            'img1_block_noise': round(block_noise_orig, 2),  # 互換性のため
+            'img2_block_noise': round(block_noise_img2, 2),
+            'img1_ringing': round(ringing_orig, 2),
+            'img2_ringing': round(ringing_img2, 2),
+            'artifact_ratio': round(total_artifact_img2/total_artifact_orig, 3) if total_artifact_orig != 0 else 0
+        }
+    else:
+        # 比較モード（将来実装）または元画像なし：2つの画像を比較
+        block_noise1, ringing1 = detect_artifacts(img1_gray)
+        block_noise2, ringing2 = detect_artifacts(img2_gray)
+
+        print(f"画像1ブロックノイズ: {block_noise1:.2f}")
+        print(f"画像2ブロックノイズ: {block_noise2:.2f}")
+        print(f"画像1リンギング: {ringing1:.2f}")
+        print(f"画像2リンギング: {ringing2:.2f}")
+
+        results['artifacts'] = {
+            'img1_block_noise': round(block_noise1, 2),
+            'img2_block_noise': round(block_noise2, 2),
+            'img1_ringing': round(ringing1, 2),
+            'img2_ringing': round(ringing2, 2)
+        }
 
     # 9. エッジ保持率
     print("\n【9. エッジ保持率】")
     print_usage_status("エッジ検出開始（GPU使用）" if GPU_AVAILABLE else "エッジ検出開始（CPU使用）")
-    edge_density1 = detect_edges_gpu(img1_gray)
-    edge_density2 = detect_edges_gpu(img2_gray)
 
-    print(f"画像1エッジ密度: {edge_density1:.2f}%")
-    print(f"画像2エッジ密度: {edge_density2:.2f}%")
-    print(f"差: {abs(edge_density1 - edge_density2):.2f}% ({((edge_density2/edge_density1 - 1) * 100 if edge_density1 != 0 else 0):+.1f}%)")
+    if comparison_mode == 'evaluation' and img_original_gray is not None:
+        # 評価モード：超解像画像のエッジ保持率を評価
+        edge_density_orig = detect_edges_gpu(img_original_gray)
+        edge_density_img2 = detect_edges_gpu(img2_gray)
 
-    results['edges'] = {
-        'img1_density': round(edge_density1, 2),
-        'img2_density': round(edge_density2, 2),
-        'difference_pct': round((edge_density2/edge_density1 - 1) * 100 if edge_density1 != 0 else 0, 1)
-    }
+        print(f"元画像エッジ密度: {edge_density_orig:.2f}%")
+        print(f"超解像画像エッジ密度: {edge_density_img2:.2f}%")
+
+        preservation_ratio = (edge_density_img2 / edge_density_orig) if edge_density_orig > 0 else 0
+        print(f"保持率: {preservation_ratio:.2%} ({(preservation_ratio - 1) * 100:+.1f}%)")
+
+        # 絶対評価（エッジ密度は高い方が細部保持）
+        if preservation_ratio >= 1.05:
+            print(f"  評価: [OK] 優秀（エッジ改善: +{(preservation_ratio - 1) * 100:.1f}%）")
+        elif preservation_ratio >= 0.95:
+            print(f"  評価: [OK] 高品質（エッジ保持: {preservation_ratio:.2%}）")
+        elif preservation_ratio >= 0.85:
+            print(f"  評価: [WARNING] 許容範囲（やや劣化: {preservation_ratio:.2%}）")
+        else:
+            print(f"  評価: [ERROR] 低品質（大幅劣化: {preservation_ratio:.2%}）")
+
+        results['edges'] = {
+            'img1_density': round(edge_density_orig, 2),  # 互換性のため
+            'img2_density': round(edge_density_img2, 2),
+            'difference_pct': round((edge_density_img2/edge_density_orig - 1) * 100 if edge_density_orig != 0 else 0, 1),
+            'preservation_ratio': round(preservation_ratio, 3)
+        }
+    else:
+        # 比較モード（将来実装）または元画像なし：2つの画像を比較
+        edge_density1 = detect_edges_gpu(img1_gray)
+        edge_density2 = detect_edges_gpu(img2_gray)
+
+        print(f"画像1エッジ密度: {edge_density1:.2f}%")
+        print(f"画像2エッジ密度: {edge_density2:.2f}%")
+        print(f"差: {abs(edge_density1 - edge_density2):.2f}% ({((edge_density2/edge_density1 - 1) * 100 if edge_density1 != 0 else 0):+.1f}%)")
+
+        results['edges'] = {
+            'img1_density': round(edge_density1, 2),
+            'img2_density': round(edge_density2, 2),
+            'difference_pct': round((edge_density2/edge_density1 - 1) * 100 if edge_density1 != 0 else 0, 1)
+        }
 
     # 10. 色分布分析
     print("\n【10. 色分布分析（RGB/HSV/LAB）】")
@@ -1559,20 +2046,43 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
     print_usage_status("色差計算開始（GPU使用）" if GPU_AVAILABLE else "色差計算開始（CPU使用）")
 
     if img_original_rgb is not None:
-        # 元画像がある場合：それぞれ元画像との色差を計算
-        delta_e_img1_vs_orig = calculate_color_difference_gpu(img1_rgb, img_original_rgb)
-        delta_e_img2_vs_orig = calculate_color_difference_gpu(img2_rgb, img_original_rgb)
-        print(f"\n  画像1 vs 元画像 ΔE: {delta_e_img1_vs_orig:.2f}")
-        print(f"  画像2 vs 元画像 ΔE: {delta_e_img2_vs_orig:.2f}")
-        if delta_e_img1_vs_orig < delta_e_img2_vs_orig:
-            print(f"  → 元画像の方が元画像の色に近い (差: {delta_e_img2_vs_orig - delta_e_img1_vs_orig:.2f})")
+        # 元画像がある場合：元画像との色差を計算
+        if comparison_mode == 'evaluation':
+            # 評価モード：超解像画像の色再現性を評価
+            delta_e_img2_vs_orig = calculate_color_difference_gpu(img2_rgb, img_original_rgb)
+            print(f"\n  超解像画像 vs 元画像 ΔE: {delta_e_img2_vs_orig:.2f}")
+
+            # 絶対評価（色差は低い方が良い）
+            if delta_e_img2_vs_orig < 1:
+                print(f"  評価: [OK] 優秀（ΔE < 1: 人間の目では区別不可能）")
+            elif delta_e_img2_vs_orig < 5:
+                print(f"  評価: [OK] 高品質（ΔE < 5: 許容範囲）")
+            elif delta_e_img2_vs_orig < 10:
+                print(f"  評価: [WARNING] 許容範囲（ΔE < 10: やや違いあり）")
+            else:
+                print(f"  評価: [ERROR] 低品質（ΔE ≥ 10: 明確な色の違い）")
+
+            # 互換性のためimg1の値も計算
+            delta_e_img1_vs_orig = 0.0  # Dummy value
+            delta_e_result = {
+                'img1_vs_original': round(delta_e_img1_vs_orig, 2),
+                'img2_vs_original': round(delta_e_img2_vs_orig, 2)
+            }
         else:
-            print(f"  → AI処理結果の方が元画像の色に近い (差: {delta_e_img1_vs_orig - delta_e_img2_vs_orig:.2f})")
-        print(f"    (ΔE < 1: 人間の目では区別不可, ΔE < 5: 許容範囲, ΔE > 10: 明確な違い)")
-        delta_e_result = {
-            'img1_vs_original': round(delta_e_img1_vs_orig, 2),
-            'img2_vs_original': round(delta_e_img2_vs_orig, 2)
-        }
+            # 比較モード（将来実装）：2つのAI結果を比較
+            delta_e_img1_vs_orig = calculate_color_difference_gpu(img1_rgb, img_original_rgb)
+            delta_e_img2_vs_orig = calculate_color_difference_gpu(img2_rgb, img_original_rgb)
+            print(f"\n  モデルA vs 元画像 ΔE: {delta_e_img1_vs_orig:.2f}")
+            print(f"  モデルB vs 元画像 ΔE: {delta_e_img2_vs_orig:.2f}")
+            if delta_e_img1_vs_orig < delta_e_img2_vs_orig:
+                print(f"  → モデルAの方が元画像の色に近い (差: {delta_e_img2_vs_orig - delta_e_img1_vs_orig:.2f})")
+            else:
+                print(f"  → モデルBの方が元画像の色に近い (差: {delta_e_img1_vs_orig - delta_e_img2_vs_orig:.2f})")
+            print(f"    (ΔE < 1: 人間の目では区別不可, ΔE < 5: 許容範囲, ΔE > 10: 明確な違い)")
+            delta_e_result = {
+                'img1_vs_original': round(delta_e_img1_vs_orig, 2),
+                'img2_vs_original': round(delta_e_img2_vs_orig, 2)
+            }
     else:
         # 元画像がない場合：元画像 vs AI処理結果
         delta_e_val = calculate_color_difference_gpu(img1_rgb, img2_rgb)
@@ -1588,57 +2098,200 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
 
     # 11. 周波数領域分析
     print("\n【11. 周波数領域分析（FFT）】")
-    freq_analysis1 = analyze_frequency_domain(img1_gray)
-    freq_analysis2 = analyze_frequency_domain(img2_gray)
 
-    print(f"画像1低周波成分比率: {freq_analysis1['low_freq_ratio']:.3f}")
-    print(f"画像2低周波成分比率: {freq_analysis2['low_freq_ratio']:.3f}")
-    print(f"画像1高周波成分比率: {freq_analysis1['high_freq_ratio']:.3f}")
-    print(f"画像2高周波成分比率: {freq_analysis2['high_freq_ratio']:.3f}")
+    if comparison_mode == 'evaluation' and img_original_gray is not None:
+        # 評価モード：超解像画像の周波数成分保持率を評価
+        freq_analysis_orig = analyze_frequency_domain(img_original_gray)
+        freq_analysis_img2 = analyze_frequency_domain(img2_gray)
 
-    results['frequency_analysis'] = {
-        'img1': freq_analysis1,
-        'img2': freq_analysis2
-    }
+        print(f"元画像低周波成分比率: {freq_analysis_orig['low_freq_ratio']:.3f}")
+        print(f"超解像画像低周波成分比率: {freq_analysis_img2['low_freq_ratio']:.3f}")
+        print(f"元画像高周波成分比率: {freq_analysis_orig['high_freq_ratio']:.3f}")
+        print(f"超解像画像高周波成分比率: {freq_analysis_img2['high_freq_ratio']:.3f}")
+
+        high_freq_ratio = (freq_analysis_img2['high_freq_ratio'] / freq_analysis_orig['high_freq_ratio']) if freq_analysis_orig['high_freq_ratio'] > 0 else 0
+
+        # 絶対評価（高周波成分は細部の指標、保持/改善が重要）
+        if high_freq_ratio >= 1.05:
+            print(f"  評価: [OK] 優秀（高周波成分改善: +{(high_freq_ratio - 1) * 100:.1f}%）")
+        elif high_freq_ratio >= 0.95:
+            print(f"  評価: [OK] 高品質（高周波成分保持: {high_freq_ratio:.2%}）")
+        elif high_freq_ratio >= 0.85:
+            print(f"  評価: [WARNING] 許容範囲（やや劣化: {high_freq_ratio:.2%}）")
+        else:
+            print(f"  評価: [ERROR] 低品質（大幅劣化: {high_freq_ratio:.2%}）")
+
+        results['frequency_analysis'] = {
+            'img1': freq_analysis_orig,  # 互換性のため
+            'img2': freq_analysis_img2,
+            'high_freq_ratio': round(high_freq_ratio, 3)
+        }
+    else:
+        # 比較モード（将来実装）または元画像なし：2つの画像を比較
+        freq_analysis1 = analyze_frequency_domain(img1_gray)
+        freq_analysis2 = analyze_frequency_domain(img2_gray)
+
+        print(f"画像1低周波成分比率: {freq_analysis1['low_freq_ratio']:.3f}")
+        print(f"画像2低周波成分比率: {freq_analysis2['low_freq_ratio']:.3f}")
+        print(f"画像1高周波成分比率: {freq_analysis1['high_freq_ratio']:.3f}")
+        print(f"画像2高周波成分比率: {freq_analysis2['high_freq_ratio']:.3f}")
+
+        results['frequency_analysis'] = {
+            'img1': freq_analysis1,
+            'img2': freq_analysis2
+        }
 
     # 12. テクスチャ分析
     print("\n【12. テクスチャ分析】")
-    texture1 = analyze_texture(img1_gray)
-    texture2 = analyze_texture(img2_gray)
 
-    print(f"画像1テクスチャ複雑度: {texture1['texture_complexity']:.2f}")
-    print(f"画像2テクスチャ複雑度: {texture2['texture_complexity']:.2f}")
+    if comparison_mode == 'evaluation' and img_original_gray is not None:
+        # 評価モード：超解像画像のテクスチャ保持率を評価
+        texture_orig = analyze_texture(img_original_gray)
+        texture_img2 = analyze_texture(img2_gray)
 
-    results['texture'] = {
-        'img1': texture1,
-        'img2': texture2
-    }
+        print(f"元画像テクスチャ複雑度: {texture_orig['texture_complexity']:.2f}")
+        print(f"超解像画像テクスチャ複雑度: {texture_img2['texture_complexity']:.2f}")
+
+        preservation_ratio = (texture_img2['texture_complexity'] / texture_orig['texture_complexity']) if texture_orig['texture_complexity'] > 0 else 0
+        print(f"保持率: {preservation_ratio:.2%}")
+
+        # 絶対評価（テクスチャは細部の指標、保持/改善が重要）
+        if preservation_ratio >= 1.05:
+            print(f"  評価: [OK] 優秀（テクスチャ改善: +{(preservation_ratio - 1) * 100:.1f}%）")
+        elif preservation_ratio >= 0.95:
+            print(f"  評価: [OK] 高品質（テクスチャ保持: {preservation_ratio:.2%}）")
+        elif preservation_ratio >= 0.85:
+            print(f"  評価: [WARNING] 許容範囲（やや劣化: {preservation_ratio:.2%}）")
+        else:
+            print(f"  評価: [ERROR] 低品質（大幅劣化: {preservation_ratio:.2%}）")
+
+        results['texture'] = {
+            'img1': texture_orig,  # 互換性のため
+            'img2': texture_img2,
+            'preservation_ratio': round(preservation_ratio, 3)
+        }
+    else:
+        # 比較モード（将来実装）または元画像なし：2つの画像を比較
+        texture1 = analyze_texture(img1_gray)
+        texture2 = analyze_texture(img2_gray)
+
+        print(f"画像1テクスチャ複雑度: {texture1['texture_complexity']:.2f}")
+        print(f"画像2テクスチャ複雑度: {texture2['texture_complexity']:.2f}")
+
+        results['texture'] = {
+            'img1': texture1,
+            'img2': texture2
+        }
 
     # 13. 局所的品質分析
     print("\n【13. 局所的品質分析（パッチベースSSIM）】")
-    local_ssim = analyze_local_quality(img1_rgb, img2_rgb)
+    print(f"パッチサイズ: {patch_size}×{patch_size}ピクセル")
 
-    print(f"局所SSIM 平均: {np.mean(local_ssim):.4f}")
-    print(f"局所SSIM 最小: {np.min(local_ssim):.4f}")
-    print(f"局所SSIM 最大: {np.max(local_ssim):.4f}")
-    print(f"局所SSIM 標準偏差: {np.std(local_ssim):.4f}")
+    if comparison_mode == 'evaluation' and img_original_rgb is not None:
+        # 評価モード：超解像画像と元画像を比較
+        local_ssim_1d, local_ssim_2d, patch_grid = analyze_local_quality(img2_rgb, img_original_rgb, patch_size=patch_size)
+        print("超解像画像 vs 元画像の局所品質:")
+    else:
+        # 比較モード（将来実装）または元画像なし
+        local_ssim_1d, local_ssim_2d, patch_grid = analyze_local_quality(img1_rgb, img2_rgb, patch_size=patch_size)
+
+    print(f"パッチ数: {patch_grid[0]} × {patch_grid[1]} = {patch_grid[0] * patch_grid[1]}ブロック")
+    print(f"局所SSIM 平均: {np.mean(local_ssim_1d):.4f}")
+    print(f"局所SSIM 最小: {np.min(local_ssim_1d):.4f}")
+    print(f"局所SSIM 最大: {np.max(local_ssim_1d):.4f}")
+    print(f"局所SSIM 標準偏差: {np.std(local_ssim_1d):.4f}")
+
+    # 絶対評価
+    mean_local_ssim = np.mean(local_ssim_1d)
+    std_local_ssim = np.std(local_ssim_1d)
+
+    if comparison_mode == 'evaluation':
+        if mean_local_ssim >= 0.90:
+            print(f"  評価: [OK] 優秀（局所品質均一: 平均SSIM {mean_local_ssim:.4f}）")
+        elif mean_local_ssim >= 0.75:
+            print(f"  評価: [OK] 高品質（局所品質良好: 平均SSIM {mean_local_ssim:.4f}）")
+        elif mean_local_ssim >= 0.60:
+            print(f"  評価: [WARNING] 許容範囲（局所品質やや低め: 平均SSIM {mean_local_ssim:.4f}）")
+        else:
+            print(f"  評価: [ERROR] 低品質（局所品質不均一: 平均SSIM {mean_local_ssim:.4f}）")
+
+        if std_local_ssim > 0.15:
+            print(f"  [WARNING] 標準偏差が高い（{std_local_ssim:.4f}）: ハルシネーション疑い")
 
     results['local_quality'] = {
-        'mean_ssim': round(np.mean(local_ssim), 4),
-        'min_ssim': round(np.min(local_ssim), 4),
-        'max_ssim': round(np.max(local_ssim), 4),
-        'std_ssim': round(np.std(local_ssim), 4)
+        'mean_ssim': round(np.mean(local_ssim_1d), 4),
+        'min_ssim': round(np.min(local_ssim_1d), 4),
+        'max_ssim': round(np.max(local_ssim_1d), 4),
+        'std_ssim': round(np.std(local_ssim_1d), 4)
     }
+
+    # 13.1 P6ヒートマップ生成（局所品質ばらつき可視化）
+    print("\n【13.1 P6ヒートマップ生成（局所品質ばらつき）】")
+
+    try:
+        p6_heatmap_path = os.path.join(output_dir, 'p6_local_quality_heatmap.png')
+        # 評価モードでは超解像画像、それ以外は従来通り画像1を使用
+        reference_img = img2_rgb if (comparison_mode == 'evaluation' and img_original_rgb is not None) else img1_rgb
+        generate_p6_heatmap(local_ssim_2d, reference_img, p6_heatmap_path, patch_size=patch_size)
+        print(f"[OK] P6ヒートマップを保存: {p6_heatmap_path}")
+        print(f"   - パッチサイズ: {patch_size}×{patch_size}ピクセル")
+        print(f"   - 標準偏差 {np.std(local_ssim_1d):.4f} が高いほどハルシネーション疑い")
+        print(f"   - 赤い領域: SSIM < 0.7 = ハルシネーション疑い")
+        print(f"   - 青い領域: SSIM > 0.9 = 元画像に忠実")
+    except Exception as e:
+        import traceback
+        print(f"[WARNING] P6ヒートマップ生成エラー: {e}")
+        print("[WARNING] 詳細なエラー情報:")
+        traceback.print_exc()
 
     # 14. ヒストグラム類似度
     print("\n【14. ヒストグラム類似度】")
-    hist1 = cv2.calcHist([img1_gray], [0], None, [256], [0, 256])
-    hist2 = cv2.calcHist([img2_gray], [0], None, [256], [0, 256])
 
-    hist_corr = cv2.compareHist(hist1, hist2, cv2.HISTCMP_CORREL)
-    print(f"ヒストグラム相関: {hist_corr:.4f} (1.0 = 完全一致)")
+    if comparison_mode == 'evaluation' and img_original_gray is not None:
+        # 評価モード：超解像画像と元画像のヒストグラム相関を計算
+        hist_orig = cv2.calcHist([img_original_gray], [0], None, [256], [0, 256])
+        hist_img2 = cv2.calcHist([img2_gray], [0], None, [256], [0, 256])
+        hist_corr = cv2.compareHist(hist_orig, hist_img2, cv2.HISTCMP_CORREL)
+
+        print(f"超解像画像 vs 元画像 ヒストグラム相関: {hist_corr:.4f}")
+
+        # 絶対評価
+        if hist_corr >= 0.95:
+            print(f"  評価: [OK] 優秀（相関 ≥ 0.95: ヒストグラムほぼ一致）")
+        elif hist_corr >= 0.85:
+            print(f"  評価: [OK] 高品質（相関 ≥ 0.85: 類似）")
+        elif hist_corr >= 0.70:
+            print(f"  評価: [WARNING] 許容範囲（相関 ≥ 0.70: やや差あり）")
+        else:
+            print(f"  評価: [ERROR] 低品質（相関 < 0.70: 大きく異なる）")
+    else:
+        # 比較モード（将来実装）または元画像なし
+        hist1 = cv2.calcHist([img1_gray], [0], None, [256], [0, 256])
+        hist2 = cv2.calcHist([img2_gray], [0], None, [256], [0, 256])
+        hist_corr = cv2.compareHist(hist1, hist2, cv2.HISTCMP_CORREL)
+        print(f"ヒストグラム相関: {hist_corr:.4f} (1.0 = 完全一致)")
 
     results['histogram_correlation'] = round(hist_corr, 4)
+
+    # 評価モードの場合、変数名を統一（総合スコア計算用）
+    if comparison_mode == 'evaluation' and img_original_gray is not None:
+        # 評価モードでは、resultsから値を取得して標準変数名に設定
+        sharpness1 = results['sharpness']['img1']
+        sharpness2 = results['sharpness']['img2']
+        contrast1 = results['contrast']['img1']
+        contrast2 = results['contrast']['img2']
+        entropy1 = results['entropy']['img1']
+        entropy2 = results['entropy']['img2']
+        noise1 = results['noise']['img1']
+        noise2 = results['noise']['img2']
+        block_noise1 = results['artifacts']['img1_block_noise']
+        ringing1 = results['artifacts']['img1_ringing']
+        block_noise2 = results['artifacts']['img2_block_noise']
+        ringing2 = results['artifacts']['img2_ringing']
+        edge_density1 = results['edges']['img1_density']
+        edge_density2 = results['edges']['img2_density']
+        texture1 = results['texture']['img1']
+        texture2 = results['texture']['img2']
 
     # 15. 総合スコア計算（絶対評価）
     print("\n【15. 総合評価スコア】")
@@ -1726,25 +2379,46 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
     total2 = (sharp2_score + contrast2_score + entropy2_score + noise2_score +
               artifact2_score + edge2_score + texture2_score) / 7
 
-    print(f"画像1総合スコア: {total1:.1f} / 100")
-    print(f"画像2総合スコア: {total2:.1f} / 100")
+    if comparison_mode == 'evaluation':
+        print(f"元画像総合スコア: {total1:.1f} / 100")
+        print(f"超解像画像総合スコア: {total2:.1f} / 100")
 
-    if total2 > total1:
-        print(f"→ 画像2が {total2 - total1:.1f}点 優位")
-    elif total1 > total2:
-        print(f"→ 画像1が {total1 - total2:.1f}点 優位")
+        if total2 > total1:
+            print(f"→ 超解像画像が {total2 - total1:.1f}点 優位")
+        elif total1 > total2:
+            print(f"→ 元画像が {total1 - total2:.1f}点 優位（超解像で品質劣化）")
+        else:
+            print(f"→ 同等の品質")
+
+        print("\n【スコア内訳（7項目で評価）】")
+        print(f"             元画像  超解像")
+        print(f"シャープネス:   {sharp1_score:5.1f}   {sharp2_score:5.1f}")
+        print(f"コントラスト:   {contrast1_score:5.1f}   {contrast2_score:5.1f}")
+        print(f"エントロピー:   {entropy1_score:5.1f}   {entropy2_score:5.1f}")
+        print(f"ノイズ対策:     {noise1_score:5.1f}   {noise2_score:5.1f}")
+        print(f"エッジ保持:     {edge1_score:5.1f}   {edge2_score:5.1f}")
+        print(f"歪み抑制:       {artifact1_score:5.1f}   {artifact2_score:5.1f}")
+        print(f"テクスチャ:     {texture1_score:5.1f}   {texture2_score:5.1f}")
     else:
-        print(f"→ 同等の品質")
+        print(f"画像1総合スコア: {total1:.1f} / 100")
+        print(f"画像2総合スコア: {total2:.1f} / 100")
 
-    print("\n【スコア内訳（7項目で評価）】")
-    print(f"             画像1   画像2")
-    print(f"シャープネス:   {sharp1_score:5.1f}   {sharp2_score:5.1f}")
-    print(f"コントラスト:   {contrast1_score:5.1f}   {contrast2_score:5.1f}")
-    print(f"エントロピー:   {entropy1_score:5.1f}   {entropy2_score:5.1f}")
-    print(f"ノイズ対策:     {noise1_score:5.1f}   {noise2_score:5.1f}")
-    print(f"エッジ保持:     {edge1_score:5.1f}   {edge2_score:5.1f}")
-    print(f"歪み抑制:       {artifact1_score:5.1f}   {artifact2_score:5.1f}")
-    print(f"テクスチャ:     {texture1_score:5.1f}   {texture2_score:5.1f}")
+        if total2 > total1:
+            print(f"→ 画像2が {total2 - total1:.1f}点 優位")
+        elif total1 > total2:
+            print(f"→ 画像1が {total1 - total2:.1f}点 優位")
+        else:
+            print(f"→ 同等の品質")
+
+        print("\n【スコア内訳（7項目で評価）】")
+        print(f"             画像1   画像2")
+        print(f"シャープネス:   {sharp1_score:5.1f}   {sharp2_score:5.1f}")
+        print(f"コントラスト:   {contrast1_score:5.1f}   {contrast2_score:5.1f}")
+        print(f"エントロピー:   {entropy1_score:5.1f}   {entropy2_score:5.1f}")
+        print(f"ノイズ対策:     {noise1_score:5.1f}   {noise2_score:5.1f}")
+        print(f"エッジ保持:     {edge1_score:5.1f}   {edge2_score:5.1f}")
+        print(f"歪み抑制:       {artifact1_score:5.1f}   {artifact2_score:5.1f}")
+        print(f"テクスチャ:     {texture1_score:5.1f}   {texture2_score:5.1f}")
 
     print(f"\n【類似度指標（参考値）】")
     print(f"  SSIM:        {ssim_score_val:.1f}/100")
@@ -1832,10 +2506,11 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         json.dump(results, f, indent=2, ensure_ascii=False, cls=NumpyEncoder)
 
     print(f"結果を '{output_dir}/' に保存しました")
-    print("  - comparison_report.png: ★比較レポート（グラフとスコア表示）★")
+    print("  - comparison_report.png: *比較レポート（グラフとスコア表示）*")
     print("  - detailed_analysis.png: 詳細分析可視化（12枚の分析画像）")
     print("  - difference.png: 差分画像")
     print("  - heatmap.png: 差分ヒートマップ")
+    print("  - p6_local_quality_heatmap.png: *P6局所品質ばらつきヒートマップ*")
     print("  - comparison.png: 3枚並べて比較")
     print("  - edges_*.png: エッジ検出結果")
     print("  - analysis_results.json: 分析結果データ（JSON形式）")
@@ -1845,8 +2520,9 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
     print("=" * 80)
 
     # 結果の解釈を追加
-    # 評価モードを結果に保存
+    # 評価モードと比較モードを結果に保存
     results['evaluation_mode'] = evaluation_mode
+    results['comparison_mode'] = comparison_mode
 
     try:
         from result_interpreter import interpret_results, format_interpretation_text

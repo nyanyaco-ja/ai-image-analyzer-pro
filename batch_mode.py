@@ -20,7 +20,7 @@ class BatchModeMixin:
 
         info_title = ctk.CTkLabel(
             info_frame,
-            text="📚 バッチ処理について",
+            text="[BATCH] バッチ処理について",
             font=("Arial", 18, "bold"),
             text_color="#4A90E2"
         )
@@ -136,7 +136,7 @@ class BatchModeMixin:
         self.batch_original_dir = tk.StringVar()
         original_label = ctk.CTkLabel(
             self.folder_accordion.content_frame,
-            text="📁 元画像フォルダ（必須・処理前・PNG推奨）",
+            text="[FOLDER] 元画像フォルダ（必須・処理前・PNG推奨）",
             font=("Arial", 14, "bold"),
             text_color="#00ff88"
         )
@@ -170,7 +170,7 @@ class BatchModeMixin:
         # 超解像モデルフォルダ（複数）
         upscaled_label = ctk.CTkLabel(
             self.folder_accordion.content_frame,
-            text="🤖 超解像モデルフォルダ（必須・最低1つ、最大5個）",
+            text="[MODEL] 超解像モデルフォルダ（必須・最低1つ、最大5個）",
             font=("Arial", 14, "bold"),
             text_color="#ffffff"
         )
@@ -214,7 +214,7 @@ class BatchModeMixin:
             # 参照ボタン
             browse_btn = ctk.CTkButton(
                 model_frame,
-                text="📁",
+                text="[FOLDER]",
                 command=lambda idx=i: self.browse_batch_model(idx),
                 width=50,
                 height=40,
@@ -254,7 +254,7 @@ class BatchModeMixin:
 
         csv_browse_btn = ctk.CTkButton(
             csv_frame,
-            text="📁",
+            text="[FOLDER]",
             command=self.browse_batch_csv_output,
             width=50,
             height=40,
@@ -281,7 +281,7 @@ class BatchModeMixin:
 
         detail_browse_btn = ctk.CTkButton(
             detail_frame,
-            text="📁",
+            text="[FOLDER]",
             command=self.browse_batch_detail_output,
             width=50,
             height=40,
@@ -402,7 +402,7 @@ class BatchModeMixin:
         # === 並列処理設定 ===
         parallel_info = ctk.CTkLabel(
             self.detail_accordion.content_frame,
-            text="⚡ 並列処理設定（1000枚以上で効果的、少量は逆に遅くなります）",
+            text="[PARALLEL] 並列処理設定（1000枚以上で効果的、少量は逆に遅くなります）",
             font=("Arial", 11),
             text_color="#888888",
             justify="left"
@@ -465,11 +465,75 @@ class BatchModeMixin:
         )
         workers_info.pack(side=tk.LEFT)
 
+        # P6パッチサイズ選択
+        patch_info = ctk.CTkLabel(
+            self.detail_accordion.content_frame,
+            text="P6ヒートマップ精度（パッチサイズ）:",
+            font=("Arial", 13, "bold"),
+            text_color="#4A90E2",
+            justify="left"
+        )
+        patch_info.pack(anchor="w", padx=15, pady=(20, 5))
+
+        patch_desc = ctk.CTkLabel(
+            self.detail_accordion.content_frame,
+            text="大量処理には16×16（標準）を推奨、医療画像は8×8を選択",
+            font=("Arial", 11),
+            text_color="#888888",
+            justify="left"
+        )
+        patch_desc.pack(anchor="w", padx=15, pady=(0, 5))
+
+        # パッチサイズ変数（デフォルト16）
+        self.batch_patch_size = tk.IntVar(value=16)
+
+        patch_frame = ctk.CTkFrame(self.detail_accordion.content_frame, fg_color="transparent")
+        patch_frame.pack(fill=tk.X, padx=15, pady=(5, 15))
+
+        # 8×8オプション
+        patch_8 = ctk.CTkRadioButton(
+            patch_frame,
+            text="8×8（超高精度、医療画像用）",
+            variable=self.batch_patch_size,
+            value=8,
+            font=("Arial", 12),
+            text_color="#ffffff",
+            fg_color="#ff6b6b",
+            hover_color="#ee5555"
+        )
+        patch_8.pack(anchor="w", pady=(0, 5))
+
+        # 16×16オプション（推奨）
+        patch_16 = ctk.CTkRadioButton(
+            patch_frame,
+            text="16×16（標準精度、論文標準）⭐ 推奨",
+            variable=self.batch_patch_size,
+            value=16,
+            font=("Arial", 12),
+            text_color="#ffffff",
+            fg_color="#4A90E2",
+            hover_color="#357ABD"
+        )
+        patch_16.pack(anchor="w", pady=(0, 5))
+
+        # 32×32オプション
+        patch_32 = ctk.CTkRadioButton(
+            patch_frame,
+            text="32×32（高速、概要把握用）",
+            variable=self.batch_patch_size,
+            value=32,
+            font=("Arial", 12),
+            text_color="#ffffff",
+            fg_color="#4ecdc4",
+            hover_color="#3db8af"
+        )
+        patch_32.pack(anchor="w")
+
         # === 通常のバッチ処理セクション ===
         # 実行ボタン（翻訳対応）
         self.batch_analyze_btn = ctk.CTkButton(
             self.batch_mode_frame,
-            text=f"🚀 {self.i18n.t('buttons.analyze_batch')}",
+            text=f"[RUN] {self.i18n.t('buttons.analyze_batch')}",
             command=self.start_batch_analysis,
             height=60,
             corner_radius=10,
@@ -515,7 +579,7 @@ class BatchModeMixin:
 
         csv_select_btn = ctk.CTkButton(
             csv_select_frame,
-            text="📁 CSV選択",
+            text="[FOLDER] CSV選択",
             command=self.browse_stats_csv,
             width=120,
             height=45,
@@ -533,7 +597,7 @@ class BatchModeMixin:
         # 統計分析実行ボタン
         self.stats_analyze_btn = ctk.CTkButton(
             button_frame,
-            text=f"📈 {self.i18n.t('buttons.analyze_stats')}",
+            text=f"[ANALYZE] {self.i18n.t('buttons.analyze_stats')}",
             command=self.start_stats_analysis,
             height=55,
             corner_radius=10,
@@ -547,7 +611,7 @@ class BatchModeMixin:
         # ハルシネーション抽出ボタン
         self.hallucination_extract_btn = ctk.CTkButton(
             button_frame,
-            text="⚠️ ハルシネーション疑いデータ抽出",
+            text="[WARNING] ハルシネーション疑いデータ抽出",
             command=self.extract_hallucination_suspects,
             height=45,
             corner_radius=10,
@@ -561,7 +625,7 @@ class BatchModeMixin:
         # クリーンデータセット抽出ボタン（NEW in v1.5）
         self.clean_dataset_btn = ctk.CTkButton(
             button_frame,
-            text="✨ 正常データ抽出（AI学習用）",
+            text="[EXTRACT] 正常データ抽出（AI学習用）",
             command=self.extract_clean_dataset,
             height=45,
             corner_radius=10,
@@ -714,7 +778,7 @@ class BatchModeMixin:
                     continue
 
             # 完了メッセージ
-            message = f"✅ バッチBicubic縮小が完了しました\n\n"
+            message = f"[OK] バッチBicubic縮小が完了しました\n\n"
             message += f"成功: {success_count}枚\n"
             if error_count > 0:
                 message += f"エラー: {error_count}枚\n\n"
@@ -799,7 +863,8 @@ class BatchModeMixin:
             "append_mode": self.batch_append_mode.get(),  # 追加モード
             "evaluation_mode": self.batch_evaluation_mode.get(),  # 評価モード（バッチ処理タブの設定）
             "num_workers": num_workers,  # 並列処理数（ユーザー設定）
-            "checkpoint_interval": 1000  # チェックポイント間隔（1000サンプルごと）
+            "checkpoint_interval": 1000,  # チェックポイント間隔（1000サンプルごと）
+            "patch_size": self.batch_patch_size.get()  # P6ヒートマップのパッチサイズ
         }
 
         # UIを無効化
@@ -866,7 +931,7 @@ class BatchModeMixin:
 
         if success:
             self.batch_status_label.configure(
-                text=f"✅ バッチ処理完了！CSVファイル: {csv_path}",
+                text=f"[OK] バッチ処理完了！CSVファイル: {csv_path}",
                 text_color="#00ff88"
             )
 
@@ -882,7 +947,7 @@ class BatchModeMixin:
             )
         else:
             self.batch_status_label.configure(
-                text="❌ バッチ処理エラー",
+                text="[ERROR] バッチ処理エラー",
                 text_color="#ff4444"
             )
             messagebox.showerror("エラー", f"バッチ処理中にエラーが発生しました:\n{output}")

@@ -126,7 +126,7 @@ class ModernImageAnalyzerGUI(
 
         lang_label = ctk.CTkLabel(
             lang_frame,
-            text="🌍",
+            text="LANG",
             font=("Arial", 20),
             text_color="#4A90E2"
         )
@@ -215,7 +215,7 @@ class ModernImageAnalyzerGUI(
 
         self.single_mode_btn = ctk.CTkButton(
             button_container,
-            text=f"📸 {self.i18n.t('tabs.single_analysis')}",
+            text=f"[IMG] {self.i18n.t('tabs.single_analysis')}",
             command=self.switch_to_single_mode,
             height=40,
             width=180,
@@ -229,7 +229,7 @@ class ModernImageAnalyzerGUI(
 
         self.batch_mode_btn = ctk.CTkButton(
             button_container,
-            text=f"🔬 {self.i18n.t('tabs.batch_processing')}",
+            text=f"[BATCH] {self.i18n.t('tabs.batch_processing')}",
             command=self.switch_to_batch_mode,
             height=40,
             width=180,
@@ -243,7 +243,7 @@ class ModernImageAnalyzerGUI(
 
         self.academic_mode_btn = ctk.CTkButton(
             button_container,
-            text=f"📚 {self.i18n.t('tabs.academic_benchmark')}",
+            text=f"[ACAD] {self.i18n.t('tabs.academic_benchmark')}",
             command=self.switch_to_academic_mode,
             height=40,
             width=220,
@@ -371,6 +371,81 @@ class ModernImageAnalyzerGUI(
             text_color="#888888"
         )
         self.mode_developer_desc.pack(anchor="w", padx=30, pady=(0, 15))
+
+        # P6パッチサイズ選択
+        patch_label = ctk.CTkLabel(
+            mode_frame,
+            text="P6ヒートマップ精度（パッチサイズ）:",
+            font=("Arial", 14, "bold"),
+            text_color="#00ffff"
+        )
+        patch_label.pack(anchor="w", padx=30, pady=(15, 8))
+
+        # パッチサイズ変数（デフォルト16）
+        self.patch_size = tk.IntVar(value=16)
+
+        # 8×8オプション
+        patch_8 = ctk.CTkRadioButton(
+            mode_frame,
+            text="8×8 - 超高精度（医療画像・論文品質）",
+            variable=self.patch_size,
+            value=8,
+            font=("Arial", 13),
+            text_color="#ffffff",
+            fg_color="#ff6b6b",
+            hover_color="#ee5555"
+        )
+        patch_8.pack(anchor="w", padx=30, pady=(0, 5))
+
+        patch_8_desc = ctk.CTkLabel(
+            mode_frame,
+            text="  16,384ブロック（1024×1024画像）- 最も細かい分析",
+            font=("Arial", 11),
+            text_color="#888888"
+        )
+        patch_8_desc.pack(anchor="w", padx=30, pady=(0, 8))
+
+        # 16×16オプション（推奨）
+        patch_16 = ctk.CTkRadioButton(
+            mode_frame,
+            text="16×16 - 標準精度（論文標準）⭐ 推奨",
+            variable=self.patch_size,
+            value=16,
+            font=("Arial", 13),
+            text_color="#ffffff",
+            fg_color="#4A90E2",
+            hover_color="#357ABD"
+        )
+        patch_16.pack(anchor="w", padx=30, pady=(0, 5))
+
+        patch_16_desc = ctk.CTkLabel(
+            mode_frame,
+            text="  4,096ブロック（1024×1024画像）- 精度と速度のバランス",
+            font=("Arial", 11),
+            text_color="#888888"
+        )
+        patch_16_desc.pack(anchor="w", padx=30, pady=(0, 8))
+
+        # 32×32オプション
+        patch_32 = ctk.CTkRadioButton(
+            mode_frame,
+            text="32×32 - 高速",
+            variable=self.patch_size,
+            value=32,
+            font=("Arial", 13),
+            text_color="#ffffff",
+            fg_color="#4ecdc4",
+            hover_color="#3db8af"
+        )
+        patch_32.pack(anchor="w", padx=30, pady=(0, 5))
+
+        patch_32_desc = ctk.CTkLabel(
+            mode_frame,
+            text="  1,024ブロック（1024×1024画像）- 概要把握",
+            font=("Arial", 11),
+            text_color="#888888"
+        )
+        patch_32_desc.pack(anchor="w", padx=30, pady=(0, 15))
 
         # 元画像（必須）
         self.original_accordion = AccordionSection(input_section, self.i18n.t('sections.original_image_required'), bg_color="#1b3d1b", title_color="#00ff88", font_size=18)
@@ -587,7 +662,7 @@ class ModernImageAnalyzerGUI(
         # 分析開始ボタン（大きく目立つ）（翻訳対応）
         self.analyze_btn = ctk.CTkButton(
             input_section,
-            text=f"🚀 {self.i18n.t('buttons.analyze')}",
+            text=f"[RUN] {self.i18n.t('buttons.analyze')}",
             command=self.start_analysis,
             height=70,
             corner_radius=15,
@@ -624,7 +699,7 @@ class ModernImageAnalyzerGUI(
 
         btn_report = ctk.CTkButton(
             button_group,
-            text="📊 レポート",
+            text="[STATS] レポート",
             command=self.show_comparison_report,
             height=40,
             corner_radius=10,
@@ -636,7 +711,7 @@ class ModernImageAnalyzerGUI(
 
         btn_folder = ctk.CTkButton(
             button_group,
-            text="📁 フォルダ",
+            text="[FOLDER] フォルダ",
             command=self.open_output_folder,
             height=40,
             corner_radius=10,
@@ -648,7 +723,7 @@ class ModernImageAnalyzerGUI(
 
         btn_clear = ctk.CTkButton(
             button_group,
-            text="🗑️ クリア",
+            text="[CLR] クリア",
             command=self.clear_results,
             height=40,
             corner_radius=10,
@@ -665,7 +740,7 @@ class ModernImageAnalyzerGUI(
         # 画像比較プレビューエリア
         preview_title = ctk.CTkLabel(
             self.single_right_frame,
-            text="📸 画像比較プレビュー",
+            text="[IMG] 画像比較プレビュー",
             font=("Arial", 18, "bold"),
             text_color="#4A90E2"
         )
@@ -682,7 +757,7 @@ class ModernImageAnalyzerGUI(
 
         img_before_title = ctk.CTkLabel(
             img_before_container,
-            text="📄 元画像 (Before)",
+            text="[FILE] 元画像 (Before)",
             font=("Arial", 12, "bold"),
             text_color="#FFA500"
         )
@@ -703,7 +778,7 @@ class ModernImageAnalyzerGUI(
 
         img1_title = ctk.CTkLabel(
             img1_container,
-            text="🎨 超解像結果1 (After)",
+            text="[SR] 超解像結果1 (After)",
             font=("Arial", 12, "bold"),
             text_color="#00ff88"
         )
@@ -724,7 +799,7 @@ class ModernImageAnalyzerGUI(
 
         img2_title = ctk.CTkLabel(
             img2_container,
-            text="🎨 超解像結果2 (After)",
+            text="[SR] 超解像結果2 (After)",
             font=("Arial", 12, "bold"),
             text_color="#00ff88"
         )
@@ -752,12 +827,12 @@ class ModernImageAnalyzerGUI(
         self.tabview.pack(fill=tk.BOTH, expand=True, padx=15, pady=15)
 
         # タブ作成（単一モード用）
-        self.tabview.add("📊 わかりやすい解釈")
-        self.tabview.add("📝 詳細データ")
+        self.tabview.add("[STATS] わかりやすい解釈")
+        self.tabview.add("[LOG] 詳細データ")
 
         # わかりやすい解釈タブ
         self.interpretation_text = ctk.CTkTextbox(
-            self.tabview.tab("📊 わかりやすい解釈"),
+            self.tabview.tab("[STATS] わかりやすい解釈"),
             font=("Meiryo", 11),
             fg_color="#0a0e27",
             text_color="#4A90E2",
@@ -767,7 +842,7 @@ class ModernImageAnalyzerGUI(
 
         # 詳細データタブ
         self.result_text = ctk.CTkTextbox(
-            self.tabview.tab("📝 詳細データ"),
+            self.tabview.tab("[LOG] 詳細データ"),
             font=("Meiryo", 11),
             fg_color="#0a0e27",
             text_color="#00ff88",
@@ -781,7 +856,7 @@ class ModernImageAnalyzerGUI(
         # バッチ処理進捗エリア
         batch_progress_title = ctk.CTkLabel(
             self.batch_right_frame,
-            text="📊 バッチ処理進捗",
+            text="[STATS] バッチ処理進捗",
             font=("Arial", 18, "bold"),
             text_color="#4A90E2"
         )
@@ -814,7 +889,7 @@ class ModernImageAnalyzerGUI(
         # 結果表示テキストエリア
         batch_result_label = ctk.CTkLabel(
             self.batch_right_frame,
-            text="📝 処理結果ログ",
+            text="[LOG] 処理結果ログ",
             font=("Arial", 16, "bold"),
             text_color="#4A90E2"
         )
@@ -835,7 +910,7 @@ class ModernImageAnalyzerGUI(
         # 論文用処理進捗エリア
         academic_progress_title = ctk.CTkLabel(
             self.academic_right_frame,
-            text="📊 論文用ベンチマーク評価進捗",
+            text="[STATS] 論文用ベンチマーク評価進捗",
             font=("Arial", 18, "bold"),
             text_color="#9b59b6"
         )
@@ -868,7 +943,7 @@ class ModernImageAnalyzerGUI(
         # 結果表示テキストエリア
         academic_result_label = ctk.CTkLabel(
             self.academic_right_frame,
-            text="📝 処理結果ログ",
+            text="[LOG] 処理結果ログ",
             font=("Arial", 16, "bold"),
             text_color="#9b59b6"
         )
@@ -1115,14 +1190,16 @@ class ModernImageAnalyzerGUI(
                 self.current_step = f"画像{img_num}の精度を評価中..."
 
                 # 出力ディレクトリを画像番号ごとに分ける
-                output_subdir = os.path.join(self.output_dir.get(), f"image_{img_num}")
+                output_base = self.output_dir.get() or 'analysis_results'
+                output_subdir = os.path.join(output_base, f"image_{img_num}")
 
                 results = analyze_images(
                     gt_path,  # 元画像（GT）
                     img_path,  # AI処理結果
                     output_subdir,
                     None,  # original_pathはNone
-                    evaluation_mode=self.evaluation_mode.get()
+                    evaluation_mode=self.evaluation_mode.get(),
+                    patch_size=self.patch_size.get()  # P6ヒートマップのパッチサイズ
                 )
 
                 # 画像番号を結果に追加
@@ -1138,7 +1215,10 @@ class ModernImageAnalyzerGUI(
 
         except Exception as e:
             sys.stdout = old_stdout
-            self.root.after(0, self.display_error, str(e))
+            import traceback
+            error_detail = f"{str(e)}\n\n詳細:\n{traceback.format_exc()}"
+            print(f"エラー発生:\n{error_detail}")  # コンソールにも出力
+            self.root.after(0, self.display_error, error_detail)
 
     def display_multi_results(self, output, all_results):
         """複数画像の結果を表示"""
@@ -1161,7 +1241,7 @@ class ModernImageAnalyzerGUI(
             img_name = results.get('image_name', f'画像{img_num}')
 
             self.interpretation_text.insert(tk.END, f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
-            self.interpretation_text.insert(tk.END, f"📸 画像 {img_num}: {img_name}\n")
+            self.interpretation_text.insert(tk.END, f"[IMG] 画像 {img_num}: {img_name}\n")
             self.interpretation_text.insert(tk.END, f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n")
 
             if results and 'interpretation' in results:
@@ -1171,13 +1251,14 @@ class ModernImageAnalyzerGUI(
                 self.interpretation_text.insert(tk.END, "\n\n")
 
         # ステータス更新
-        self.status_label.configure(text=f"✅ 精度評価 - {len(all_results)}件完了", text_color="#00ff88")
+        self.status_label.configure(text=f"[OK] 精度評価 - {len(all_results)}件完了", text_color="#00ff88")
 
+        output_folder = self.output_dir.get() or 'analysis_results'
         messagebox.showinfo(
             "完了",
             f"精度評価が完了しました。\n"
             f"{len(all_results)}件の比較が完了しました。\n\n"
-            f"結果は '{self.output_dir.get()}' フォルダに保存されました。"
+            f"結果は '{output_folder}' フォルダに保存されました。"
         )
 
     def display_results(self, output, results):
@@ -1225,28 +1306,29 @@ class ModernImageAnalyzerGUI(
             else:
                 color = "#ffaa00"
 
-            self.status_label.configure(text=f"✅ {summary_msg}", text_color=color)
+            self.status_label.configure(text=f"[OK] {summary_msg}", text_color=color)
         else:
-            self.status_label.configure(text="✅ 分析完了", text_color="#00ff88")
+            self.status_label.configure(text="[OK] 分析完了", text_color="#00ff88")
 
+        output_folder = self.output_dir.get() or 'analysis_results'
         messagebox.showinfo(
             "完了",
             f"分析が完了しました。\n\n"
-            f"結果は '{self.output_dir.get()}' フォルダに保存されました。\n\n"
-            f"「📊 わかりやすい解釈」タブで優劣を確認できます。"
+            f"結果は '{output_folder}' フォルダに保存されました。\n\n"
+            f"「[STATS] わかりやすい解釈」タブで優劣を確認できます。"
         )
 
     def display_error(self, error_msg):
         self.progress.stop()
         self.progress.set(0)
         self.analyze_btn.configure(state='normal')
-        self.status_label.configure(text="❌ エラーが発生しました", text_color="#ff4444")
+        self.status_label.configure(text="[ERROR] エラーが発生しました", text_color="#ff4444")
 
         self.result_text.insert("1.0", f"エラー:\n{error_msg}")
         messagebox.showerror("エラー", f"分析中にエラーが発生しました:\n{error_msg}")
 
     def open_output_folder(self):
-        output_path = self.output_dir.get()
+        output_path = self.output_dir.get() or 'analysis_results'
         if os.path.exists(output_path):
             os.startfile(output_path)
         else:
@@ -1260,7 +1342,8 @@ class ModernImageAnalyzerGUI(
         self.analysis_results = None
 
     def show_comparison_report(self):
-        report_path = os.path.join(self.output_dir.get(), 'comparison_report.png')
+        output_base = self.output_dir.get() or 'analysis_results'
+        report_path = os.path.join(output_base, 'comparison_report.png')
 
         if not os.path.exists(report_path):
             messagebox.showwarning("警告", "比較レポートが見つかりません。\n先に分析を実行してください。")
@@ -1357,21 +1440,21 @@ class ModernImageAnalyzerGUI(
         self.subtitle_label.configure(text=self.i18n.t('app.subtitle'))
 
         # メインタブボタン
-        self.single_mode_btn.configure(text=f"📸 {self.i18n.t('tabs.single_analysis')}")
-        self.batch_mode_btn.configure(text=f"🔬 {self.i18n.t('tabs.batch_processing')}")
-        self.academic_mode_btn.configure(text=f"📚 {self.i18n.t('tabs.academic_benchmark')}")
+        self.single_mode_btn.configure(text=f"[IMG] {self.i18n.t('tabs.single_analysis')}")
+        self.batch_mode_btn.configure(text=f"[BATCH] {self.i18n.t('tabs.batch_processing')}")
+        self.academic_mode_btn.configure(text=f"[ACAD] {self.i18n.t('tabs.academic_benchmark')}")
 
         # 主要ボタン
         # 単一画像分析
-        self.analyze_btn.configure(text=f"🚀 {self.i18n.t('buttons.analyze')}")
+        self.analyze_btn.configure(text=f"[RUN] {self.i18n.t('buttons.analyze')}")
 
         # バッチ処理
-        self.batch_analyze_btn.configure(text=f"🚀 {self.i18n.t('buttons.analyze_batch')}")
-        self.stats_analyze_btn.configure(text=f"📈 {self.i18n.t('buttons.analyze_stats')}")
+        self.batch_analyze_btn.configure(text=f"[RUN] {self.i18n.t('buttons.analyze_batch')}")
+        self.stats_analyze_btn.configure(text=f"[ANALYZE] {self.i18n.t('buttons.analyze_stats')}")
 
         # 論文用ベンチマーク評価
-        self.academic_analyze_btn.configure(text=f"🚀 {self.i18n.t('buttons.analyze_academic')}")
-        self.academic_stats_analyze_btn.configure(text=f"📈 {self.i18n.t('buttons.analyze_stats')}")
+        self.academic_analyze_btn.configure(text=f"[RUN] {self.i18n.t('buttons.analyze_academic')}")
+        self.academic_stats_analyze_btn.configure(text=f"[ANALYZE] {self.i18n.t('buttons.analyze_stats')}")
 
         # 評価モード（単一画像分析タブ）
         self.mode_image.configure(text=self.i18n.t('modes.image'))
