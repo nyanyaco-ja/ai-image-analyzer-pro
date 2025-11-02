@@ -661,14 +661,25 @@ def generate_p6_heatmap(ssim_2d, original_img, output_path, patch_size=16):
 
     # カスタムカラーマップ作成（赤→橙→黄→緑→青）
     # 学術的に厳密な基準（局所SSIMは全体SSIMより厳しく評価）
+    # 学術的閾値を使用したカラーマップ（HTML版と一致させる）
     # 0.00-0.70: 赤（ハルシネーション疑い）
     # 0.70-0.80: 橙（品質低下）
     # 0.80-0.90: 黄（やや低下）
     # 0.90-0.95: 緑（良好）
     # 0.95-1.00: 青（元画像に忠実）
-    colors = ['#FF0000', '#FF6600', '#FFDD00', '#00DD00', '#0066FF']
-    n_bins = 100
-    cmap = LinearSegmentedColormap.from_list('p6_heatmap', colors, N=n_bins)
+    color_positions = [
+        (0.00, '#FF0000'),  # 赤
+        (0.70, '#FF6600'),  # 橙
+        (0.80, '#FFDD00'),  # 黄
+        (0.90, '#00DD00'),  # 緑
+        (0.95, '#0066FF'),  # 青
+        (1.00, '#0066FF')   # 青（1.0まで維持）
+    ]
+
+    # カラーマップ作成（位置と色を明示的に指定）
+    positions = [pos for pos, _ in color_positions]
+    colors = [color for _, color in color_positions]
+    cmap = LinearSegmentedColormap.from_list('p6_heatmap', list(zip(positions, colors)), N=256)
 
     # プロット作成
     fig, ax = plt.subplots(figsize=(12, 10))
@@ -752,6 +763,236 @@ def generate_p6_heatmap(ssim_2d, original_img, output_path, patch_size=16):
     print(f"  [DEBUG] ファイル存在確認: {os.path.exists(output_path)}")
 
     return output_path
+
+def generate_p6_heatmap_interactive(ssim_2d, output_html_path, patch_size=16):
+    """P6ヒートマップのインタラクティブHTML版を生成（論文補足資料用）
+
+    Args:
+        ssim_2d: 2D SSIM マップ (rows x cols)
+        output_html_path: HTML保存先パス
+        patch_size: パッチサイズ（デフォルト16）
+
+    Returns:
+        output_html_path: 保存されたHTMLファイルのパス
+    """
+    try:
+        import plotly.graph_objects as go
+    except ImportError:
+        print("[WARNING] Plotly not installed. Skipping interactive heatmap generation.")
+        print("           Install with: pip install plotly")
+        return None
+
+    # カスタムカラースケール（PNG版と同じ）
+    colorscale = [
+        [0.00, '#FF0000'],  # 赤（ハルシネーション疑い）
+        [0.70, '#FF6600'],  # 橙（品質低下）
+        [0.80, '#FFDD00'],  # 黄（やや低下）
+        [0.90, '#00DD00'],  # 緑（良好）
+        [0.95, '#0066FF']   # 青（元画像に忠実）
+    ]
+
+    # ヒートマップ作成
+    fig = go.Figure(data=go.Heatmap(
+        z=ssim_2d,
+        colorscale=colorscale,
+        zmin=0.0,
+        zmax=1.0,
+        hovertemplate=(
+            '<b>Block Position</b><br>'
+            'Row: %{y}<br>'
+            'Column: %{x}<br>'
+            '<b>Local SSIM: %{z:.4f}</b><br>'
+            '<extra></extra>'
+        ),
+        colorbar=dict(
+            title=dict(
+                text='局所SSIM<br>(Local SSIM)',
+                side='right'
+            ),
+            tickvals=[0.35, 0.75, 0.85, 0.925, 0.975],
+            ticktext=[
+                '赤: ハルシネーション疑い',
+                '橙: 低下',
+                '黄: やや低下',
+                '緑: 良好',
+                '青: 忠実'
+            ],
+            len=0.8
+        )
+    ))
+
+    # 統計情報
+    mean_ssim = np.mean(ssim_2d)
+    std_ssim = np.std(ssim_2d)
+    min_ssim = np.min(ssim_2d)
+    max_ssim = np.max(ssim_2d)
+
+    # レイアウト設定
+    fig.update_layout(
+        title=dict(
+            text=(
+                f'P6 Local Quality Variance Heatmap (Interactive)<br>'
+                f'<sub>Patch Size: {patch_size}×{patch_size}px | '
+                f'Grid: {ssim_2d.shape[0]}×{ssim_2d.shape[1]} | '
+                f'Mean: {mean_ssim:.4f} | Std: {std_ssim:.4f} | '
+                f'Min: {min_ssim:.4f} | Max: {max_ssim:.4f}</sub>'
+            ),
+            x=0.5,
+            xanchor='center'
+        ),
+        xaxis=dict(
+            title=f'Patch Column (each patch = {patch_size}px)',
+            side='bottom'
+        ),
+        yaxis=dict(
+            title=f'Patch Row (each patch = {patch_size}px)',
+            autorange='reversed'  # 画像と同じ向き（上が0）
+        ),
+        width=1200,
+        height=1000,
+        font=dict(size=12)
+    )
+
+    # HTMLとして保存
+    fig.write_html(
+        output_html_path,
+        config={
+            'displayModeBar': True,
+            'displaylogo': False,
+            'modeBarButtonsToRemove': ['lasso2d', 'select2d']
+        }
+    )
+
+    # 統計情報をHTMLに追加
+    stats_html = f"""
+    <div style="margin: 30px; padding: 20px; background-color: #f5f5f5; border-radius: 10px; font-family: Arial, sans-serif;">
+        <h2 style="color: #333; border-bottom: 2px solid #4A90E2; padding-bottom: 10px;">P6 Law Statistics</h2>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+            <div>
+                <h3 style="color: #4A90E2;">Basic Statistics</h3>
+                <ul style="line-height: 1.8;">
+                    <li><strong>Mean SSIM:</strong> {mean_ssim:.4f}</li>
+                    <li><strong>Standard Deviation:</strong> {std_ssim:.4f}</li>
+                    <li><strong>Min SSIM:</strong> {min_ssim:.4f}</li>
+                    <li><strong>Max SSIM:</strong> {max_ssim:.4f}</li>
+                    <li><strong>Grid Size:</strong> {ssim_2d.shape[0]} × {ssim_2d.shape[1]} = {ssim_2d.shape[0] * ssim_2d.shape[1]} blocks</li>
+                    <li><strong>Patch Size:</strong> {patch_size} × {patch_size} pixels</li>
+                </ul>
+            </div>
+
+            <div>
+                <h3 style="color: #4A90E2;">Quality Thresholds (Academic Standard)</h3>
+                <ul style="line-height: 1.8;">
+                    <li><span style="color: #0066FF;">●</span> <strong>0.95-1.00:</strong> Faithful to original</li>
+                    <li><span style="color: #00DD00;">●</span> <strong>0.90-0.95:</strong> Good quality</li>
+                    <li><span style="color: #FFDD00;">●</span> <strong>0.80-0.90:</strong> Slight degradation</li>
+                    <li><span style="color: #FF6600;">●</span> <strong>0.70-0.80:</strong> Quality degradation</li>
+                    <li><span style="color: #FF0000;">●</span> <strong>0.00-0.70:</strong> Hallucination suspected</li>
+                </ul>
+            </div>
+        </div>
+
+        <div style="margin-top: 20px; padding: 15px; background-color: #fff3cd; border-left: 4px solid #ffc107; border-radius: 5px;">
+            <strong>Note:</strong> Hover over each block to see the exact local SSIM value.
+            Click and drag to zoom. Double-click to reset view.
+        </div>
+
+        <div style="margin-top: 20px; padding: 15px; background-color: #d1ecf1; border-left: 4px solid #0c5460; border-radius: 5px;">
+            <strong>P6 Law:</strong> High standard deviation (std > 0.05) indicates structural defects
+            that cannot be detected by average-based metrics (overall SSIM, PSNR, etc.).
+        </div>
+    </div>
+    """
+
+    # HTMLファイルに統計情報を追加
+    with open(output_html_path, 'r', encoding='utf-8') as f:
+        html_content = f.read()
+
+    html_content = html_content.replace('</body>', stats_html + '</body>')
+
+    with open(output_html_path, 'w', encoding='utf-8') as f:
+        f.write(html_content)
+
+    print(f"  [OK] Interactive HTML heatmap saved: {output_html_path}")
+
+    return output_html_path
+
+def export_p6_data_csv(ssim_2d, output_csv_path, patch_size=16):
+    """P6データをCSV形式で出力（再現性・追試用）
+
+    Args:
+        ssim_2d: 2D SSIM マップ (rows x cols)
+        output_csv_path: CSV保存先パス
+        patch_size: パッチサイズ（デフォルト16）
+
+    Returns:
+        output_csv_path: 保存されたCSVファイルのパス
+    """
+    try:
+        import pandas as pd
+    except ImportError:
+        # pandasがない場合は手動でCSV作成
+        import csv
+
+        with open(output_csv_path, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            writer.writerow(['row', 'col', 'local_ssim', 'pixel_y_start', 'pixel_x_start', 'pixel_y_end', 'pixel_x_end'])
+
+            rows, cols = ssim_2d.shape
+            for i in range(rows):
+                for j in range(cols):
+                    writer.writerow([
+                        i,
+                        j,
+                        f"{ssim_2d[i, j]:.6f}",
+                        i * patch_size,
+                        j * patch_size,
+                        (i + 1) * patch_size,
+                        (j + 1) * patch_size
+                    ])
+
+        print(f"  [OK] CSV data saved (without pandas): {output_csv_path}")
+        return output_csv_path
+
+    # pandasがある場合
+    rows, cols = ssim_2d.shape
+    data = []
+
+    for i in range(rows):
+        for j in range(cols):
+            data.append({
+                'row': i,
+                'col': j,
+                'local_ssim': round(ssim_2d[i, j], 6),
+                'pixel_y_start': i * patch_size,
+                'pixel_x_start': j * patch_size,
+                'pixel_y_end': (i + 1) * patch_size,
+                'pixel_x_end': (j + 1) * patch_size
+            })
+
+    df = pd.DataFrame(data)
+    df.to_csv(output_csv_path, index=False, encoding='utf-8')
+
+    # 統計情報も別ファイルで保存
+    stats_csv_path = output_csv_path.replace('.csv', '_statistics.csv')
+    stats_df = pd.DataFrame([{
+        'mean_ssim': np.mean(ssim_2d),
+        'std_ssim': np.std(ssim_2d),
+        'min_ssim': np.min(ssim_2d),
+        'max_ssim': np.max(ssim_2d),
+        'median_ssim': np.median(ssim_2d),
+        'grid_rows': rows,
+        'grid_cols': cols,
+        'total_blocks': rows * cols,
+        'patch_size': patch_size
+    }])
+    stats_df.to_csv(stats_csv_path, index=False, encoding='utf-8')
+
+    print(f"  [OK] CSV data saved: {output_csv_path}")
+    print(f"  [OK] Statistics saved: {stats_csv_path}")
+
+    return output_csv_path
 
 def analyze_color_distribution(img_rgb):
     """色分布の詳細分析（RGB, HSV, LAB）"""
@@ -2243,6 +2484,21 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         print(f"     黄 (0.80-0.90): やや低下")
         print(f"     橙 (0.70-0.80): 品質低下")
         print(f"     赤 (0.00-0.70): ハルシネーション疑い")
+
+        # 13.2 インタラクティブHTML版ヒートマップ生成（論文補足資料用）
+        print("\n【13.2 インタラクティブHTML版ヒートマップ生成】")
+        p6_html_path = os.path.join(output_dir, 'p6_local_quality_heatmap_interactive.html')
+        html_result = generate_p6_heatmap_interactive(local_ssim_2d, p6_html_path, patch_size=patch_size)
+        if html_result:
+            print(f"[OK] ブラウザで開いて各ブロックの詳細値を確認できます")
+        else:
+            print(f"[INFO] Plotlyがインストールされていません（pip install plotly）")
+
+        # 13.3 CSV形式での生データ出力（再現性・追試用）
+        print("\n【13.3 CSV形式での生データ出力】")
+        p6_csv_path = os.path.join(output_dir, 'p6_local_quality_data.csv')
+        export_p6_data_csv(local_ssim_2d, p6_csv_path, patch_size=patch_size)
+
     except Exception as e:
         import traceback
         print(f"[WARNING] P6ヒートマップ生成エラー: {e}")
