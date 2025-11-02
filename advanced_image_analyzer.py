@@ -659,12 +659,13 @@ def generate_p6_heatmap(ssim_2d, original_img, output_path, patch_size=16):
     print(f"  [DEBUG] 保存先ディレクトリ: {output_dir_path}")
     print(f"  [DEBUG] ディレクトリ存在確認: {os.path.exists(output_dir_path)}")
 
-    # カスタムカラーマップ作成（赤→黄→緑→青）
-    # 0.0-0.6: 赤（ハルシネーション疑い）
-    # 0.6-0.7: 橙（品質低下）
-    # 0.7-0.8: 黄（やや低下）
-    # 0.8-0.9: 緑（良好）
-    # 0.9-1.0: 青（元画像に忠実）
+    # カスタムカラーマップ作成（赤→橙→黄→緑→青）
+    # 学術的に厳密な基準（局所SSIMは全体SSIMより厳しく評価）
+    # 0.00-0.70: 赤（ハルシネーション疑い）
+    # 0.70-0.80: 橙（品質低下）
+    # 0.80-0.90: 黄（やや低下）
+    # 0.90-0.95: 緑（良好）
+    # 0.95-1.00: 青（元画像に忠実）
     colors = ['#FF0000', '#FF6600', '#FFDD00', '#00DD00', '#0066FF']
     n_bins = 100
     cmap = LinearSegmentedColormap.from_list('p6_heatmap', colors, N=n_bins)
@@ -679,17 +680,17 @@ def generate_p6_heatmap(ssim_2d, original_img, output_path, patch_size=16):
     cbar = plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
     cbar.set_label('局所SSIM (パッチ単位)', fontsize=12)
 
-    # カラーバーに品質ラベルを追加
-    cbar.ax.text(1.5, 0.95, '忠実', transform=cbar.ax.transAxes,
-                 fontsize=10, va='center')
-    cbar.ax.text(1.5, 0.75, '良好', transform=cbar.ax.transAxes,
-                 fontsize=10, va='center')
-    cbar.ax.text(1.5, 0.55, 'やや低下', transform=cbar.ax.transAxes,
-                 fontsize=10, va='center')
-    cbar.ax.text(1.5, 0.35, '低下', transform=cbar.ax.transAxes,
-                 fontsize=10, va='center')
-    cbar.ax.text(1.5, 0.15, 'ハルシネ\nーション疑', transform=cbar.ax.transAxes,
-                 fontsize=9, va='center')
+    # カラーバーに品質ラベルを追加（学術的基準）
+    cbar.ax.text(1.5, 0.975, '忠実', transform=cbar.ax.transAxes,
+                 fontsize=10, va='center')  # 0.95-1.0
+    cbar.ax.text(1.5, 0.925, '良好', transform=cbar.ax.transAxes,
+                 fontsize=10, va='center')  # 0.90-0.95
+    cbar.ax.text(1.5, 0.85, 'やや低下', transform=cbar.ax.transAxes,
+                 fontsize=10, va='center')  # 0.80-0.90
+    cbar.ax.text(1.5, 0.75, '低下', transform=cbar.ax.transAxes,
+                 fontsize=10, va='center')  # 0.70-0.80
+    cbar.ax.text(1.5, 0.35, 'ハルシネ\nーション疑', transform=cbar.ax.transAxes,
+                 fontsize=9, va='center')  # 0.00-0.70
 
     # タイトル設定
     ax.set_title('P6: 局所品質ばらつき検出ヒートマップ\n(64×64パッチ単位のSSIM分布)',
@@ -2236,8 +2237,12 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         print(f"[OK] P6ヒートマップを保存: {p6_heatmap_path}")
         print(f"   - パッチサイズ: {patch_size}×{patch_size}ピクセル")
         print(f"   - 標準偏差 {np.std(local_ssim_1d):.4f} が高いほどハルシネーション疑い")
-        print(f"   - 赤い領域: SSIM < 0.7 = ハルシネーション疑い")
-        print(f"   - 青い領域: SSIM > 0.9 = 元画像に忠実")
+        print(f"   - 色分け（学術的基準）:")
+        print(f"     青 (0.95-1.00): 元画像に忠実")
+        print(f"     緑 (0.90-0.95): 良好")
+        print(f"     黄 (0.80-0.90): やや低下")
+        print(f"     橙 (0.70-0.80): 品質低下")
+        print(f"     赤 (0.00-0.70): ハルシネーション疑い")
     except Exception as e:
         import traceback
         print(f"[WARNING] P6ヒートマップ生成エラー: {e}")
