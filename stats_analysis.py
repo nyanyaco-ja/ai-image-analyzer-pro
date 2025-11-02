@@ -69,7 +69,7 @@ class StatsAnalysisMixin:
 
         if success:
             self.batch_status_label.configure(
-                text="✅ 統計分析完了！25種類のプロットが analysis_output/ に保存されました",
+                text="[OK] 統計分析完了！25種類のプロットが analysis_output/ に保存されました",
                 text_color="#00ff88"
             )
 
@@ -96,7 +96,7 @@ class StatsAnalysisMixin:
                     os.startfile(output_dir)
         else:
             self.batch_status_label.configure(
-                text="❌ 統計分析エラー",
+                text="[ERROR] 統計分析エラー",
                 text_color="#ff4444"
             )
             messagebox.showerror("エラー", f"統計分析中にエラーが発生しました:\n{output}")

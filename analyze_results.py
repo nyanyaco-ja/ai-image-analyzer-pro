@@ -30,12 +30,12 @@ def analyze_batch_results(csv_file):
     df = pd.read_csv(csv_file)
 
     print(f"\n{'='*80}")
-    print(f"📊 統計分析レポート")
+    print(f"[STATS] 統計分析レポート")
     print(f"{'='*80}")
-    print(f"📄 データファイル: {csv_file}")
-    print(f"📷 画像数: {df['image_id'].nunique()}")
-    print(f"🤖 モデル数: {df['model'].nunique()}")
-    print(f"📊 総データ数: {len(df)}")
+    print(f"[FILE] データファイル: {csv_file}")
+    print(f"[IMAGE] 画像数: {df['image_id'].nunique()}")
+    print(f"[MODEL] モデル数: {df['model'].nunique()}")
+    print(f"[STATS] 総データ数: {len(df)}")
     print(f"{'='*80}\n")
 
     # 出力ディレクトリ作成
@@ -60,8 +60,8 @@ def analyze_batch_results(csv_file):
     # 6. 研究用プロット生成
     generate_research_plots(df, output_dir)
 
-    print(f"\n✅ 分析完了！")
-    print(f"📁 結果保存先: {output_dir}/")
+    print(f"\n[OK] 分析完了！")
+    print(f"[FOLDER] 結果保存先: {output_dir}/")
 
 
 def print_basic_statistics(df):
@@ -69,7 +69,7 @@ def print_basic_statistics(df):
     基本統計量の表示
     """
 
-    print(f"\n📈 主要指標の基本統計量:")
+    print(f"\n[STATS] 主要指標の基本統計量:")
     print(f"{'='*80}")
 
     # 17項目すべて
@@ -90,7 +90,7 @@ def compare_models(df, output_dir):
     モデル別比較
     """
 
-    print(f"\n🏆 モデル別ランキング:")
+    print(f"\n[RANK] モデル別ランキング:")
     print(f"{'='*80}")
 
     # 主要指標でグループ化
@@ -127,7 +127,7 @@ def compare_models(df, output_dir):
     plt.savefig(output_dir / 'model_scores.png', dpi=150)
     plt.close()
 
-    print(f"📊 グラフ保存: {output_dir}/model_scores.png")
+    print(f"[STATS] グラフ保存: {output_dir}/model_scores.png")
 
 
 def analyze_correlations(df, output_dir):
@@ -135,7 +135,7 @@ def analyze_correlations(df, output_dir):
     17項目間の相関分析
     """
 
-    print(f"\n🔗 相関分析:")
+    print(f"\n[CORR] 相関分析:")
     print(f"{'='*80}")
 
     # 数値列のみ抽出
@@ -155,10 +155,10 @@ def analyze_correlations(df, output_dir):
     plt.savefig(output_dir / 'correlation_matrix.png', dpi=150)
     plt.close()
 
-    print(f"📊 相関マトリックス保存: {output_dir}/correlation_matrix.png")
+    print(f"[STATS] 相関マトリックス保存: {output_dir}/correlation_matrix.png")
 
     # 高相関ペアを表示
-    print(f"\n🔥 高相関ペア（|r| > 0.7）:")
+    print(f"\n[HIGH] 高相関ペア（|r| > 0.7）:")
     high_corr = []
     for i in range(len(corr_matrix.columns)):
         for j in range(i+1, len(corr_matrix.columns)):
@@ -184,7 +184,7 @@ def suggest_thresholds(df, output_dir):
     根拠のある閾値を提案
     """
 
-    print(f"\n💡 推奨閾値の提案:")
+    print(f"\n[TIP] 推奨閾値の提案:")
     print(f"{'='*80}")
 
     thresholds = {}
@@ -240,7 +240,7 @@ def suggest_thresholds(df, output_dir):
         print(f"{config['name']:30s}: {condition:20s} (平均: {data.mean():.4f}, 標準偏差: {data.std():.4f})")
 
     print(f"{'='*80}")
-    print(f"💡 解釈:")
+    print(f"[TIP] 解釈:")
     print(f"   - これらの閾値は、全データの統計分布に基づいています")
     print(f"   - 25パーセンタイル = 上位75%の品質を「合格」とする基準")
     print(f"   - 75パーセンタイル = 下位75%の品質を「合格」とする基準")
@@ -251,7 +251,7 @@ def suggest_thresholds(df, output_dir):
     with open(output_dir / 'recommended_thresholds.json', 'w', encoding='utf-8') as f:
         json.dump(thresholds, f, indent=2, ensure_ascii=False)
 
-    print(f"💾 閾値保存: {output_dir}/recommended_thresholds.json\n")
+    print(f"[SAVE] 閾値保存: {output_dir}/recommended_thresholds.json\n")
 
 
 def suggest_hallucination_logic(df, output_dir):
@@ -261,7 +261,7 @@ def suggest_hallucination_logic(df, output_dir):
     - 17の単独閾値判定
     """
 
-    print(f"\n🔍 ハルシネーション検出ロジックの提案（26パターン）:")
+    print(f"\n[DETECT] ハルシネーション検出ロジックの提案（26パターン）:")
     print(f"{'='*80}")
 
     # 検出カウント用
@@ -464,7 +464,7 @@ def suggest_hallucination_logic(df, output_dir):
 
     # ========== 総合リスクスコア計算 ==========
     print(f"\n{'='*80}")
-    print(f"📊 総合ハルシネーションリスクスコア（26パターン統合）")
+    print(f"[STATS] 総合ハルシネーションリスクスコア（26パターン統合）")
     print(f"{'='*80}")
 
     # 信頼度分類（多数決）
@@ -492,7 +492,7 @@ def suggest_hallucination_logic(df, output_dir):
     # リスク付きCSV保存
     output_csv = output_dir / 'results_with_26pattern_detection.csv'
     df.to_csv(output_csv, index=False, encoding='utf-8-sig')
-    print(f"\n💾 26パターン検出結果保存: {output_csv}")
+    print(f"\n[SAVE] 26パターン検出結果保存: {output_csv}")
 
     # サマリーCSV保存
     summary_data = {
@@ -509,7 +509,7 @@ def suggest_hallucination_logic(df, output_dir):
     summary_df = pd.DataFrame(summary_data)
     summary_path = output_dir / 'pattern_detection_summary.csv'
     summary_df.to_csv(summary_path, index=False, encoding='utf-8-sig')
-    print(f"💾 パターン別サマリー保存: {summary_path}")
+    print(f"[SAVE] パターン別サマリー保存: {summary_path}")
 
     print(f"{'='*80}\n")
 
@@ -519,7 +519,7 @@ def generate_research_plots(df, output_dir):
     研究用プロット画像を生成（論文・発表用）
     """
 
-    print(f"\n📊 研究用プロット生成中:")
+    print(f"\n[STATS] 研究用プロット生成中:")
     print(f"{'='*80}")
 
     # 1. シャープネス vs PSNR 散布図（AIモデルの戦略を示す）
@@ -552,7 +552,7 @@ def generate_research_plots(df, output_dir):
     plot1_path = output_dir / 'strategy_map_sharpness_vs_psnr.png'
     plt.savefig(plot1_path, dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"✅ シャープネス vs PSNR 散布図: {plot1_path}")
+    print(f"[OK] シャープネス vs PSNR 散布図: {plot1_path}")
 
 
     # 2. LPIPS 箱ひげ図（安定性を示す）
@@ -579,7 +579,7 @@ def generate_research_plots(df, output_dir):
     plot2_path = output_dir / 'stability_lpips_boxplot.png'
     plt.savefig(plot2_path, dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"✅ LPIPS 箱ひげ図: {plot2_path}")
+    print(f"[OK] LPIPS 箱ひげ図: {plot2_path}")
 
 
     # 3. SSIM vs PSNR 散布図（相関確認・異常検出）
@@ -608,7 +608,7 @@ def generate_research_plots(df, output_dir):
     plot3_path = output_dir / 'correlation_ssim_vs_psnr.png'
     plt.savefig(plot3_path, dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"✅ SSIM vs PSNR 散布図: {plot3_path}")
+    print(f"[OK] SSIM vs PSNR 散布図: {plot3_path}")
 
 
     # 4. ノイズ vs アーティファクト 散布図
@@ -637,7 +637,7 @@ def generate_research_plots(df, output_dir):
     plot4_path = output_dir / 'quality_noise_vs_artifact.png'
     plt.savefig(plot4_path, dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"✅ ノイズ vs アーティファクト: {plot4_path}")
+    print(f"[OK] ノイズ vs アーティファクト: {plot4_path}")
 
 
     # 5. モデル別レーダーチャート（主要6指標）
@@ -686,7 +686,7 @@ def generate_research_plots(df, output_dir):
     plot5_path = output_dir / 'radar_chart_model_comparison.png'
     plt.savefig(plot5_path, dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"✅ モデル別レーダーチャート: {plot5_path}")
+    print(f"[OK] モデル別レーダーチャート: {plot5_path}")
 
 
     # 6. 17項目のバイオリンプロット（分布の可視化）
@@ -724,7 +724,7 @@ def generate_research_plots(df, output_dir):
     plot6_path = output_dir / 'violin_plots_all_metrics.png'
     plt.savefig(plot6_path, dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"✅ 17項目バイオリンプロット: {plot6_path}")
+    print(f"[OK] 17項目バイオリンプロット: {plot6_path}")
 
     # ===== ハルシネーション検出系プロット =====
 
@@ -758,7 +758,7 @@ def generate_research_plots(df, output_dir):
     plt.tight_layout()
     plt.savefig(output_dir / 'hallucination_ssim_high_psnr_low.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"✅ ハルシネーション検出①（SSIM×PSNR）")
+    print(f"[OK] ハルシネーション検出①（SSIM×PSNR）")
 
 
     # 8. シャープネス × ノイズ（過剰処理検出）
@@ -790,7 +790,7 @@ def generate_research_plots(df, output_dir):
     plt.tight_layout()
     plt.savefig(output_dir / 'hallucination_sharpness_vs_noise.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"✅ ハルシネーション検出②（シャープネス×ノイズ）")
+    print(f"[OK] ハルシネーション検出②（シャープネス×ノイズ）")
 
 
     # 9. エッジ密度 × 局所品質標準偏差
@@ -819,7 +819,7 @@ def generate_research_plots(df, output_dir):
     plt.tight_layout()
     plt.savefig(output_dir / 'hallucination_edge_vs_local_std.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"✅ ハルシネーション検出③（エッジ×局所品質）")
+    print(f"[OK] ハルシネーション検出③（エッジ×局所品質）")
 
 
     # 10. 高周波成分 × エントロピー
@@ -846,7 +846,7 @@ def generate_research_plots(df, output_dir):
     plt.tight_layout()
     plt.savefig(output_dir / 'hallucination_highfreq_vs_entropy.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"✅ ハルシネーション検出④（高周波×エントロピー）")
+    print(f"[OK] ハルシネーション検出④（高周波×エントロピー）")
 
 
     # ===== 品質トレードオフ系プロット =====
@@ -865,7 +865,7 @@ def generate_research_plots(df, output_dir):
     plt.tight_layout()
     plt.savefig(output_dir / 'tradeoff_ssim_vs_noise.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"✅ トレードオフ①（SSIM×ノイズ）")
+    print(f"[OK] トレードオフ①（SSIM×ノイズ）")
 
 
     # 12. PSNR × コントラスト
@@ -882,7 +882,7 @@ def generate_research_plots(df, output_dir):
     plt.tight_layout()
     plt.savefig(output_dir / 'tradeoff_psnr_vs_contrast.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"✅ トレードオフ②（PSNR×コントラスト）")
+    print(f"[OK] トレードオフ②（PSNR×コントラスト）")
 
 
     # 13. シャープネス × アーティファクト
@@ -899,7 +899,7 @@ def generate_research_plots(df, output_dir):
     plt.tight_layout()
     plt.savefig(output_dir / 'tradeoff_sharpness_vs_artifact.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"✅ トレードオフ③（シャープネス×アーティファクト）")
+    print(f"[OK] トレードオフ③（シャープネス×アーティファクト）")
 
 
     # 14. LPIPS × MS-SSIM
@@ -916,7 +916,7 @@ def generate_research_plots(df, output_dir):
     plt.tight_layout()
     plt.savefig(output_dir / 'tradeoff_lpips_vs_msssim.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"✅ トレードオフ④（LPIPS×MS-SSIM）")
+    print(f"[OK] トレードオフ④（LPIPS×MS-SSIM）")
 
 
     # 15. テクスチャ × 高周波成分
@@ -933,7 +933,7 @@ def generate_research_plots(df, output_dir):
     plt.tight_layout()
     plt.savefig(output_dir / 'tradeoff_texture_vs_highfreq.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"✅ トレードオフ⑤（テクスチャ×高周波）")
+    print(f"[OK] トレードオフ⑤（テクスチャ×高周波）")
 
 
     # ===== 医療画像特化系プロット =====
@@ -952,7 +952,7 @@ def generate_research_plots(df, output_dir):
     plt.tight_layout()
     plt.savefig(output_dir / 'medical_contrast_vs_histogram.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"✅ 医療特化①（コントラスト×ヒストグラム）")
+    print(f"[OK] 医療特化①（コントラスト×ヒストグラム）")
 
 
     # 17. エッジ密度 × 局所品質平均
@@ -969,7 +969,7 @@ def generate_research_plots(df, output_dir):
     plt.tight_layout()
     plt.savefig(output_dir / 'medical_edge_vs_local_quality.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"✅ 医療特化②（エッジ×局所品質）")
+    print(f"[OK] 医療特化②（エッジ×局所品質）")
 
 
     # 18. ノイズ × 局所品質標準偏差
@@ -986,7 +986,7 @@ def generate_research_plots(df, output_dir):
     plt.tight_layout()
     plt.savefig(output_dir / 'medical_noise_vs_local_std.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"✅ 医療特化③（ノイズ×局所品質SD）")
+    print(f"[OK] 医療特化③（ノイズ×局所品質SD）")
 
 
     # 19. 色差ΔE × LAB明度
@@ -1003,7 +1003,7 @@ def generate_research_plots(df, output_dir):
     plt.tight_layout()
     plt.savefig(output_dir / 'medical_deltae_vs_lab.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"✅ 医療特化④（色差×LAB明度）")
+    print(f"[OK] 医療特化④（色差×LAB明度）")
 
 
     # ===== 分布・PCA系プロット =====
@@ -1021,7 +1021,7 @@ def generate_research_plots(df, output_dir):
     plt.tight_layout()
     plt.savefig(output_dir / 'distribution_total_score_histogram.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"✅ 分布①（総合スコアヒストグラム）")
+    print(f"[OK] 分布①（総合スコアヒストグラム）")
 
 
     # 21. 主成分分析（PCA）プロット
@@ -1057,7 +1057,7 @@ def generate_research_plots(df, output_dir):
     plt.tight_layout()
     plt.savefig(output_dir / 'pca_2d_projection.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"✅ 分布②（PCA 2次元プロット）")
+    print(f"[OK] 分布②（PCA 2次元プロット）")
 
 
     # 22. パーセンタイルバンドプロット（主要指標）
@@ -1091,7 +1091,7 @@ def generate_research_plots(df, output_dir):
     plt.tight_layout()
     plt.savefig(output_dir / 'percentile_bands.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"✅ 分布③（パーセンタイルバンド）")
+    print(f"[OK] 分布③（パーセンタイルバンド）")
 
 
     # 23. 寄与率グラフ（PCA）
@@ -1110,10 +1110,10 @@ def generate_research_plots(df, output_dir):
     plt.tight_layout()
     plt.savefig(output_dir / 'pca_cumulative_variance.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"✅ 分布④（PCA寄与率）")
+    print(f"[OK] 分布④（PCA寄与率）")
 
     print(f"{'='*80}")
-    print(f"✅ 全23種類の研究用プロット生成完了")
+    print(f"[OK] 全23種類の研究用プロット生成完了")
     print(f"   論文・発表資料にそのまま使用できます（300dpi高解像度）\n")
 
 
@@ -1126,7 +1126,7 @@ if __name__ == '__main__':
     csv_file = sys.argv[1]
 
     if not Path(csv_file).exists():
-        print(f"❌ エラー: CSVファイルが見つかりません: {csv_file}")
+        print(f"[ERROR] エラー: CSVファイルが見つかりません: {csv_file}")
         sys.exit(1)
 
     analyze_batch_results(csv_file)

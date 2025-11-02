@@ -224,7 +224,7 @@ class DataExtractionMixin:
             # CSV保存（疑いデータ）
             output_path = str(Path(csv_path).parent / f"hallucination_suspects_{Path(csv_path).stem}.csv")
             hallucination_all.to_csv(output_path, index=False, encoding='utf-8-sig')
-            result_text += f"✅ 疑いデータCSV: {output_path}\n"
+            result_text += f"[OK] 疑いデータCSV: {output_path}\n"
 
             # サマリーCSV保存（モデル別統計）
             summary_path = str(Path(csv_path).parent / f"hallucination_summary_{Path(csv_path).stem}.csv")
@@ -256,7 +256,7 @@ class DataExtractionMixin:
 
             summary_df = pd.DataFrame(summary_data)
             summary_df.to_csv(summary_path, index=False, encoding='utf-8-sig')
-            result_text += f"✅ サマリーCSV: {summary_path}\n"
+            result_text += f"[OK] サマリーCSV: {summary_path}\n"
 
             # 詳細統計レポート保存（テキスト）
             report_path = str(Path(csv_path).parent / f"hallucination_report_{Path(csv_path).stem}.txt")
@@ -266,7 +266,7 @@ class DataExtractionMixin:
                 f.write("【モデル別詳細統計】\n")
                 f.write(f"{'='*60}\n\n")
                 f.write(summary_stats.to_string())
-            result_text += f"✅ 詳細レポート: {report_path}\n"
+            result_text += f"[OK] 詳細レポート: {report_path}\n"
 
             # グラフ生成
             import matplotlib.pyplot as plt
@@ -388,7 +388,7 @@ class DataExtractionMixin:
             plt.savefig(graph_path, dpi=300, bbox_inches='tight')
             plt.close()
 
-            result_text += f"✅ 分析グラフ: {graph_path}\n"
+            result_text += f"[OK] 分析グラフ: {graph_path}\n"
             result_text += f"{'='*60}\n"
 
             # 結果表示
@@ -396,7 +396,7 @@ class DataExtractionMixin:
             self.batch_result_text.insert("1.0", result_text)
 
             self.batch_status_label.configure(
-                text=f"✅ ハルシネーション疑いデータ抽出完了（{len(hallucination_all)}件）",
+                text=f"[OK] ハルシネーション疑いデータ抽出完了（{len(hallucination_all)}件）",
                 text_color="#ff4444"
             )
 
@@ -608,10 +608,10 @@ class DataExtractionMixin:
 
             # 結果表示
             result_text = f"=" * 70 + "\n"
-            result_text += "✅ クリーンデータセット作成完了\n"
+            result_text += "[OK] クリーンデータセット作成完了\n"
             result_text += "=" * 70 + "\n\n"
-            result_text += f"📁 出力先: {output_dir}\n\n"
-            result_text += f"📊 統計:\n"
+            result_text += f"[FOLDER] 出力先: {output_dir}\n\n"
+            result_text += f"[STATS] 統計:\n"
             result_text += f"  総データ数: {len(df)}件\n"
             result_text += f"  正常データ: {len(normal_df)}件 ({len(normal_df)/len(df)*100:.1f}%)\n"
             result_text += f"  正常画像数: {len(normal_df['image_id'].unique())}枚\n\n"
@@ -620,7 +620,7 @@ class DataExtractionMixin:
                 count = len(normal_df[normal_df['model'] == model])
                 total = len(df[df['model'] == model])
                 result_text += f"  {model}: {count}/{total}件 ({count/total*100:.1f}%)\n"
-            result_text += f"\n📄 ファイル:\n"
+            result_text += f"\n[FILE] ファイル:\n"
             result_text += f"  metadata.csv : メタデータ\n"
             result_text += f"  README.txt   : 説明書\n"
             result_text += f"  コピーファイル数: {len(copied_files)}個\n"
@@ -629,7 +629,7 @@ class DataExtractionMixin:
             self.batch_result_text.insert("1.0", result_text)
 
             self.batch_status_label.configure(
-                text=f"✅ クリーンデータセット作成完了（{len(normal_df['image_id'].unique())}枚）",
+                text=f"[OK] クリーンデータセット作成完了（{len(normal_df['image_id'].unique())}枚）",
                 text_color="#44ff44"
             )
 
