@@ -782,13 +782,14 @@ def generate_p6_heatmap_interactive(ssim_2d, output_html_path, patch_size=16):
         print("           Install with: pip install plotly")
         return None
 
-    # カスタムカラースケール（PNG版と同じ）
+    # カスタムカラースケール（PNG版と同じ学術的閾値）
     colorscale = [
         [0.00, '#FF0000'],  # 赤（ハルシネーション疑い）
         [0.70, '#FF6600'],  # 橙（品質低下）
         [0.80, '#FFDD00'],  # 黄（やや低下）
         [0.90, '#00DD00'],  # 緑（良好）
-        [0.95, '#0066FF']   # 青（元画像に忠実）
+        [0.95, '#0066FF'],  # 青（元画像に忠実）
+        [1.00, '#0066FF']   # 青（1.0まで維持）
     ]
 
     # ヒートマップ作成
@@ -806,16 +807,16 @@ def generate_p6_heatmap_interactive(ssim_2d, output_html_path, patch_size=16):
         ),
         colorbar=dict(
             title=dict(
-                text='局所SSIM<br>(Local SSIM)',
+                text='Local SSIM',
                 side='right'
             ),
             tickvals=[0.35, 0.75, 0.85, 0.925, 0.975],
             ticktext=[
-                '赤: ハルシネーション疑い',
-                '橙: 低下',
-                '黄: やや低下',
-                '緑: 良好',
-                '青: 忠実'
+                'Red: Hallucination',
+                'Orange: Degraded',
+                'Yellow: Slight loss',
+                'Green: Good',
+                'Blue: Faithful'
             ],
             len=0.8
         )
@@ -827,19 +828,8 @@ def generate_p6_heatmap_interactive(ssim_2d, output_html_path, patch_size=16):
     min_ssim = np.min(ssim_2d)
     max_ssim = np.max(ssim_2d)
 
-    # レイアウト設定
+    # レイアウト設定（論文形式：キャプションは図の下）
     fig.update_layout(
-        title=dict(
-            text=(
-                f'P6 Local Quality Variance Heatmap (Interactive)<br>'
-                f'<sub>Patch Size: {patch_size}×{patch_size}px | '
-                f'Grid: {ssim_2d.shape[0]}×{ssim_2d.shape[1]} | '
-                f'Mean: {mean_ssim:.4f} | Std: {std_ssim:.4f} | '
-                f'Min: {min_ssim:.4f} | Max: {max_ssim:.4f}</sub>'
-            ),
-            x=0.5,
-            xanchor='center'
-        ),
         xaxis=dict(
             title=f'Patch Column (each patch = {patch_size}px)',
             side='bottom'
@@ -849,8 +839,28 @@ def generate_p6_heatmap_interactive(ssim_2d, output_html_path, patch_size=16):
             autorange='reversed'  # 画像と同じ向き（上が0）
         ),
         width=1200,
-        height=1000,
-        font=dict(size=12)
+        height=1100,  # キャプション用に高さ増加
+        font=dict(size=12),
+        margin=dict(b=150)  # 下マージン拡大
+    )
+
+    # 図の下にキャプション追加（論文形式）
+    fig.add_annotation(
+        text=(
+            f'<b>Figure: P6 Local Quality Variance Heatmap (Interactive)</b><br>'
+            f'Patch Size: {patch_size}×{patch_size}px | '
+            f'Grid: {ssim_2d.shape[0]}×{ssim_2d.shape[1]} blocks | '
+            f'Mean SSIM: {mean_ssim:.4f} | Std: {std_ssim:.4f} | '
+            f'Range: [{min_ssim:.4f}, {max_ssim:.4f}]'
+        ),
+        xref='paper',
+        yref='paper',
+        x=0.5,
+        y=-0.15,  # 図の下に配置
+        xanchor='center',
+        yanchor='top',
+        showarrow=False,
+        font=dict(size=13)
     )
 
     # HTMLとして保存
