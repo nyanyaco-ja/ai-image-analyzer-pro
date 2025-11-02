@@ -700,12 +700,12 @@ def create_detailed_visualizations(img1_rgb, img2_rgb, img1_gray, img2_gray, out
     # 1. 元画像
     plt.subplot(3, 4, 1)
     plt.imshow(img1_rgb)
-    plt.title('画像1 (元画像)', fontsize=12, fontweight='bold')
+    plt.title('元画像 (Ground Truth)', fontsize=12, fontweight='bold')
     plt.axis('off')
 
     plt.subplot(3, 4, 2)
     plt.imshow(img2_rgb)
-    plt.title('画像2 (比較画像)', fontsize=12, fontweight='bold')
+    plt.title('AI処理結果', fontsize=12, fontweight='bold')
     plt.axis('off')
 
     # 2. ヒストグラム
@@ -713,7 +713,7 @@ def create_detailed_visualizations(img1_rgb, img2_rgb, img1_gray, img2_gray, out
     for i, color in enumerate(['r', 'g', 'b']):
         hist = cv2.calcHist([img1_rgb], [i], None, [256], [0, 256])
         plt.plot(hist, color=color, alpha=0.7, linewidth=1.5)
-    plt.title('ヒストグラム - 画像1', fontsize=11)
+    plt.title('ヒストグラム - 元画像', fontsize=11)
     plt.xlim([0, 256])
     plt.xlabel('輝度値', fontsize=9)
     plt.ylabel('ピクセル数', fontsize=9)
@@ -722,7 +722,7 @@ def create_detailed_visualizations(img1_rgb, img2_rgb, img1_gray, img2_gray, out
     for i, color in enumerate(['r', 'g', 'b']):
         hist = cv2.calcHist([img2_rgb], [i], None, [256], [0, 256])
         plt.plot(hist, color=color, alpha=0.7, linewidth=1.5)
-    plt.title('ヒストグラム - 画像2', fontsize=11)
+    plt.title('ヒストグラム - AI処理結果', fontsize=11)
     plt.xlim([0, 256])
     plt.xlabel('輝度値', fontsize=9)
     plt.ylabel('ピクセル数', fontsize=9)
@@ -733,12 +733,12 @@ def create_detailed_visualizations(img1_rgb, img2_rgb, img1_gray, img2_gray, out
 
     plt.subplot(3, 4, 5)
     plt.imshow(edges1, cmap='gray')
-    plt.title('エッジ検出 - 画像1', fontsize=11)
+    plt.title('エッジ検出 - 元画像', fontsize=11)
     plt.axis('off')
 
     plt.subplot(3, 4, 6)
     plt.imshow(edges2, cmap='gray')
-    plt.title('エッジ検出 - 画像2', fontsize=11)
+    plt.title('エッジ検出 - AI処理結果', fontsize=11)
     plt.axis('off')
 
     # 4. 差分
@@ -766,12 +766,12 @@ def create_detailed_visualizations(img1_rgb, img2_rgb, img1_gray, img2_gray, out
 
     plt.subplot(3, 4, 9)
     plt.imshow(magnitude1, cmap='gray')
-    plt.title('周波数スペクトル - 画像1', fontsize=11)
+    plt.title('周波数スペクトル - 元画像', fontsize=11)
     plt.axis('off')
 
     plt.subplot(3, 4, 10)
     plt.imshow(magnitude2, cmap='gray')
-    plt.title('周波数スペクトル - 画像2', fontsize=11)
+    plt.title('周波数スペクトル - AI処理結果', fontsize=11)
     plt.axis('off')
 
     # 6. シャープネス可視化（ラプラシアン）
@@ -780,14 +780,14 @@ def create_detailed_visualizations(img1_rgb, img2_rgb, img1_gray, img2_gray, out
 
     plt.subplot(3, 4, 11)
     im1 = plt.imshow(np.abs(lap1), cmap='viridis')
-    plt.title('シャープネスマップ - 画像1', fontsize=11)
+    plt.title('シャープネスマップ - 元画像', fontsize=11)
     plt.axis('off')
     cb1 = plt.colorbar(im1, fraction=0.046, pad=0.04)
     cb1.ax.tick_params(labelsize=8)
 
     plt.subplot(3, 4, 12)
     im2 = plt.imshow(np.abs(lap2), cmap='viridis')
-    plt.title('シャープネスマップ - 画像2', fontsize=11)
+    plt.title('シャープネスマップ - AI処理結果', fontsize=11)
     plt.axis('off')
     cb2 = plt.colorbar(im2, fraction=0.046, pad=0.04)
     cb2.ax.tick_params(labelsize=8)
@@ -819,8 +819,8 @@ def create_comparison_report(results, img1_name, img2_name, output_dir):
     x = np.arange(len(categories))
     width = 0.35
 
-    bars1 = ax1.barh(x - width/2, img1_values, width, label='画像1', color='#3498db')
-    bars2 = ax1.barh(x + width/2, img2_values, width, label='画像2', color='#e74c3c')
+    bars1 = ax1.barh(x - width/2, img1_values, width, label='元画像', color='#3498db')
+    bars2 = ax1.barh(x + width/2, img2_values, width, label='AI処理結果', color='#e74c3c')
 
     ax1.set_yticks(x)
     ax1.set_yticklabels(categories)
@@ -835,14 +835,14 @@ def create_comparison_report(results, img1_name, img2_name, output_dir):
     total_score = results['total_score']['img2']
     img1_score = results['total_score']['img1']
 
-    ax2.barh(['画像1 (基準)', '画像2'], [img1_score, total_score],
+    ax2.barh(['元画像 (基準)', 'AI処理結果'], [img1_score, total_score],
              color=['#3498db', '#e74c3c' if total_score < 70 else '#f39c12' if total_score < 90 else '#2ecc71'])
     ax2.set_xlim(0, 100)
     ax2.set_xlabel('総合スコア', fontsize=11, fontweight='bold')
     ax2.set_title('総合評価', fontsize=13, fontweight='bold', pad=10)
     ax2.grid(axis='x', alpha=0.3)
 
-    for i, (score, name) in enumerate(zip([img1_score, total_score], ['画像1', '画像2'])):
+    for i, (score, name) in enumerate(zip([img1_score, total_score], ['元画像', 'AI処理結果'])):
         ax2.text(score + 2, i, f'{score:.1f}', va='center', fontsize=12, fontweight='bold')
 
     # 主要指標
@@ -854,18 +854,18 @@ def create_comparison_report(results, img1_name, img2_name, output_dir):
     # SSIM/PSNR/delta_eは元画像の有無で形式が異なる
     ssim_data = results['ssim']
     if isinstance(ssim_data, dict):
-        ssim_display = f"画像1: {ssim_data['img1_vs_original']:.4f}\n  画像2: {ssim_data['img2_vs_original']:.4f}"
+        ssim_display = f"元画像: {ssim_data['img1_vs_original']:.4f}\n  AI処理結果: {ssim_data['img2_vs_original']:.4f}"
     else:
         ssim_display = f"{ssim_data:.4f}"
 
     psnr_data = results['psnr']
     if isinstance(psnr_data, dict):
-        psnr_display = f"画像1: {psnr_data['img1_vs_original']:.2f} dB\n  画像2: {psnr_data['img2_vs_original']:.2f} dB"
+        psnr_display = f"元画像: {psnr_data['img1_vs_original']:.2f} dB\n  AI処理結果: {psnr_data['img2_vs_original']:.2f} dB"
     else:
         psnr_display = f"{psnr_data:.2f} dB"
 
     if isinstance(delta_e_value, dict):
-        delta_e_display = f"画像1: {delta_e_value['img1_vs_original']:.2f}\n  画像2: {delta_e_value['img2_vs_original']:.2f}"
+        delta_e_display = f"元画像: {delta_e_value['img1_vs_original']:.2f}\n  AI処理結果: {delta_e_value['img2_vs_original']:.2f}"
     else:
         delta_e_display = f"{delta_e_value:.2f}"
 
@@ -879,8 +879,8 @@ PSNR: {psnr_display}
   (30dB以上で視覚的に同等)
 
 シャープネス:
-  画像1: {results['sharpness']['img1']:.2f}
-  画像2: {results['sharpness']['img2']:.2f}
+  元画像: {results['sharpness']['img1']:.2f}
+  AI処理結果: {results['sharpness']['img2']:.2f}
   差: {results['sharpness']['difference_pct']:+.1f}%
 
 色差 (ΔE): {delta_e_display}
@@ -894,7 +894,7 @@ PSNR: {psnr_display}
     # エッジ比較
     ax4 = plt.subplot(2, 3, 4)
     edge_data = [results['edges']['img1_density'], results['edges']['img2_density']]
-    ax4.bar(['画像1', '画像2'], edge_data, color=['#3498db', '#9b59b6'])
+    ax4.bar(['元画像', 'AI処理結果'], edge_data, color=['#3498db', '#9b59b6'])
     ax4.set_ylabel('エッジ密度 (%)', fontsize=11, fontweight='bold')
     ax4.set_title('エッジ保持率', fontsize=13, fontweight='bold', pad=10)
     ax4.grid(axis='y', alpha=0.3)
@@ -917,7 +917,7 @@ PSNR: {psnr_display}
     ax5.set_ylabel('値 (低い方が良い)', fontsize=11, fontweight='bold')
     ax5.set_title('ノイズとアーティファクト', fontsize=13, fontweight='bold', pad=10)
     ax5.set_xticks(x)
-    ax5.set_xticklabels(['画像1', '画像2'])
+    ax5.set_xticklabels(['元画像', 'AI処理結果'])
     ax5.legend(fontsize=10)
     ax5.grid(axis='y', alpha=0.3)
 
@@ -931,8 +931,8 @@ PSNR: {psnr_display}
     x = np.arange(2)
     width = 0.35
 
-    ax6.bar(x - width/2, freq1, width, label='画像1', color='#3498db')
-    ax6.bar(x + width/2, freq2, width, label='画像2', color='#9b59b6')
+    ax6.bar(x - width/2, freq1, width, label='元画像', color='#3498db')
+    ax6.bar(x + width/2, freq2, width, label='AI処理結果', color='#9b59b6')
 
     ax6.set_ylabel('比率 (%)', fontsize=11, fontweight='bold')
     ax6.set_title('周波数成分分布', fontsize=13, fontweight='bold', pad=10)
@@ -978,116 +978,70 @@ def imread_unicode(filename):
 
 def analyze_images(img1_path, img2_path, output_dir='analysis_results', original_path=None, evaluation_mode='image'):
     """
-    2つの画像を詳細に比較分析する（拡張版）
+    元画像とAI処理結果を詳細に比較分析する（精度評価）
 
     Parameters:
-    img1_path: 画像1のパス（例: chaiNNer）
-    img2_path: 画像2のパス（例: Upscayl）
+    img1_path: 元画像のパス（Ground Truth / 基準画像）
+    img2_path: AI処理結果のパス（超解像画像など）
     output_dir: 結果保存ディレクトリ
-    original_path: 元画像のパス（オプション、AI超解像の精度評価用）
-    evaluation_mode: 評価モード ('image', 'document', 'developer')
+    original_path: 使用しない（後方互換性のため残す）
+    evaluation_mode: 評価モード ('image', 'document', 'developer', 'academic')
+
+    Returns:
+    results: 分析結果の辞書
     """
 
     # 出力ディレクトリ作成
     os.makedirs(output_dir, exist_ok=True)
 
     # 画像読み込み（日本語パス対応）
-    # 注: img1/img2 は超解像結果（処理後）、original は元画像（処理前）
-    img1 = imread_unicode(img1_path)  # 超解像結果1
-    img2 = imread_unicode(img2_path)  # 超解像結果2
+    img1 = imread_unicode(img1_path)  # 元画像（Ground Truth）
+    img2 = imread_unicode(img2_path)  # AI処理結果
 
-    # より明確な変数名のエイリアスを定義
-    img_sr1 = img1  # SR = Super-Resolution（超解像結果1）
-    img_sr2 = img2  # SR = Super-Resolution（超解像結果2）
-
-    # 元画像の読み込み（オプション）
-    img_original = None
-    if original_path:
-        img_original = imread_unicode(original_path)
-        if img_original is not None:
-            print(f"\n✅ 元画像（処理前）を読み込みました: {original_path}")
-            print(f"   元画像サイズ: {img_original.shape[1]} x {img_original.shape[0]} px")
-        else:
-            print(f"\n⚠️  元画像の読み込みに失敗しました: {original_path}")
-            img_original = None
-
-    # 元画像のエイリアス
-    img_before = img_original  # Before（処理前）= オリジナル
+    # エイリアス（コード全体で統一的に使用）
+    img_original = img1  # 元画像
+    img_ai_result = img2  # AI処理結果
 
     if img1 is None or img2 is None:
         print("エラー: 画像ファイルが読み込めません")
-        print(f"画像1パス: {img1_path}")
-        print(f"画像2パス: {img2_path}")
+        print(f"元画像パス: {img1_path}")
+        print(f"AI処理結果パス: {img2_path}")
         return
 
     # 画像サイズチェックと調整
     if img1.shape != img2.shape:
         print(f"\n画像サイズが異なります:")
-        print(f"  画像1: {img1.shape[1]} x {img1.shape[0]} px")
-        print(f"  画像2: {img2.shape[1]} x {img2.shape[0]} px")
-        print(f"画像2を画像1のサイズにリサイズします...\n")
+        print(f"  元画像: {img1.shape[1]} x {img1.shape[0]} px")
+        print(f"  AI処理結果: {img2.shape[1]} x {img2.shape[0]} px")
+        print(f"AI処理結果を元画像のサイズにリサイズします...\n")
 
-        # 画像2を画像1のサイズに合わせる
+        # AI処理結果を元画像のサイズに合わせる
         img2 = cv2.resize(img2, (img1.shape[1], img1.shape[0]), interpolation=cv2.INTER_LANCZOS4)
+        img_ai_result = img2  # エイリアスも更新
 
-    # 元画像のリサイズ処理（必要な場合のみ）
-    img_original_rgb = None
-    img_original_gray = None
-    if img_original is not None:
-        target_size = (img1.shape[1], img1.shape[0])  # 画像1のサイズに合わせる
-        original_size = (img_original.shape[1], img_original.shape[0])
 
-        # 学術評価モード：リサイズなし（同サイズのはず）
-        if evaluation_mode == 'academic':
-            if original_size != target_size:
-                print(f"\n⚠️  警告: 学術評価モードですが、元画像と処理後画像のサイズが異なります")
-                print(f"   元画像: {original_size[0]}x{original_size[1]}")
-                print(f"   処理後: {target_size[0]}x{target_size[1]}")
-                print(f"   学術評価では同サイズが前提です（Bicubic縮小 → AI超解像）")
-                # 学術評価モードでもリサイズは実行（警告のみ）
-                img_original_resized = cv2.resize(img_original, target_size, interpolation=cv2.INTER_LANCZOS4)
-            else:
-                print(f"\n✅ 学術評価モード: 元画像サイズ一致（{original_size[0]}x{original_size[1]}）")
-                print(f"   Bicubic縮小 → AI超解像 → 元画像比較（標準ベンチマーク方式）")
-                img_original_resized = img_original
-        # 実用評価モード：LANCZOS拡大でリサイズ
-        elif original_size != target_size:
-            print(f"\n🔄 実用評価モード: 元画像をリサイズ中...")
-            print(f"   {original_size[0]}x{original_size[1]} → {target_size[0]}x{target_size[1]} (LANCZOS4)")
-            img_original_resized = cv2.resize(img_original, target_size, interpolation=cv2.INTER_LANCZOS4)
-            print(f"   ✅ リサイズ完了")
-        else:
-            print(f"\n✅ 元画像サイズ一致（{original_size[0]}x{original_size[1]}）- リサイズ不要")
-            img_original_resized = img_original
+    # 分析パターンの表示
+    if evaluation_mode == "academic":
+        print("\n" + "=" * 80)
+        print("【分析パターン】学術評価モード（Academic Evaluation）")
+        print("=" * 80)
+        print("📚 標準ベンチマーク方式: ×2 Scale Super-Resolution")
+        print(f"   Ground Truth（元画像）: {img1.shape[1]}x{img1.shape[0]}px")
+        print(f"   AI処理結果: {img2.shape[1]}x{img2.shape[0]}px")
+        print("   比較対象: DIV2K, Set5, Set14等との定量比較")
+        print("=" * 80)
+    else:
+        print("\n" + "=" * 80)
+        print("【分析パターン】精度評価モード（元画像基準）")
+        print("=" * 80)
+        print("📌 用途: AI超解像、画質改善、ノイズ除去等の精度評価")
+        print(f"   元画像: {img1.shape[1]}x{img1.shape[0]}px")
+        print(f"   AI処理結果: {img2.shape[1]}x{img2.shape[0]}px")
+        print("=" * 80)
 
-        img_original_rgb = cv2.cvtColor(img_original_resized, cv2.COLOR_BGR2RGB)
-        img_original_gray = cv2.cvtColor(img_original_resized, cv2.COLOR_BGR2GRAY)
-
-        # 分析パターンの検出と表示
-        if evaluation_mode == 'academic':
-            print("\n" + "=" * 80)
-            print("【分析パターン】学術評価モード（Academic Evaluation）")
-            print("=" * 80)
-            print("📚 標準ベンチマーク方式: ×2 Scale Super-Resolution")
-            print(f"   Ground Truth: {img_original.shape[1]}x{img_original.shape[0]}px")
-            print(f"   Bicubic LR → SR: {img1.shape[1]//2}x{img1.shape[0]//2} → {img1.shape[1]}x{img1.shape[0]}px")
-            print("   比較対象: DIV2K, Set5, Set14等との定量比較")
-            print("=" * 80)
-        elif img_original.shape == img1.shape:
-            print("\n" + "=" * 80)
-            print("【分析パターン】同解像度比較（実用評価）")
-            print("=" * 80)
-            print("📌 用途: ノイズ除去、色調補正、画質改善、AI復元など")
-            print("   処理前と処理後のサイズが同じ場合の分析モードです")
-            print("=" * 80)
-        else:
-            print("\n" + "=" * 80)
-            print("【分析パターン】異解像度比較（実用評価・超解像）")
-            print("=" * 80)
-            print("📌 用途: AI超解像、アップスケーリング、高精細化など")
-            print(f"   処理前: {img_original.shape[1]}x{img_original.shape[0]} → 処理後: {img1.shape[1]}x{img1.shape[0]}")
-            print("   ※ 元画像をLANCZOS拡大して比較（実用シナリオ）")
-            print("=" * 80)
+    # RGB/グレースケール変換（元画像）
+    img_original_rgb = cv2.cvtColor(img1, cv2.COLOR_BGR2RGB)
+    img_original_gray = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
 
     # RGB変換（OpenCVはBGRなので）
     img1_rgb = cv2.cvtColor(img1, cv2.COLOR_BGR2RGB)
@@ -1164,17 +1118,17 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         print(f"画像1 vs 元画像 SSIM: {ssim_img1_vs_orig:.4f}")
         print(f"画像2 vs 元画像 SSIM: {ssim_img2_vs_orig:.4f}")
         if ssim_img1_vs_orig > ssim_img2_vs_orig:
-            print(f"→ 画像1の方が元画像に近い (+{(ssim_img1_vs_orig - ssim_img2_vs_orig):.4f})")
+            print(f"→ 元画像の方が元画像に近い (+{(ssim_img1_vs_orig - ssim_img2_vs_orig):.4f})")
         else:
-            print(f"→ 画像2の方が元画像に近い (+{(ssim_img2_vs_orig - ssim_img1_vs_orig):.4f})")
+            print(f"→ AI処理結果の方が元画像に近い (+{(ssim_img2_vs_orig - ssim_img1_vs_orig):.4f})")
         results['ssim'] = {
             'img1_vs_original': round(ssim_img1_vs_orig, 4),
             'img2_vs_original': round(ssim_img2_vs_orig, 4)
         }
     else:
-        # 元画像がない場合：画像1 vs 画像2
+        # 元画像がない場合：元画像 vs AI処理結果
         ssim_score = calculate_ssim_gpu(img1_rgb, img2_rgb)
-        print(f"SSIM (画像1 vs 画像2): {ssim_score:.4f}")
+        print(f"SSIM (元画像 vs AI処理結果): {ssim_score:.4f}")
         results['ssim'] = round(ssim_score, 4)
 
     # 2.5. MS-SSIM（Multi-Scale SSIM）
@@ -1212,17 +1166,17 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         print(f"画像1 vs 元画像 PSNR: {psnr_img1_vs_orig:.2f} dB")
         print(f"画像2 vs 元画像 PSNR: {psnr_img2_vs_orig:.2f} dB")
         if psnr_img1_vs_orig > psnr_img2_vs_orig:
-            print(f"→ 画像1の方が元画像に近い (+{(psnr_img1_vs_orig - psnr_img2_vs_orig):.2f} dB)")
+            print(f"→ 元画像の方が元画像に近い (+{(psnr_img1_vs_orig - psnr_img2_vs_orig):.2f} dB)")
         else:
-            print(f"→ 画像2の方が元画像に近い (+{(psnr_img2_vs_orig - psnr_img1_vs_orig):.2f} dB)")
+            print(f"→ AI処理結果の方が元画像に近い (+{(psnr_img2_vs_orig - psnr_img1_vs_orig):.2f} dB)")
         results['psnr'] = {
             'img1_vs_original': round(psnr_img1_vs_orig, 2),
             'img2_vs_original': round(psnr_img2_vs_orig, 2)
         }
     else:
-        # 元画像がない場合：画像1 vs 画像2
+        # 元画像がない場合：元画像 vs AI処理結果
         psnr_score = calculate_psnr_gpu(img1_rgb, img2_rgb)
-        print(f"PSNR (画像1 vs 画像2): {psnr_score:.2f} dB")
+        print(f"PSNR (元画像 vs AI処理結果): {psnr_score:.2f} dB")
         results['psnr'] = round(psnr_score, 2)
 
     # 3.4. ピクセル差分（MAE - 平均絶対誤差）
@@ -1307,9 +1261,9 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
             'text_region_ratio': round(text_ratio * 100, 2) if text_pixel_count > 0 else 0
         }
     else:
-        # 元画像がない場合：画像1 vs 画像2
+        # 元画像がない場合：元画像 vs AI処理結果
         mae_score = np.mean(np.abs(img1_rgb.astype(float) - img2_rgb.astype(float)))
-        print(f"MAE (画像1 vs 画像2): {mae_score:.2f} (差分率: {(mae_score/255)*100:.1f}%)")
+        print(f"MAE (元画像 vs AI処理結果): {mae_score:.2f} (差分率: {(mae_score/255)*100:.1f}%)")
 
         if mae_score < 5:
             print("  評価: ほぼ完全一致")
@@ -1397,9 +1351,9 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
                 print(f"  GPU使用: いいえ（CPU処理）")
 
             if clip_img1_vs_orig > clip_img2_vs_orig:
-                print(f"→ 画像1の方が元画像に意味的に近い (+{(clip_img1_vs_orig - clip_img2_vs_orig):.4f})")
+                print(f"→ 元画像の方が元画像に意味的に近い (+{(clip_img1_vs_orig - clip_img2_vs_orig):.4f})")
             else:
-                print(f"→ 画像2の方が元画像に意味的に近い (+{(clip_img2_vs_orig - clip_img1_vs_orig):.4f})")
+                print(f"→ AI処理結果の方が元画像に意味的に近い (+{(clip_img2_vs_orig - clip_img1_vs_orig):.4f})")
 
             # 各画像の評価（文書画像の場合は厳格な基準を適用）
             if is_any_document:
@@ -1439,7 +1393,7 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
             print("  ※CLIP計算をスキップしました（ライブラリ未インストール）")
             results['clip_similarity'] = None
     else:
-        # 元画像がない場合：画像1 vs 画像2
+        # 元画像がない場合：元画像 vs AI処理結果
         clip_similarity = calculate_clip_similarity(img1_rgb, img2_rgb)
         print_usage_status("CLIP計算完了")
 
@@ -1581,25 +1535,25 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
     print("RGB色空間:")
     for channel in ['Red', 'Green', 'Blue']:
         print(f"  {channel}チャンネル:")
-        print(f"    画像1: 平均={color_stats1[channel]['mean']:.1f}, 標準偏差={color_stats1[channel]['std']:.1f}")
-        print(f"    画像2: 平均={color_stats2[channel]['mean']:.1f}, 標準偏差={color_stats2[channel]['std']:.1f}")
+        print(f"    元画像: 平均={color_stats1[channel]['mean']:.1f}, 標準偏差={color_stats1[channel]['std']:.1f}")
+        print(f"    AI処理結果: 平均={color_stats2[channel]['mean']:.1f}, 標準偏差={color_stats2[channel]['std']:.1f}")
 
     # HSV
     print(f"\nHSV色空間 - 彩度:")
-    print(f"  画像1: 平均={color_stats1['Saturation']['mean']:.1f}")
-    print(f"  画像2: 平均={color_stats2['Saturation']['mean']:.1f}")
+    print(f"  元画像: 平均={color_stats1['Saturation']['mean']:.1f}")
+    print(f"  AI処理結果: 平均={color_stats2['Saturation']['mean']:.1f}")
 
     # LAB（知覚的色差）
     print(f"\nLAB色空間（知覚的色分析）:")
     print(f"  明度(L):")
-    print(f"    画像1: {color_stats1['LAB']['L_mean']:.1f} ± {color_stats1['LAB']['L_std']:.1f}")
-    print(f"    画像2: {color_stats2['LAB']['L_mean']:.1f} ± {color_stats2['LAB']['L_std']:.1f}")
+    print(f"    元画像: {color_stats1['LAB']['L_mean']:.1f} ± {color_stats1['LAB']['L_std']:.1f}")
+    print(f"    AI処理結果: {color_stats2['LAB']['L_mean']:.1f} ± {color_stats2['LAB']['L_std']:.1f}")
     print(f"  a(赤-緑):")
-    print(f"    画像1: {color_stats1['LAB']['a_mean']:.1f} ± {color_stats1['LAB']['a_std']:.1f}")
-    print(f"    画像2: {color_stats2['LAB']['a_mean']:.1f} ± {color_stats2['LAB']['a_std']:.1f}")
+    print(f"    元画像: {color_stats1['LAB']['a_mean']:.1f} ± {color_stats1['LAB']['a_std']:.1f}")
+    print(f"    AI処理結果: {color_stats2['LAB']['a_mean']:.1f} ± {color_stats2['LAB']['a_std']:.1f}")
     print(f"  b(黄-青):")
-    print(f"    画像1: {color_stats1['LAB']['b_mean']:.1f} ± {color_stats1['LAB']['b_std']:.1f}")
-    print(f"    画像2: {color_stats2['LAB']['b_mean']:.1f} ± {color_stats2['LAB']['b_std']:.1f}")
+    print(f"    元画像: {color_stats1['LAB']['b_mean']:.1f} ± {color_stats1['LAB']['b_std']:.1f}")
+    print(f"    AI処理結果: {color_stats2['LAB']['b_mean']:.1f} ± {color_stats2['LAB']['b_std']:.1f}")
 
     # Delta E (CIE2000) - 知覚的色差
     print_usage_status("色差計算開始（GPU使用）" if GPU_AVAILABLE else "色差計算開始（CPU使用）")
@@ -1611,16 +1565,16 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         print(f"\n  画像1 vs 元画像 ΔE: {delta_e_img1_vs_orig:.2f}")
         print(f"  画像2 vs 元画像 ΔE: {delta_e_img2_vs_orig:.2f}")
         if delta_e_img1_vs_orig < delta_e_img2_vs_orig:
-            print(f"  → 画像1の方が元画像の色に近い (差: {delta_e_img2_vs_orig - delta_e_img1_vs_orig:.2f})")
+            print(f"  → 元画像の方が元画像の色に近い (差: {delta_e_img2_vs_orig - delta_e_img1_vs_orig:.2f})")
         else:
-            print(f"  → 画像2の方が元画像の色に近い (差: {delta_e_img1_vs_orig - delta_e_img2_vs_orig:.2f})")
+            print(f"  → AI処理結果の方が元画像の色に近い (差: {delta_e_img1_vs_orig - delta_e_img2_vs_orig:.2f})")
         print(f"    (ΔE < 1: 人間の目では区別不可, ΔE < 5: 許容範囲, ΔE > 10: 明確な違い)")
         delta_e_result = {
             'img1_vs_original': round(delta_e_img1_vs_orig, 2),
             'img2_vs_original': round(delta_e_img2_vs_orig, 2)
         }
     else:
-        # 元画像がない場合：画像1 vs 画像2
+        # 元画像がない場合：元画像 vs AI処理結果
         delta_e_val = calculate_color_difference_gpu(img1_rgb, img2_rgb)
         print(f"\n  ΔE (色差): {delta_e_val:.2f}")
         print(f"    (ΔE < 1: 人間の目では区別不可, ΔE < 5: 許容範囲, ΔE > 10: 明確な違い)")
@@ -1922,8 +1876,8 @@ if __name__ == "__main__":
         img2_path = 'upscayl_oiran.png'
         output_dir = 'analysis_results'
 
-    print(f"画像1: {img1_path}")
-    print(f"画像2: {img2_path}")
+    print(f"元画像: {img1_path}")
+    print(f"AI処理結果: {img2_path}")
     print(f"出力先: {output_dir}")
     print()
 
