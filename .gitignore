@@ -40,6 +40,10 @@ desktop.ini
 
 # ログファイル
 *.log
+gui_log.txt
+
+# テストファイル
+test_*.py
 
 # Hugging Face / transformersキャッシュ（CLIPモデル等）
 .cache/
