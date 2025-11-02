@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 import threading
 import os
+import sys
 
 class StatsAnalysisMixin:
     """統計分析機能を提供するMixinクラス"""

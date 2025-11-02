@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, scrolledtext
 import threading
 import os
+import sys
+import json
 from datetime import datetime
 from ui_components import AccordionSection, get_timestamp_filename
 import customtkinter as ctk
@@ -222,7 +224,7 @@ class AcademicModeMixin:
         self.academic_original_dir = tk.StringVar()
         original_label = ctk.CTkLabel(
             self.config_accordion.content_frame,
-            text="📁 元画像フォルダ（必須・高解像度画像・PNG推奨・15,000枚推奨）",
+            text="📁 元画像フォルダ（必須・高解像度画像・PNG推奨）",
             font=("Arial", 14, "bold"),
             text_color="#00ff88"
         )

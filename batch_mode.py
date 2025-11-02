@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, scrolledtext
 import threading
 import os
+import sys
+import json
 from datetime import datetime
 from ui_components import AccordionSection, get_timestamp_filename
 import customtkinter as ctk
