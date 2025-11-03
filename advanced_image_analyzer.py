@@ -683,7 +683,7 @@ def generate_p6_heatmap(ssim_2d, original_img, output_path, patch_size=16):
 
     # プロット作成（論文形式：下マージン拡大）
     fig, ax = plt.subplots(figsize=(12, 11))
-    plt.subplots_adjust(bottom=0.15)  # 下マージン拡大
+    plt.subplots_adjust(bottom=0.18)  # 下マージン拡大（キャプション用）
 
     # ヒートマップ描画
     im = ax.imshow(ssim_2d, cmap=cmap, vmin=0.0, vmax=1.0, aspect='auto')
@@ -741,8 +741,8 @@ def generate_p6_heatmap(ssim_2d, original_img, output_path, patch_size=16):
         f'Mean: {mean_ssim:.4f} | Std: {std_ssim:.4f} | '
         f'Range: [{min_ssim:.4f}, {max_ssim:.4f}]'
     )
-    fig.text(0.5, 0.02, caption_text,
-             ha='center', va='bottom', fontsize=11, weight='bold')
+    fig.text(0.5, 0.06, caption_text,
+             ha='center', va='center', fontsize=11, weight='bold')
 
     # 低SSIM領域（ハルシネーション疑い）を強調表示
     threshold = 0.7
@@ -1103,70 +1103,70 @@ def analyze_texture(img_gray):
         return {'texture_complexity': float(texture_complexity)}
 
 def create_detailed_visualizations(img1_rgb, img2_rgb, img1_gray, img2_gray, output_dir):
-    """詳細な可視化画像を生成"""
-    fig = plt.figure(figsize=(20, 12))
+    """Generate detailed visualization images (English)"""
+    fig = plt.figure(figsize=(20, 13))  # 高さ増加（キャプション用）
 
-    # 1. 元画像
+    # 1. Original images
     plt.subplot(3, 4, 1)
     plt.imshow(img1_rgb)
-    plt.title('元画像 (Ground Truth)', fontsize=12, fontweight='bold')
+    plt.title('Original (Ground Truth)', fontsize=12, fontweight='bold')
     plt.axis('off')
 
     plt.subplot(3, 4, 2)
     plt.imshow(img2_rgb)
-    plt.title('AI処理結果', fontsize=12, fontweight='bold')
+    plt.title('AI Processed', fontsize=12, fontweight='bold')
     plt.axis('off')
 
-    # 2. ヒストグラム
+    # 2. Histograms
     plt.subplot(3, 4, 3)
     for i, color in enumerate(['r', 'g', 'b']):
         hist = cv2.calcHist([img1_rgb], [i], None, [256], [0, 256])
         plt.plot(hist, color=color, alpha=0.7, linewidth=1.5)
-    plt.title('ヒストグラム - 元画像', fontsize=11)
+    plt.title('Histogram - Original', fontsize=11)
     plt.xlim([0, 256])
-    plt.xlabel('輝度値', fontsize=9)
-    plt.ylabel('ピクセル数', fontsize=9)
+    plt.xlabel('Brightness', fontsize=9)
+    plt.ylabel('Pixels', fontsize=9)
 
     plt.subplot(3, 4, 4)
     for i, color in enumerate(['r', 'g', 'b']):
         hist = cv2.calcHist([img2_rgb], [i], None, [256], [0, 256])
         plt.plot(hist, color=color, alpha=0.7, linewidth=1.5)
-    plt.title('ヒストグラム - AI処理結果', fontsize=11)
+    plt.title('Histogram - AI Processed', fontsize=11)
     plt.xlim([0, 256])
-    plt.xlabel('輝度値', fontsize=9)
-    plt.ylabel('ピクセル数', fontsize=9)
+    plt.xlabel('Brightness', fontsize=9)
+    plt.ylabel('Pixels', fontsize=9)
 
-    # 3. エッジ検出
+    # 3. Edge detection
     edges1 = cv2.Canny(img1_gray, 100, 200)
     edges2 = cv2.Canny(img2_gray, 100, 200)
 
     plt.subplot(3, 4, 5)
     plt.imshow(edges1, cmap='gray')
-    plt.title('エッジ検出 - 元画像', fontsize=11)
+    plt.title('Edge Detection - Original', fontsize=11)
     plt.axis('off')
 
     plt.subplot(3, 4, 6)
     plt.imshow(edges2, cmap='gray')
-    plt.title('エッジ検出 - AI処理結果', fontsize=11)
+    plt.title('Edge Detection - AI Processed', fontsize=11)
     plt.axis('off')
 
-    # 4. 差分
+    # 4. Difference
     diff = cv2.absdiff(img1_rgb, img2_rgb)
     diff_gray = cv2.cvtColor(diff, cv2.COLOR_RGB2GRAY)
 
     plt.subplot(3, 4, 7)
     plt.imshow(diff)
-    plt.title('絶対差分', fontsize=11)
+    plt.title('Absolute Difference', fontsize=11)
     plt.axis('off')
 
     plt.subplot(3, 4, 8)
     plt.imshow(diff_gray, cmap='hot')
-    plt.title('差分ヒートマップ', fontsize=11)
+    plt.title('Difference Heatmap', fontsize=11)
     plt.axis('off')
     cb = plt.colorbar(fraction=0.046, pad=0.04)
     cb.ax.tick_params(labelsize=8)
 
-    # 5. FFT（周波数領域）
+    # 5. FFT (Frequency domain)
     f1 = np.fft.fft2(img1_gray)
     f2 = np.fft.fft2(img2_gray)
 
@@ -1175,44 +1175,48 @@ def create_detailed_visualizations(img1_rgb, img2_rgb, img1_gray, img2_gray, out
 
     plt.subplot(3, 4, 9)
     plt.imshow(magnitude1, cmap='gray')
-    plt.title('周波数スペクトル - 元画像', fontsize=11)
+    plt.title('Frequency Spectrum - Original', fontsize=11)
     plt.axis('off')
 
     plt.subplot(3, 4, 10)
     plt.imshow(magnitude2, cmap='gray')
-    plt.title('周波数スペクトル - AI処理結果', fontsize=11)
+    plt.title('Frequency Spectrum - AI Processed', fontsize=11)
     plt.axis('off')
 
-    # 6. シャープネス可視化（ラプラシアン）
+    # 6. Sharpness visualization (Laplacian)
     lap1 = cv2.Laplacian(img1_gray, cv2.CV_64F)
     lap2 = cv2.Laplacian(img2_gray, cv2.CV_64F)
 
     plt.subplot(3, 4, 11)
     im1 = plt.imshow(np.abs(lap1), cmap='viridis')
-    plt.title('シャープネスマップ - 元画像', fontsize=11)
+    plt.title('Sharpness Map - Original', fontsize=11)
     plt.axis('off')
     cb1 = plt.colorbar(im1, fraction=0.046, pad=0.04)
     cb1.ax.tick_params(labelsize=8)
 
     plt.subplot(3, 4, 12)
     im2 = plt.imshow(np.abs(lap2), cmap='viridis')
-    plt.title('シャープネスマップ - AI処理結果', fontsize=11)
+    plt.title('Sharpness Map - AI Processed', fontsize=11)
     plt.axis('off')
     cb2 = plt.colorbar(im2, fraction=0.046, pad=0.04)
     cb2.ax.tick_params(labelsize=8)
 
-    plt.tight_layout()
+    plt.tight_layout(rect=[0, 0.04, 1, 1])  # 下マージン確保
 
-    print(f"[DEBUG] detailed_analysis.png 保存中...")
+    # 図の下にキャプション追加（論文形式）
+    fig.text(0.5, 0.01, 'Figure: Detailed Image Analysis Visualization',
+             ha='center', va='bottom', fontsize=16, weight='bold')
+
+    print(f"[DEBUG] Saving detailed_analysis.png...")
     print(f"  output_dir: {repr(output_dir)}")
 
     try:
         output_path = os.path.join(output_dir, 'detailed_analysis.png')
         print(f"  output_path: {output_path}")
         plt.savefig(output_path, dpi=150, bbox_inches='tight')
-        print(f"  [OK] 保存成功: {output_path}")
+        print(f"  [OK] Saved successfully: {output_path}")
     except Exception as e:
-        print(f"  [ERROR] 保存エラー: {e}")
+        print(f"  [ERROR] Save error: {e}")
         import traceback
         traceback.print_exc()
         raise
@@ -1221,8 +1225,7 @@ def create_detailed_visualizations(img1_rgb, img2_rgb, img1_gray, img2_gray, out
 
 def create_comparison_report(results, img1_name, img2_name, output_dir):
     """Generate comparison report image (English)"""
-    fig = plt.figure(figsize=(16, 10))
-    fig.suptitle('Image Comparison Analysis Report', fontsize=20, fontweight='bold', y=0.98)
+    fig = plt.figure(figsize=(16, 11))  # 高さ増加（キャプション用）
 
     # Score comparison
     ax1 = plt.subplot(2, 3, 1)
@@ -1364,7 +1367,11 @@ Color Diff (ΔE): {delta_e_display}
     ax6.set_ylim(0, 100)
     ax6.grid(axis='y', alpha=0.3)
 
-    plt.tight_layout()
+    plt.tight_layout(rect=[0, 0.06, 1, 1])  # 下マージン確保
+
+    # 図の下にキャプション追加（論文形式）
+    fig.text(0.5, 0.02, 'Figure: Image Comparison Analysis Report',
+             ha='center', va='bottom', fontsize=16, weight='bold')
 
     print(f"[DEBUG] Saving comparison_report.png...")
     print(f"  output_dir: {repr(output_dir)}")
