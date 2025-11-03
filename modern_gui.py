@@ -754,13 +754,13 @@ class ModernImageAnalyzerGUI(
         img_before_container = ctk.CTkFrame(image_compare_frame, fg_color="transparent")
         img_before_container.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        img_before_title = ctk.CTkLabel(
+        self.img_before_title = ctk.CTkLabel(
             img_before_container,
             text=self.i18n.t('gui.original_before'),
             font=("Arial", 12, "bold"),
             text_color="#FFA500"
         )
-        img_before_title.pack(pady=(0, 5))
+        self.img_before_title.pack(pady=(0, 5))
 
         self.preview_img_before_label = tk.Label(
             img_before_container,
@@ -775,13 +775,13 @@ class ModernImageAnalyzerGUI(
         img1_container = ctk.CTkFrame(image_compare_frame, fg_color="transparent")
         img1_container.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        img1_title = ctk.CTkLabel(
+        self.img1_title = ctk.CTkLabel(
             img1_container,
             text=self.i18n.t('gui.sr_result_1'),
             font=("Arial", 12, "bold"),
             text_color="#00ff88"
         )
-        img1_title.pack(pady=(0, 5))
+        self.img1_title.pack(pady=(0, 5))
 
         self.preview_img1_label = tk.Label(
             img1_container,
@@ -796,13 +796,13 @@ class ModernImageAnalyzerGUI(
         img2_container = ctk.CTkFrame(image_compare_frame, fg_color="transparent")
         img2_container.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        img2_title = ctk.CTkLabel(
+        self.img2_title = ctk.CTkLabel(
             img2_container,
             text=self.i18n.t('gui.sr_result_2'),
             font=("Arial", 12, "bold"),
             text_color="#00ff88"
         )
-        img2_title.pack(pady=(0, 5))
+        self.img2_title.pack(pady=(0, 5))
 
         self.preview_img2_label = tk.Label(
             img2_container,
@@ -853,13 +853,13 @@ class ModernImageAnalyzerGUI(
         self.batch_right_frame = ctk.CTkFrame(self.right_panel, fg_color="transparent")
 
         # バッチ処理進捗エリア
-        batch_progress_title = ctk.CTkLabel(
+        self.batch_progress_title = ctk.CTkLabel(
             self.batch_right_frame,
             text=self.i18n.t('gui.batch_progress_title'),
             font=("Arial", 18, "bold"),
             text_color="#4A90E2"
         )
-        batch_progress_title.pack(pady=(20, 10))
+        self.batch_progress_title.pack(pady=(20, 10))
 
         # 進捗表示フレーム
         self.batch_progress_frame = ctk.CTkFrame(self.batch_right_frame, fg_color="#0a0e27", corner_radius=10)
@@ -886,13 +886,13 @@ class ModernImageAnalyzerGUI(
         self.batch_progress.set(0)
 
         # 結果表示テキストエリア
-        batch_result_label = ctk.CTkLabel(
+        self.batch_result_label = ctk.CTkLabel(
             self.batch_right_frame,
             text=self.i18n.t('gui.batch_log_title'),
             font=("Arial", 16, "bold"),
             text_color="#4A90E2"
         )
-        batch_result_label.pack(pady=(10, 5), padx=15, anchor="w")
+        self.batch_result_label.pack(pady=(10, 5), padx=15, anchor="w")
 
         self.batch_result_text = ctk.CTkTextbox(
             self.batch_right_frame,
@@ -907,13 +907,13 @@ class ModernImageAnalyzerGUI(
         self.academic_right_frame = ctk.CTkFrame(self.right_panel, fg_color="transparent")
 
         # 論文用処理進捗エリア
-        academic_progress_title = ctk.CTkLabel(
+        self.academic_progress_title = ctk.CTkLabel(
             self.academic_right_frame,
             text=self.i18n.t('gui.academic_progress_title'),
             font=("Arial", 18, "bold"),
             text_color="#9b59b6"
         )
-        academic_progress_title.pack(pady=(20, 10))
+        self.academic_progress_title.pack(pady=(20, 10))
 
         # 進捗表示フレーム
         self.academic_progress_frame = ctk.CTkFrame(self.academic_right_frame, fg_color="#0a0e27", corner_radius=10)
@@ -940,13 +940,13 @@ class ModernImageAnalyzerGUI(
         self.academic_progress.set(0)
 
         # 結果表示テキストエリア
-        academic_result_label = ctk.CTkLabel(
+        self.academic_result_label = ctk.CTkLabel(
             self.academic_right_frame,
             text=self.i18n.t('gui.academic_log_title'),
             font=("Arial", 16, "bold"),
             text_color="#9b59b6"
         )
-        academic_result_label.pack(pady=(10, 5), padx=15, anchor="w")
+        self.academic_result_label.pack(pady=(10, 5), padx=15, anchor="w")
 
         self.academic_result_text = ctk.CTkTextbox(
             self.academic_right_frame,
@@ -1521,6 +1521,42 @@ class ModernImageAnalyzerGUI(
         self.bicubic_accordion.update_title(self.i18n.t('sections.bicubic_info'))
         self.config_accordion.update_title(self.i18n.t('sections.evaluation_settings'))
         self.academic_stats_accordion.update_title(self.i18n.t('sections.stats_analysis'))
+
+        # プレビュー画像のタイトル（画像が選択されていない場合のみ更新）
+        if hasattr(self, 'img_before_title'):
+            self.img_before_title.configure(text=self.i18n.t('gui.original_before'))
+        if hasattr(self, 'img1_title'):
+            self.img1_title.configure(text=self.i18n.t('gui.sr_result_1'))
+        if hasattr(self, 'img2_title'):
+            self.img2_title.configure(text=self.i18n.t('gui.sr_result_2'))
+
+        # プレビュープレースホルダー（画像が読み込まれていない場合）
+        if hasattr(self, 'preview_img_before_label') and not hasattr(self.preview_img_before_label, 'image'):
+            self.preview_img_before_label.configure(text=self.i18n.t('gui.select_original_prompt'))
+        if hasattr(self, 'preview_img1_label') and not hasattr(self.preview_img1_label, 'image'):
+            self.preview_img1_label.configure(text=self.i18n.t('gui.select_sr1_prompt'))
+        if hasattr(self, 'preview_img2_label') and not hasattr(self.preview_img2_label, 'image'):
+            self.preview_img2_label.configure(text=self.i18n.t('gui.select_sr2_prompt'))
+
+        # バッチ処理進捗エリア
+        if hasattr(self, 'batch_progress_title'):
+            self.batch_progress_title.configure(text=self.i18n.t('gui.batch_progress_title'))
+        if hasattr(self, 'batch_status_label'):
+            # 処理中でない場合のみ更新
+            if self.batch_analyze_btn.cget('state') != 'disabled':
+                self.batch_status_label.configure(text=self.i18n.t('gui.batch_start_prompt'))
+        if hasattr(self, 'batch_result_label'):
+            self.batch_result_label.configure(text=self.i18n.t('gui.batch_log_title'))
+
+        # アカデミック評価進捗エリア
+        if hasattr(self, 'academic_progress_title'):
+            self.academic_progress_title.configure(text=self.i18n.t('gui.academic_progress_title'))
+        if hasattr(self, 'academic_status_label'):
+            # 処理中でない場合のみ更新
+            if self.academic_analyze_btn.cget('state') != 'disabled':
+                self.academic_status_label.configure(text=self.i18n.t('gui.academic_start_prompt'))
+        if hasattr(self, 'academic_result_label'):
+            self.academic_result_label.configure(text=self.i18n.t('gui.academic_log_title'))
 
 def main():
     root = ctk.CTk()
