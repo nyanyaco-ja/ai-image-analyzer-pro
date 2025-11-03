@@ -109,7 +109,15 @@
     "warning_output_not_found": "Output folder not found:\n{path}",
     "status_cleared": "Results cleared",
     "warning_no_report": "Comparison report not found.\nPlease run analysis first.",
-    "lang_japanese": "🇯🇵 日本語"
+    "lang_japanese": "🇯🇵 日本語",
+    "complete_title": "Complete",
+    "error_title": "Error",
+    "warning_title": "Warning",
+    "analysis_complete_multi_message": "Accuracy evaluation completed.\n{count} comparisons completed.\n\nResults saved to '{folder}' folder.",
+    "analysis_complete_single_message": "Analysis completed.\n\nResults saved to '{folder}' folder.\n\nYou can check the comparison results in the \"[STATS] Interpretation\" tab.",
+    "comparison_report_title": "Comparison Report",
+    "accuracy_eval_header": "=== Accuracy Evaluation (Original vs AI Result) - {count} Comparisons ===\n\n",
+    "error_prefix": "Error:\n{error}"
   },
   "batch": {
     "title": "[BATCH] About Batch Processing",

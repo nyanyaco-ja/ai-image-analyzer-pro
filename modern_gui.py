@@ -1242,7 +1242,7 @@ class ModernImageAnalyzerGUI(
 
         # 詳細データタブに結果表示
         self.result_text.delete("1.0", tk.END)
-        self.result_text.insert("1.0", f"=== 精度評価（元画像 vs AI処理結果） - {len(all_results)}件の比較 ===\n\n")
+        self.result_text.insert("1.0", self.i18n.t('gui.accuracy_eval_header').format(count=len(all_results)))
         self.result_text.insert(tk.END, output)
 
         # わかりやすい解釈タブに複数結果を表示
@@ -1269,10 +1269,8 @@ class ModernImageAnalyzerGUI(
 
         output_folder = self.output_dir.get() or 'analysis_results'
         messagebox.showinfo(
-            "完了",
-            f"精度評価が完了しました。\n"
-            f"{len(all_results)}件の比較が完了しました。\n\n"
-            f"結果は '{output_folder}' フォルダに保存されました。"
+            self.i18n.t('gui.complete_title'),
+            self.i18n.t('gui.analysis_complete_multi_message').format(count=len(all_results), folder=output_folder)
         )
 
     def display_results(self, output, results):
@@ -1326,10 +1324,8 @@ class ModernImageAnalyzerGUI(
 
         output_folder = self.output_dir.get() or 'analysis_results'
         messagebox.showinfo(
-            "完了",
-            f"分析が完了しました。\n\n"
-            f"結果は '{output_folder}' フォルダに保存されました。\n\n"
-            f"「[STATS] わかりやすい解釈」タブで優劣を確認できます。"
+            self.i18n.t('gui.complete_title'),
+            self.i18n.t('gui.analysis_complete_single_message').format(folder=output_folder)
         )
 
     def display_error(self, error_msg):
@@ -1338,15 +1334,15 @@ class ModernImageAnalyzerGUI(
         self.analyze_btn.configure(state='normal')
         self.status_label.configure(text=self.i18n.t('gui.status_error'), text_color="#ff4444")
 
-        self.result_text.insert("1.0", f"エラー:\n{error_msg}")
-        messagebox.showerror("エラー", f"分析中にエラーが発生しました:\n{error_msg}")
+        self.result_text.insert("1.0", self.i18n.t('gui.error_prefix').format(error=error_msg))
+        messagebox.showerror(self.i18n.t('gui.error_title'), self.i18n.t('gui.error_analysis_failed').format(error=error_msg))
 
     def open_output_folder(self):
         output_path = self.output_dir.get() or 'analysis_results'
         if os.path.exists(output_path):
             os.startfile(output_path)
         else:
-            messagebox.showwarning("警告", f"出力フォルダが見つかりません:\n{output_path}")
+            messagebox.showwarning(self.i18n.t('gui.warning_title'), self.i18n.t('gui.warning_output_not_found').format(path=output_path))
 
     def clear_results(self):
         self.result_text.delete("1.0", tk.END)
@@ -1360,12 +1356,12 @@ class ModernImageAnalyzerGUI(
         report_path = os.path.join(output_base, 'comparison_report.png')
 
         if not os.path.exists(report_path):
-            messagebox.showwarning("警告", "比較レポートが見つかりません。\n先に分析を実行してください。")
+            messagebox.showwarning(self.i18n.t('gui.warning_title'), self.i18n.t('gui.warning_no_report'))
             return
 
         # 新しいウィンドウで画像表示
         report_window = ctk.CTkToplevel(self.root)
-        report_window.title("比較レポート")
+        report_window.title(self.i18n.t('gui.comparison_report_title'))
         report_window.geometry("1200x800")
 
         # 画像読み込み
