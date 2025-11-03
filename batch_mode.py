@@ -20,7 +20,7 @@ class BatchModeMixin:
 
         info_title = ctk.CTkLabel(
             info_frame,
-            text="[BATCH] バッチ処理について",
+            text=self.i18n.t('batch.title'),
             font=("Arial", 18, "bold"),
             text_color="#4A90E2"
         )
@@ -28,8 +28,7 @@ class BatchModeMixin:
 
         info_text = ctk.CTkLabel(
             info_frame,
-            text="大量の画像ペア（300枚以上）を自動で分析し、統計的に妥当な閾値を決定します。\n"
-                 "医療画像研究・AIモデル比較に最適です。",
+            text=self.i18n.t('batch.description'),
             font=("Arial", 13),
             text_color="#cccccc",
             justify="left"
@@ -194,7 +193,7 @@ class BatchModeMixin:
             name_entry = ctk.CTkEntry(
                 model_frame,
                 textvariable=model_name_var,
-                placeholder_text=f"モデル{i+1}名",
+                placeholder_text=self.i18n.t('batch.model_name_placeholder').format(num=i+1),
                 width=140,
                 height=40,
                 font=("Arial", 12)
@@ -649,19 +648,19 @@ class BatchModeMixin:
 
 
     def browse_batch_original(self):
-        dirname = filedialog.askdirectory(title="元画像フォルダを選択")
+        dirname = filedialog.askdirectory(title=self.i18n.t('batch.select_original_folder'))
         if dirname:
             self.batch_original_dir.set(dirname)
 
     def browse_batch_model(self, index):
-        dirname = filedialog.askdirectory(title=f"モデル{index+1}のフォルダを選択")
+        dirname = filedialog.askdirectory(title=self.i18n.t('batch.select_model_folder').format(num=index+1))
         if dirname:
             self.batch_model_vars[index].set(dirname)
 
     def browse_batch_csv_output(self):
         """CSV出力先選択"""
         filename = filedialog.asksaveasfilename(
-            title="CSV出力先を選択",
+            title=self.i18n.t('batch.select_csv_output'),
             defaultextension=".csv",
             filetypes=[("CSV", "*.csv"), ("すべてのファイル", "*.*")],
             initialfile=get_timestamp_filename("batch_analysis", ".csv")
@@ -671,7 +670,7 @@ class BatchModeMixin:
 
     def browse_batch_detail_output(self):
         """詳細レポート出力先フォルダ選択"""
-        dirname = filedialog.askdirectory(title="詳細レポート出力先フォルダを選択")
+        dirname = filedialog.askdirectory(title=self.i18n.t('batch.select_detail_folder'))
         if dirname:
             self.batch_output_detail.set(dirname)
 
@@ -814,11 +813,17 @@ class BatchModeMixin:
         """バッチ処理開始"""
         # バリデーション：元画像フォルダ（必須）
         if not self.batch_original_dir.get():
-            messagebox.showerror("エラー", "元画像フォルダ（GT画像）を選択してください")
+            messagebox.showerror(
+                self.i18n.t('messages.error'),
+                self.i18n.t('batch.error_no_original_folder')
+            )
             return
 
         if not os.path.exists(self.batch_original_dir.get()):
-            messagebox.showerror("エラー", f"元画像フォルダが見つかりません:\n{self.batch_original_dir.get()}")
+            messagebox.showerror(
+                self.i18n.t('messages.error'),
+                self.i18n.t('batch.error_original_folder_not_found').format(path=self.batch_original_dir.get())
+            )
             return
 
         # バリデーション：有効なモデルフォルダをカウント
@@ -830,17 +835,26 @@ class BatchModeMixin:
             if model_path:
                 # モデル名が空の場合
                 if not model_name:
-                    messagebox.showerror("エラー", f"モデル{i+1}の名前を入力してください")
+                    messagebox.showerror(
+                        self.i18n.t('messages.error'),
+                        self.i18n.t('batch.error_no_model_name').format(num=i+1)
+                    )
                     return
                 # フォルダが存在しない場合
                 if not os.path.exists(model_path):
-                    messagebox.showerror("エラー", f"モデル{i+1}のフォルダが見つかりません:\n{model_path}")
+                    messagebox.showerror(
+                        self.i18n.t('messages.error'),
+                        self.i18n.t('batch.error_model_not_found').format(num=i+1, path=model_path)
+                    )
                     return
                 valid_models[model_name] = model_path
 
         # 最低1つは必須（画像1に相当）
         if len(valid_models) == 0:
-            messagebox.showerror("エラー", "少なくとも1つの超解像モデルフォルダ（AI処理結果）を選択してください")
+            messagebox.showerror(
+                self.i18n.t('messages.error'),
+                self.i18n.t('batch.error_no_models')
+            )
             return
 
         # 設定ファイル作成

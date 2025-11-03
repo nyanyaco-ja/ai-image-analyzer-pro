@@ -134,7 +134,7 @@ class ModernImageAnalyzerGUI(
 
         self.lang_button = ctk.CTkButton(
             lang_frame,
-            text="🇯🇵 日本語",
+            text=self.i18n.t('gui.lang_japanese'),
             command=self.toggle_language,
             width=120,
             height=35,
@@ -375,7 +375,7 @@ class ModernImageAnalyzerGUI(
         # P6パッチサイズ選択
         patch_label = ctk.CTkLabel(
             mode_frame,
-            text="P6ヒートマップ精度（パッチサイズ）:",
+            text=self.i18n.t('gui.patch_size_title'),
             font=("Arial", 14, "bold"),
             text_color="#00ffff"
         )
@@ -387,7 +387,7 @@ class ModernImageAnalyzerGUI(
         # 8×8オプション
         patch_8 = ctk.CTkRadioButton(
             mode_frame,
-            text="8×8 - 超高精度（医療画像・論文品質）",
+            text=self.i18n.t('gui.patch_8x8'),
             variable=self.patch_size,
             value=8,
             font=("Arial", 13),
@@ -399,7 +399,7 @@ class ModernImageAnalyzerGUI(
 
         patch_8_desc = ctk.CTkLabel(
             mode_frame,
-            text="  16,384ブロック（1024×1024画像）- 最も細かい分析",
+            text=self.i18n.t('gui.patch_8x8_detail'),
             font=("Arial", 11),
             text_color="#888888"
         )
@@ -408,7 +408,7 @@ class ModernImageAnalyzerGUI(
         # 16×16オプション（推奨）
         patch_16 = ctk.CTkRadioButton(
             mode_frame,
-            text="16×16 - 標準精度（論文標準）⭐ 推奨",
+            text=self.i18n.t('gui.patch_16x16'),
             variable=self.patch_size,
             value=16,
             font=("Arial", 13),
@@ -420,7 +420,7 @@ class ModernImageAnalyzerGUI(
 
         patch_16_desc = ctk.CTkLabel(
             mode_frame,
-            text="  4,096ブロック（1024×1024画像）- 精度と速度のバランス",
+            text=self.i18n.t('gui.patch_16x16_detail'),
             font=("Arial", 11),
             text_color="#888888"
         )
@@ -429,7 +429,7 @@ class ModernImageAnalyzerGUI(
         # 32×32オプション
         patch_32 = ctk.CTkRadioButton(
             mode_frame,
-            text="32×32 - 高速",
+            text=self.i18n.t('gui.patch_32x32'),
             variable=self.patch_size,
             value=32,
             font=("Arial", 13),
@@ -441,7 +441,7 @@ class ModernImageAnalyzerGUI(
 
         patch_32_desc = ctk.CTkLabel(
             mode_frame,
-            text="  1,024ブロック（1024×1024画像）- 概要把握",
+            text=self.i18n.t('gui.patch_32x32_detail'),
             font=("Arial", 11),
             text_color="#888888"
         )
@@ -463,8 +463,7 @@ class ModernImageAnalyzerGUI(
 
         original_sublabel = ctk.CTkLabel(
             original_frame,
-            text="※ AI処理前の高解像度オリジナル画像（超解像前、ノイズ除去前など）\n"
-                 "※ 各AI処理結果（画像1〜5）をこの元画像と比較して精度を評価します",
+            text=self.i18n.t('gui.original_note'),
             font=("Arial", 12),
             text_color="#888888",
             justify="left"
@@ -474,7 +473,7 @@ class ModernImageAnalyzerGUI(
         original_entry = ctk.CTkEntry(
             original_frame,
             textvariable=self.original_path,
-            placeholder_text="元画像を選択してください（必須）...",
+            placeholder_text=self.i18n.t('gui.placeholder_select_original'),
             height=45,
             corner_radius=10,
             font=("Arial", 13)
@@ -502,7 +501,7 @@ class ModernImageAnalyzerGUI(
         img1_entry = ctk.CTkEntry(
             img1_frame,
             textvariable=self.img1_path,
-            placeholder_text="画像ファイルを選択...",
+            placeholder_text=self.i18n.t('gui.placeholder_select_image'),
             height=45,
             corner_radius=10,
             font=("Arial", 13)
@@ -529,7 +528,7 @@ class ModernImageAnalyzerGUI(
         img2_entry = ctk.CTkEntry(
             img2_frame,
             textvariable=self.img2_path,
-            placeholder_text="画像ファイルを選択...",
+            placeholder_text=self.i18n.t('gui.placeholder_select_image'),
             height=45,
             corner_radius=10,
             font=("Arial", 13)
@@ -557,7 +556,7 @@ class ModernImageAnalyzerGUI(
         img3_entry = ctk.CTkEntry(
             img3_frame,
             textvariable=self.img3_path,
-            placeholder_text="画像ファイルを選択...",
+            placeholder_text=self.i18n.t('gui.placeholder_select_image'),
             height=45,
             corner_radius=10,
             font=("Arial", 13)
@@ -585,7 +584,7 @@ class ModernImageAnalyzerGUI(
         img4_entry = ctk.CTkEntry(
             img4_frame,
             textvariable=self.img4_path,
-            placeholder_text="画像ファイルを選択...",
+            placeholder_text=self.i18n.t('gui.placeholder_select_image'),
             height=45,
             corner_radius=10,
             font=("Arial", 13)
@@ -613,7 +612,7 @@ class ModernImageAnalyzerGUI(
         img5_entry = ctk.CTkEntry(
             img5_frame,
             textvariable=self.img5_path,
-            placeholder_text="画像ファイルを選択...",
+            placeholder_text=self.i18n.t('gui.placeholder_select_image'),
             height=45,
             corner_radius=10,
             font=("Arial", 13)
@@ -686,7 +685,7 @@ class ModernImageAnalyzerGUI(
         # ステータス
         self.status_label = ctk.CTkLabel(
             input_section,
-            text="画像を選択して分析を開始してください",
+            text=self.i18n.t('gui.status_start'),
             font=("Arial", 11),
             text_color="#888888",
             wraplength=350
@@ -699,7 +698,7 @@ class ModernImageAnalyzerGUI(
 
         btn_report = ctk.CTkButton(
             button_group,
-            text="[STATS] レポート",
+            text=self.i18n.t('gui.report_button'),
             command=self.show_comparison_report,
             height=40,
             corner_radius=10,
@@ -711,7 +710,7 @@ class ModernImageAnalyzerGUI(
 
         btn_folder = ctk.CTkButton(
             button_group,
-            text="[FOLDER] フォルダ",
+            text=self.i18n.t('gui.folder_button'),
             command=self.open_output_folder,
             height=40,
             corner_radius=10,
@@ -723,7 +722,7 @@ class ModernImageAnalyzerGUI(
 
         btn_clear = ctk.CTkButton(
             button_group,
-            text="[CLR] クリア",
+            text=self.i18n.t('gui.clear_button'),
             command=self.clear_results,
             height=40,
             corner_radius=10,
@@ -740,7 +739,7 @@ class ModernImageAnalyzerGUI(
         # 画像比較プレビューエリア
         preview_title = ctk.CTkLabel(
             self.single_right_frame,
-            text="[IMG] 画像比較プレビュー",
+            text=self.i18n.t('gui.preview_title'),
             font=("Arial", 18, "bold"),
             text_color="#4A90E2"
         )
@@ -1101,26 +1100,41 @@ class ModernImageAnalyzerGUI(
     def start_analysis(self):
         # 元画像（GT画像）は必須
         if not self.original_path.get():
-            messagebox.showerror("エラー", "元画像（GT画像）を選択してください")
+            messagebox.showerror(
+                self.i18n.t('messages.error'),
+                self.i18n.t('gui.error_select_original')
+            )
             return
 
         if not os.path.exists(self.original_path.get()):
-            messagebox.showerror("エラー", f"元画像が見つかりません:\n{self.original_path.get()}")
+            messagebox.showerror(
+                self.i18n.t('messages.error'),
+                self.i18n.t('gui.error_original_not_found').format(path=self.original_path.get())
+            )
             return
 
         # 画像1は必須
         if not self.img1_path.get():
-            messagebox.showerror("エラー", "少なくとも画像1（AI処理結果）を選択してください")
+            messagebox.showerror(
+                self.i18n.t('messages.error'),
+                self.i18n.t('gui.error_select_image1')
+            )
             return
 
         if not os.path.exists(self.img1_path.get()):
-            messagebox.showerror("エラー", f"画像1が見つかりません:\n{self.img1_path.get()}")
+            messagebox.showerror(
+                self.i18n.t('messages.error'),
+                self.i18n.t('gui.error_image1_not_found').format(path=self.img1_path.get())
+            )
             return
 
         # 画像2-5はオプション（存在チェックのみ）
         for i, path_var in enumerate([self.img2_path, self.img3_path, self.img4_path, self.img5_path], 2):
             if path_var.get() and not os.path.exists(path_var.get()):
-                messagebox.showerror("エラー", f"画像{i}が見つかりません:\n{path_var.get()}")
+                messagebox.showerror(
+                    self.i18n.t('messages.error'),
+                    self.i18n.t('gui.error_image_not_found').format(num=i, path=path_var.get())
+                )
                 return
 
         # UIを無効化

@@ -21,7 +21,7 @@ class AcademicModeMixin:
 
         info_title = ctk.CTkLabel(
             info_frame,
-            text="[ACAD] 論文用ベンチマーク評価について",
+            text=self.i18n.t('academic.title'),
             font=("Arial", 18, "bold"),
             text_color="#9b59b6"
         )
@@ -29,8 +29,7 @@ class AcademicModeMixin:
 
         info_text = ctk.CTkLabel(
             info_frame,
-            text="既存研究との公平な比較のため、標準的なBicubic縮小で基準画像を作成します。\n"
-                 "大規模データセット（15,000枚推奨）で超解像モデルを定量評価し、論文投稿用データを生成します。",
+            text=self.i18n.t('academic.description'),
             font=("Arial", 13),
             text_color="#cccccc",
             justify="left"
@@ -48,11 +47,7 @@ class AcademicModeMixin:
 
         workflow_text = ctk.CTkLabel(
             self.workflow_accordion.content_frame,
-            text="Step 1: 高解像度画像を用意（15,000枚推奨）\n"
-                 "Step 2: 元画像・超解像モデルフォルダを設定\n"
-                 "Step 3: バッチ処理開始（数時間～1日）\n"
-                 "Step 4: 統計分析・25種類プロット生成 ⭐必須\n"
-                 "Step 5: detection_count（26パターン）確認 → 深層学習へ",
+            text=self.i18n.t('academic.workflow_steps'),
             font=("Arial", 13),
             text_color="#cccccc",
             justify="left"
@@ -73,8 +68,7 @@ class AcademicModeMixin:
 
         bicubic_desc = ctk.CTkLabel(
             self.bicubic_accordion.content_frame,
-            text="高解像度GT画像から低解像度LR画像を一括生成します（×2 SR評価用）。\n"
-                 "既にLR画像がある場合はスキップ可能です。",
+            text=self.i18n.t('academic.bicubic_desc'),
             font=("Arial", 12),
             text_color="#888888",
             justify="left"
@@ -84,7 +78,7 @@ class AcademicModeMixin:
         # 入力フォルダ
         input_folder_label = ctk.CTkLabel(
             self.bicubic_accordion.content_frame,
-            text="入力フォルダ（高解像度GT、例: 1000px × 15,000枚）:",
+            text=self.i18n.t('academic.input_folder_label'),
             font=("Arial", 13),
             text_color="#cccccc"
         )
@@ -97,7 +91,7 @@ class AcademicModeMixin:
         input_entry = ctk.CTkEntry(
             input_folder_frame,
             textvariable=self.academic_input_dir,
-            placeholder_text="GT画像フォルダを選択...",
+            placeholder_text=self.i18n.t('academic.placeholder_gt_folder'),
             height=45,
             font=("Arial", 13)
         )
@@ -105,7 +99,7 @@ class AcademicModeMixin:
 
         input_btn = ctk.CTkButton(
             input_folder_frame,
-            text="参照",
+            text=self.i18n.t('buttons.browse'),
             command=self.browse_academic_input,
             width=90,
             height=45,
@@ -118,7 +112,7 @@ class AcademicModeMixin:
         # 出力フォルダ
         output_folder_label = ctk.CTkLabel(
             self.bicubic_accordion.content_frame,
-            text="出力フォルダ（低解像度LR、例: 500px × 15,000枚）:",
+            text=self.i18n.t('academic.output_folder_label'),
             font=("Arial", 13),
             text_color="#cccccc"
         )
@@ -131,7 +125,7 @@ class AcademicModeMixin:
         output_entry = ctk.CTkEntry(
             output_folder_frame,
             textvariable=self.academic_output_dir,
-            placeholder_text="LR画像出力先フォルダを選択...",
+            placeholder_text=self.i18n.t('academic.placeholder_lr_folder'),
             height=45,
             font=("Arial", 13)
         )
@@ -139,7 +133,7 @@ class AcademicModeMixin:
 
         output_btn = ctk.CTkButton(
             output_folder_frame,
-            text="参照",
+            text=self.i18n.t('buttons.browse'),
             command=self.browse_academic_output,
             width=90,
             height=45,
@@ -152,7 +146,7 @@ class AcademicModeMixin:
         # 縮小倍率
         scale_label = ctk.CTkLabel(
             self.bicubic_accordion.content_frame,
-            text="縮小倍率:",
+            text=self.i18n.t('academic.scale_label'),
             font=("Arial", 13),
             text_color="#cccccc"
         )
@@ -173,7 +167,7 @@ class AcademicModeMixin:
 
         scale_note = ctk.CTkLabel(
             scale_frame,
-            text="（0.5 = ×2 SR用、0.25 = ×4 SR用）",
+            text=self.i18n.t('academic.scale_note'),
             font=("Arial", 11),
             text_color="#888888"
         )
@@ -182,7 +176,7 @@ class AcademicModeMixin:
         # 実行ボタン
         bicubic_btn = ctk.CTkButton(
             self.bicubic_accordion.content_frame,
-            text="[BATCH] バッチBicubic縮小を実行",
+            text=self.i18n.t('academic.run_bicubic'),
             command=self.run_batch_bicubic_downscale,
             height=50,
             corner_radius=10,
@@ -205,7 +199,7 @@ class AcademicModeMixin:
         # 評価モード固定表示
         mode_info = ctk.CTkLabel(
             self.config_accordion.content_frame,
-            text="[STATS] 評価モード: 学術評価モード（Bicubic縮小・×2スケール標準評価）",
+            text=self.i18n.t('academic.mode_info'),
             font=("Arial", 14, "bold"),
             text_color="#9b59b6"
         )
@@ -224,7 +218,7 @@ class AcademicModeMixin:
         self.academic_original_dir = tk.StringVar()
         original_label = ctk.CTkLabel(
             self.config_accordion.content_frame,
-            text="[FOLDER] 元画像フォルダ（必須・高解像度画像・PNG推奨）",
+            text=self.i18n.t('academic.original_folder_required'),
             font=("Arial", 14, "bold"),
             text_color="#00ff88"
         )
@@ -236,7 +230,7 @@ class AcademicModeMixin:
         original_entry = ctk.CTkEntry(
             original_frame,
             textvariable=self.academic_original_dir,
-            placeholder_text="dataset/original/",
+            placeholder_text=self.i18n.t('academic.placeholder_original'),
             height=45,
             font=("Arial", 13)
         )
@@ -244,7 +238,7 @@ class AcademicModeMixin:
 
         original_btn = ctk.CTkButton(
             original_frame,
-            text="参照",
+            text=self.i18n.t('buttons.browse'),
             command=self.browse_academic_original,
             width=90,
             height=45,
@@ -258,7 +252,7 @@ class AcademicModeMixin:
         # 超解像モデルフォルダ（最大5つ）
         models_label = ctk.CTkLabel(
             self.config_accordion.content_frame,
-            text="[MODEL] 超解像モデルフォルダ（必須・最低1つ、最大5個）",
+            text=self.i18n.t('academic.model_folder_label'),
             font=("Arial", 14, "bold"),
             text_color="#ffffff"
         )
@@ -277,7 +271,7 @@ class AcademicModeMixin:
             name_entry = ctk.CTkEntry(
                 model_frame,
                 textvariable=name_var,
-                placeholder_text=f"モデル{i+1}名",
+                placeholder_text=self.i18n.t('academic.model_name_placeholder').format(num=i+1),
                 width=140,
                 height=40,
                 font=("Arial", 12)
@@ -290,7 +284,7 @@ class AcademicModeMixin:
             path_entry = ctk.CTkEntry(
                 model_frame,
                 textvariable=path_var,
-                placeholder_text=f"dataset/model{i+1}/",
+                placeholder_text=self.i18n.t('academic.model_path_placeholder').format(num=i+1),
                 height=40,
                 font=("Arial", 12)
             )
@@ -298,7 +292,7 @@ class AcademicModeMixin:
 
             browse_btn = ctk.CTkButton(
                 model_frame,
-                text="参照",
+                text=self.i18n.t('buttons.browse'),
                 command=lambda idx=i: self.browse_academic_model(idx),
                 width=90,
                 height=40,
@@ -312,7 +306,7 @@ class AcademicModeMixin:
         # 出力設定
         output_label = ctk.CTkLabel(
             self.config_accordion.content_frame,
-            text="[SAVE] 出力設定",
+            text=self.i18n.t('academic.save_settings'),
             font=("Arial", 14, "bold"),
             text_color="#ffffff"
         )
@@ -322,7 +316,7 @@ class AcademicModeMixin:
         csv_frame = ctk.CTkFrame(self.config_accordion.content_frame, fg_color="transparent")
         csv_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
 
-        csv_label = ctk.CTkLabel(csv_frame, text="CSV:", width=80, anchor="w", font=("Arial", 13))
+        csv_label = ctk.CTkLabel(csv_frame, text=self.i18n.t('academic.csv_label'), width=80, anchor="w", font=("Arial", 13))
         csv_label.pack(side=tk.LEFT, padx=(0, 10))
 
         self.academic_output_csv = tk.StringVar(value=get_timestamp_filename("batch_results_academic", ".csv"))
@@ -336,7 +330,7 @@ class AcademicModeMixin:
 
         csv_btn = ctk.CTkButton(
             csv_frame,
-            text="参照",
+            text=self.i18n.t('buttons.browse'),
             command=self.browse_academic_csv_output,
             width=90,
             height=40,
@@ -351,7 +345,7 @@ class AcademicModeMixin:
         detail_frame = ctk.CTkFrame(self.config_accordion.content_frame, fg_color="transparent")
         detail_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
 
-        detail_label = ctk.CTkLabel(detail_frame, text="詳細:", width=80, anchor="w", font=("Arial", 13))
+        detail_label = ctk.CTkLabel(detail_frame, text=self.i18n.t('academic.detail_label'), width=80, anchor="w", font=("Arial", 13))
         detail_label.pack(side=tk.LEFT, padx=(0, 10))
 
         self.academic_output_detail = tk.StringVar(value=f"batch_results_detail_academic_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
@@ -365,7 +359,7 @@ class AcademicModeMixin:
 
         detail_btn = ctk.CTkButton(
             detail_frame,
-            text="参照",
+            text=self.i18n.t('buttons.browse'),
             command=self.browse_academic_detail_output,
             width=90,
             height=40,
@@ -382,7 +376,7 @@ class AcademicModeMixin:
 
         limit_label = ctk.CTkLabel(
             limit_frame,
-            text="[STATS] 処理枚数:",
+            text=self.i18n.t('academic.processing_limit'),
             width=100,
             anchor="w",
             font=("Arial", 13)
@@ -401,7 +395,7 @@ class AcademicModeMixin:
 
         limit_hint = ctk.CTkLabel(
             limit_frame,
-            text="（0=全画像処理、論文用は15,000枚推奨）",
+            text=self.i18n.t('academic.limit_hint'),
             font=("Arial", 12),
             text_color="#888888"
         )
@@ -414,7 +408,7 @@ class AcademicModeMixin:
         self.academic_append_mode = tk.BooleanVar(value=False)
         append_check = ctk.CTkCheckBox(
             append_frame,
-            text="既存CSVに追記（チェック=追加、未チェック=上書き）",
+            text=self.i18n.t('academic.append_mode_label'),
             variable=self.academic_append_mode,
             font=("Arial", 13),
             text_color="#ffffff",
@@ -426,7 +420,7 @@ class AcademicModeMixin:
         # === 並列処理設定（論文用） ===
         parallel_info = ctk.CTkLabel(
             self.config_accordion.content_frame,
-            text="[PARALLEL] 並列処理設定（15,000枚推奨、少量は逆に遅くなります）",
+            text=self.i18n.t('academic.parallel_info'),
             font=("Arial", 11),
             text_color="#888888",
             justify="left"
@@ -440,7 +434,7 @@ class AcademicModeMixin:
         self.academic_use_parallel = tk.BooleanVar(value=False)  # デフォルトOFF
         academic_parallel_checkbox = ctk.CTkCheckBox(
             parallel_frame,
-            text="並列処理を使用",
+            text=self.i18n.t('academic.use_parallel'),
             variable=self.academic_use_parallel,
             command=self.toggle_academic_parallel_settings,
             font=("Arial", 13),
@@ -456,7 +450,7 @@ class AcademicModeMixin:
 
         academic_workers_label = ctk.CTkLabel(
             academic_workers_frame,
-            text="プロセス数:",
+            text=self.i18n.t('academic.num_workers'),
             font=("Arial", 12),
             text_color="#888888",
             anchor="w"
@@ -482,7 +476,10 @@ class AcademicModeMixin:
 
         academic_workers_info = ctk.CTkLabel(
             academic_workers_frame,
-            text=f"（推奨: {max(1, cpu_count() - 1)}, 最大: {max_workers}）",
+            text=self.i18n.t('academic.workers_hint').format(
+                recommended=max(1, cpu_count() - 1),
+                max=max_workers
+            ),
             font=("Arial", 11),
             text_color="#666666"
         )
@@ -491,7 +488,7 @@ class AcademicModeMixin:
         # P6パッチサイズ選択
         patch_info = ctk.CTkLabel(
             self.config_accordion.content_frame,
-            text="P6ヒートマップ精度（パッチサイズ）:",
+            text=self.i18n.t('academic.patch_size_title'),
             font=("Arial", 13, "bold"),
             text_color="#9b59b6",
             justify="left"
@@ -500,7 +497,7 @@ class AcademicModeMixin:
 
         patch_desc = ctk.CTkLabel(
             self.config_accordion.content_frame,
-            text="論文品質の場合は16×16（標準）または8×8（超高精度）を推奨",
+            text=self.i18n.t('academic.patch_size_desc'),
             font=("Arial", 11),
             text_color="#888888",
             justify="left"
@@ -516,7 +513,7 @@ class AcademicModeMixin:
         # 8×8オプション
         patch_8 = ctk.CTkRadioButton(
             patch_frame,
-            text="8×8（超高精度、医療画像・最高品質論文用）",
+            text=self.i18n.t('academic.patch_8x8'),
             variable=self.academic_patch_size,
             value=8,
             font=("Arial", 12),
@@ -529,7 +526,7 @@ class AcademicModeMixin:
         # 16×16オプション（推奨）
         patch_16 = ctk.CTkRadioButton(
             patch_frame,
-            text="16×16（標準精度、論文標準）⭐ 推奨",
+            text=self.i18n.t('academic.patch_16x16'),
             variable=self.academic_patch_size,
             value=16,
             font=("Arial", 12),
@@ -542,7 +539,7 @@ class AcademicModeMixin:
         # 32×32オプション
         patch_32 = ctk.CTkRadioButton(
             patch_frame,
-            text="32×32（高速、概要把握用）",
+            text=self.i18n.t('academic.patch_32x32'),
             variable=self.academic_patch_size,
             value=32,
             font=("Arial", 12),
@@ -577,9 +574,7 @@ class AcademicModeMixin:
 
         stats_info = ctk.CTkLabel(
             self.academic_stats_accordion.content_frame,
-            text="[WARNING] バッチ処理完了後、必ずこの統計分析を実行してください。\n"
-                 "26パターンハルシネーション検出とdetection_countが生成されます。\n"
-                 "このdetection_countが深層学習のラベルになります！",
+            text=self.i18n.t('academic.stats_warning'),
             font=("Arial", 13),
             text_color="#ffcc00",
             justify="left"
@@ -591,7 +586,7 @@ class AcademicModeMixin:
 
         stats_csv_label = ctk.CTkLabel(
             stats_csv_frame,
-            text="CSV:",
+            text=self.i18n.t('academic.csv_label'),
             width=80,
             anchor="w",
             font=("Arial", 13)
@@ -602,7 +597,7 @@ class AcademicModeMixin:
         stats_csv_entry = ctk.CTkEntry(
             stats_csv_frame,
             textvariable=self.academic_stats_csv_path,
-            placeholder_text="batch_results_academic.csv",
+            placeholder_text=self.i18n.t('academic.placeholder_stats_csv'),
             height=45,
             font=("Arial", 13)
         )
@@ -610,7 +605,7 @@ class AcademicModeMixin:
 
         stats_csv_btn = ctk.CTkButton(
             stats_csv_frame,
-            text="参照",
+            text=self.i18n.t('buttons.browse'),
             command=self.browse_academic_stats_csv,
             width=90,
             height=45,
@@ -636,33 +631,33 @@ class AcademicModeMixin:
 
     def browse_academic_input(self):
         """学術評価用：入力フォルダ選択"""
-        dirname = filedialog.askdirectory(title="高解像度GT画像フォルダを選択")
+        dirname = filedialog.askdirectory(title=self.i18n.t('academic.select_gt_folder'))
         if dirname:
             self.academic_input_dir.set(dirname)
 
     def browse_academic_output(self):
         """学術評価用：出力フォルダ選択"""
-        dirname = filedialog.askdirectory(title="低解像度LR画像出力先フォルダを選択")
+        dirname = filedialog.askdirectory(title=self.i18n.t('academic.select_lr_folder'))
         if dirname:
             self.academic_output_dir.set(dirname)
 
 
     def browse_academic_original(self):
-        dirname = filedialog.askdirectory(title="元画像フォルダを選択（高解像度画像・15,000枚推奨）")
+        dirname = filedialog.askdirectory(title=self.i18n.t('academic.select_original_folder'))
         if dirname:
             self.academic_original_dir.set(dirname)
 
     def browse_academic_model(self, index):
-        dirname = filedialog.askdirectory(title=f"超解像モデル{index+1}のフォルダを選択")
+        dirname = filedialog.askdirectory(title=self.i18n.t('academic.select_model_folder').format(num=index+1))
         if dirname:
             self.academic_model_vars[index].set(dirname)
 
     def browse_academic_csv_output(self):
         """論文用：CSV出力先選択"""
         filename = filedialog.asksaveasfilename(
-            title="CSV出力先を選択",
+            title=self.i18n.t('academic.select_csv_output'),
             defaultextension=".csv",
-            filetypes=[("CSV", "*.csv"), ("すべてのファイル", "*.*")],
+            filetypes=[("CSV", "*.csv"), (self.i18n.t('messages.select_folder'), "*.*")],
             initialfile=get_timestamp_filename("batch_results_academic", ".csv")
         )
         if filename:
@@ -670,15 +665,15 @@ class AcademicModeMixin:
 
     def browse_academic_detail_output(self):
         """論文用：詳細レポート出力先フォルダ選択"""
-        dirname = filedialog.askdirectory(title="詳細レポート出力先フォルダを選択")
+        dirname = filedialog.askdirectory(title=self.i18n.t('academic.select_detail_folder'))
         if dirname:
             self.academic_output_detail.set(dirname)
 
     def browse_academic_stats_csv(self):
         """論文用：統計分析用CSV選択"""
         filename = filedialog.askopenfilename(
-            title="統計分析するCSVファイルを選択",
-            filetypes=[("CSV", "*.csv"), ("すべてのファイル", "*.*")]
+            title=self.i18n.t('academic.select_stats_csv'),
+            filetypes=[("CSV", "*.csv"), (self.i18n.t('messages.select_folder'), "*.*")]
         )
         if filename:
             self.academic_stats_csv_path.set(filename)
@@ -688,11 +683,12 @@ class AcademicModeMixin:
         """論文用ベンチマーク評価開始"""
         # バリデーション：元画像フォルダ（必須）
         if not self.academic_original_dir.get():
-            messagebox.showerror("エラー", "元画像フォルダ（GT画像）を選択してください")
+            messagebox.showerror(self.i18n.t('messages.error'), self.i18n.t('academic.error_no_original'))
             return
 
         if not os.path.exists(self.academic_original_dir.get()):
-            messagebox.showerror("エラー", f"元画像フォルダが見つかりません:\n{self.academic_original_dir.get()}")
+            messagebox.showerror(self.i18n.t('messages.error'),
+                self.i18n.t('academic.error_original_not_found').format(path=self.academic_original_dir.get()))
             return
 
         # バリデーション：有効なモデルフォルダをカウント
@@ -704,17 +700,19 @@ class AcademicModeMixin:
             if model_path:
                 # モデル名が空の場合
                 if not model_name:
-                    messagebox.showerror("エラー", f"モデル{i+1}の名前を入力してください")
+                    messagebox.showerror(self.i18n.t('messages.error'),
+                        self.i18n.t('academic.error_no_model_name').format(num=i+1))
                     return
                 # フォルダが存在しない場合
                 if not os.path.exists(model_path):
-                    messagebox.showerror("エラー", f"モデル{i+1}のフォルダが見つかりません:\n{model_path}")
+                    messagebox.showerror(self.i18n.t('messages.error'),
+                        self.i18n.t('academic.error_model_not_found').format(num=i+1, path=model_path))
                     return
                 valid_models[model_name] = model_path
 
         # 最低1つは必須（画像1に相当）
         if len(valid_models) == 0:
-            messagebox.showerror("エラー", "少なくとも1つの超解像モデルフォルダ（AI処理結果）を選択してください")
+            messagebox.showerror(self.i18n.t('messages.error'), self.i18n.t('academic.error_no_models'))
             return
 
         # 設定ファイル作成（評価モード固定：academic）
@@ -745,7 +743,7 @@ class AcademicModeMixin:
         self.academic_analyze_btn.configure(state='disabled')
         self.academic_progress.set(0)
         self.academic_status_label.configure(
-            text="論文用ベンチマーク評価を開始します...",
+            text=self.i18n.t('academic.starting_evaluation'),
             text_color="#00ffff"
         )
         self.academic_result_text.delete("1.0", tk.END)
@@ -792,8 +790,9 @@ class AcademicModeMixin:
         """論文用評価進捗更新（別スレッドから呼ばれる）"""
         progress = current / total if total > 0 else 0
         self.root.after(0, lambda: self.academic_progress.set(progress))
+        progress_text = self.i18n.t('messages.processing').format(current=current, total=total)
         self.root.after(0, lambda: self.academic_status_label.configure(
-            text=f"処理中: {current}/{total} - {message}",
+            text=f"{progress_text} - {message}",
             text_color="#9b59b6"
         ))
         self.root.after(0, lambda: self.academic_result_text.insert(tk.END, f"{message}\n"))
@@ -808,7 +807,7 @@ class AcademicModeMixin:
 
         if success:
             self.academic_status_label.configure(
-                text=f"[OK] 論文用評価完了！次は統計分析を実行してください",
+                text=self.i18n.t('academic.evaluation_complete'),
                 text_color="#00ff88"
             )
 
@@ -817,18 +816,16 @@ class AcademicModeMixin:
                 self.academic_stats_csv_path.set(csv_path)
 
             messagebox.showinfo(
-                "完了",
-                f"論文用ベンチマーク評価が完了しました。\n\n"
-                f"CSV: {csv_path}\n\n"
-                f"⭐ 次は必ず統計分析を実行してください！\n"
-                f"26パターン検出とdetection_countが生成されます。"
+                self.i18n.t('messages.completed'),
+                self.i18n.t('academic.evaluation_complete_detail').format(csv_path=csv_path)
             )
         else:
             self.academic_status_label.configure(
-                text="[ERROR] 評価エラー",
+                text=self.i18n.t('academic.evaluation_error'),
                 text_color="#ff4444"
             )
-            messagebox.showerror("エラー", f"評価中にエラーが発生しました:\n{output}")
+            messagebox.showerror(self.i18n.t('messages.error'),
+                self.i18n.t('errors.analysis_failed').format(error=output))
 
 
     def start_academic_stats_analysis(self):
@@ -836,17 +833,18 @@ class AcademicModeMixin:
         csv_path = self.academic_stats_csv_path.get()
 
         if not csv_path:
-            messagebox.showerror("エラー", "CSVファイルを選択してください")
+            messagebox.showerror(self.i18n.t('messages.error'), self.i18n.t('academic.error_no_stats_csv'))
             return
 
         if not os.path.exists(csv_path):
-            messagebox.showerror("エラー", f"CSVファイルが見つかりません:\n{csv_path}")
+            messagebox.showerror(self.i18n.t('messages.error'),
+                self.i18n.t('academic.error_stats_csv_not_found').format(path=csv_path))
             return
 
         # UIを無効化
         self.academic_stats_analyze_btn.configure(state='disabled')
         self.academic_status_label.configure(
-            text="統計分析・26パターン検出を実行中...",
+            text=self.i18n.t('academic.stats_running'),
             text_color="#ffa500"
         )
 
@@ -890,27 +888,21 @@ class AcademicModeMixin:
 
         if success:
             self.academic_status_label.configure(
-                text="[OK] 統計分析完了！detection_countが生成されました",
+                text=self.i18n.t('academic.stats_complete'),
                 text_color="#00ff88"
             )
 
             messagebox.showinfo(
-                "完了",
-                "統計分析が完了しました。\n\n"
-                "[OK] 25種類のプロットが生成されました\n"
-                "[OK] 26パターンハルシネーション検出完了\n"
-                "[OK] detection_countがCSVに追加されました\n\n"
-                "出力先: analysis_output/\n\n"
-                "次のステップ:\n"
-                "results_with_26pattern_detection.csv を確認し、\n"
-                "detection_countを使って深層学習のラベルを生成できます。"
+                self.i18n.t('messages.completed'),
+                self.i18n.t('academic.stats_complete_detail')
             )
         else:
             self.academic_status_label.configure(
-                text="[ERROR] 統計分析エラー",
+                text=self.i18n.t('academic.stats_error'),
                 text_color="#ff4444"
             )
-            messagebox.showerror("エラー", f"統計分析中にエラーが発生しました:\n{output}")
+            messagebox.showerror(self.i18n.t('messages.error'),
+                self.i18n.t('errors.analysis_failed').format(error=output))
 
 
     def toggle_academic_parallel_settings(self):
@@ -932,18 +924,27 @@ class AcademicModeMixin:
         # 元画像パスを確認
         original_path = self.original_path.get()
         if not original_path:
-            messagebox.showerror("エラー", "元画像を先に選択してください")
+            messagebox.showerror(
+                self.i18n.t('messages.error'),
+                self.i18n.t('academic.error_select_original_first')
+            )
             return
 
         if not os.path.exists(original_path):
-            messagebox.showerror("エラー", f"元画像が見つかりません:\n{original_path}")
+            messagebox.showerror(
+                self.i18n.t('messages.error'),
+                self.i18n.t('academic.error_original_file_not_found').format(path=original_path)
+            )
             return
 
         try:
             # 画像読み込み（ビット深度・カラー形式を保持）
             img = cv2.imread(original_path, cv2.IMREAD_UNCHANGED)
             if img is None:
-                messagebox.showerror("エラー", "画像の読み込みに失敗しました")
+                messagebox.showerror(
+                    self.i18n.t('messages.error'),
+                    self.i18n.t('academic.error_image_load_failed')
+                )
                 return
 
             h, w = img.shape[:2]
@@ -961,19 +962,19 @@ class AcademicModeMixin:
 
             # 成功メッセージ
             messagebox.showinfo(
-                "生成完了",
-                f"[OK] 低解像度画像を生成しました\n\n"
-                f"元画像: {w}×{h}px\n"
-                f"生成画像: {w//2}×{h//2}px (×0.5 Bicubic)\n\n"
-                f"保存先:\n{output_path}\n\n"
-                f"次のステップ:\n"
-                f"1. この低解像度画像を外部ツールでAI超解像\n"
-                f"2. 超解像結果を画像1・2に指定\n"
-                f"3. 元画像（GT）は現在選択中の画像を使用\n"
-                f"4. 評価モードを「学術評価モード」に設定\n"
-                f"5. 分析を実行"
+                self.i18n.t('academic.bicubic_complete_title'),
+                self.i18n.t('academic.bicubic_complete_message').format(
+                    w=w,
+                    h=h,
+                    w_lr=w//2,
+                    h_lr=h//2,
+                    output_path=output_path
+                )
             )
 
         except Exception as e:
-            messagebox.showerror("エラー", f"低解像度画像の生成に失敗しました:\n{str(e)}")
+            messagebox.showerror(
+                self.i18n.t('messages.error'),
+                self.i18n.t('academic.error_bicubic_failed').format(error=str(e))
+            )
 
