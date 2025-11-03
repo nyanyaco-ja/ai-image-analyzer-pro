@@ -367,6 +367,102 @@ img003,ModelC,0.95,28.3,...,2,"P6:品質ばらつき大, 単独:LocalQuality低"
 
 ---
 
+## 学術的命名規則：現象と手法の分離
+
+### LFV（現象）と LQD Map（手法）の定義
+
+学術論文の厳密性を保つため、**観測された現象**と**分析手法（可視化ツール）**を明確に分離して定義します。
+
+#### 🔬 現象（観測された法則）
+
+**Local Fidelity Variance (LFV) - 局所忠実度分散**
+
+**定義:**
+> AI生成画像において、構造的類似性が空間的に不均一に分布し、局所SSIM値に顕著なばらつき（variance）を示す現象。画像全体の指標（mean SSIM）が高い場合でも、特定の領域で品質が大きく低下することがある。
+
+**統計的指標:**
+- **std_ssim（SSIM標準偏差）**: LFVの程度を定量化
+- 高い値 = 大きなばらつき（LFV現象あり）
+- 低い値 = 均一な品質（LFV現象なし）
+
+**観測例:**
+- ケース1（LFV検出）: std_ssim = 0.168, 下端SSIM = 0.15, 中央SSIM = 0.95
+- ケース2（LFV非検出）: std_ssim = 0.024, 全体SSIM = 0.96-0.99
+
+**P6法則との関係:**
+LFVは、P6パターン「局所品質ばらつき大」として定義されていた現象の正式な学術名称です。
+
+---
+
+#### 🗺️ 手法（可視化ツール）
+
+**LQD Map (Local Quality Distribution Map) - 局所品質分布マップ**
+
+**定義:**
+> パッチ単位のSSIM値をヒートマップとして可視化し、LFV現象を検出・分析するための手法。画像を小パッチに分割し、各パッチの構造的忠実度を色で表現する。
+
+**技術的詳細:**
+- **パッチサイズ**: 8×8, 16×16, 32×32, 64×64ピクセル（標準は16×16）
+- **色マッピング**:
+  - 青色（0.95-1.00）: Faithful（忠実）
+  - 緑色（0.90-0.95）: Good（良好）
+  - 黄色（0.80-0.90）: Slight loss（やや低下）
+  - 橙色（0.70-0.80）: Degraded（劣化）
+  - 赤色（0.00-0.70）: Hallucination（幻覚）
+
+**出力形式:**
+- **PNG版**: `p6_local_quality_heatmap.png`（論文図版用）
+- **HTML版**: `p6_local_quality_heatmap_interactive.html`（補足資料用）
+- **CSV版**: `p6_local_quality_data.csv`（生データ、再現性検証用）
+
+**P6分析手法との関係:**
+LQD Mapは、P1-P9ハルシネーション検出体系の中でP6（局所品質ばらつき）パターンを検出するための可視化手法です。
+
+---
+
+### 学術論文での使用例
+
+#### 論文本文での記述例
+
+```
+We observed the Local Fidelity Variance (LFV) phenomenon in AI-upscaled
+chest X-ray images. Figure 3 shows the Local Quality Distribution Map
+(LQD Map), revealing spatially non-uniform quality degradation. While
+the mean SSIM was 0.91, certain edge regions exhibited severe quality
+loss (SSIM=0.15), demonstrating that global metrics alone are insufficient
+for quality assessment.
+```
+
+#### 図のキャプション例
+
+```
+Figure 3: Local Quality Distribution Map (LQD Map)
+LFV Pattern Detection (P6 Analysis Method)
+
+Visualization of patch-wise SSIM distribution showing Local Fidelity
+Variance (LFV) in AI-upscaled medical images. Patch Size: 8×8px |
+Grid: 128×128 blocks | Mean SSIM: 0.9104 | Std Dev: 0.1680 |
+Min: 0.1035 | Max: 0.9926
+```
+
+---
+
+### 命名の理論的根拠
+
+**なぜ「Variance（分散）」か:**
+- ✅ 統計的に正確（コードで実際にstd_ssimを計算）
+- ✅ 中立的（良好な品質も劣化も客観的に記述）
+- ✅ P6の元の定義「局所品質ばらつき」と完全一致
+- ✅ ケース2（一貫して高品質＝低variance）も説明可能
+
+**なぜ「Distribution Map（分布マップ）」か:**
+- ✅ 可視化ツールであることが明確
+- ✅ 良い/悪い両方の分布を表示
+- ✅ 学術論文で一般的な命名規則
+- ✅ ヒートマップの目的（分布の可視化）を正確に表現
+
+---
+
 ## 観測された傾向とケーススタディ
 
 ### 傾向1: AIアップスケーリングにおける画像エッジ品質劣化の不均一性

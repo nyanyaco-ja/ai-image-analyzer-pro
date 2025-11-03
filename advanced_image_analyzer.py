@@ -640,16 +640,20 @@ def detect_artifacts(image_gray):
     return block_noise, ringing
 
 def generate_p6_heatmap(ssim_2d, original_img, output_path, patch_size=16):
-    """P6（局所品質ばらつき）ヒートマップを生成
+    """Generate LQD Map (Local Quality Distribution Map) for LFV pattern detection
+
+    This visualization method displays patch-wise SSIM distribution to detect
+    Local Fidelity Variance (LFV) phenomenon - spatially non-uniform quality
+    degradation in AI-generated images (P6 analysis method).
 
     Args:
-        ssim_2d: 2D SSIM マップ (rows x cols)
-        original_img: 元画像（サイズ参照用）
-        output_path: 保存先パス
-        patch_size: パッチサイズ（デフォルト16、論文標準）
+        ssim_2d: 2D SSIM map (rows x cols)
+        original_img: Original image (for size reference)
+        output_path: Save path
+        patch_size: Patch size (default 16, standard for academic papers)
 
     Returns:
-        heatmap_path: 保存されたヒートマップのパス
+        heatmap_path: Path to the saved heatmap
     """
     import matplotlib.pyplot as plt
     from matplotlib.colors import LinearSegmentedColormap
@@ -693,12 +697,12 @@ def generate_p6_heatmap(ssim_2d, original_img, output_path, patch_size=16):
     colors = [color for _, color in color_positions]
     cmap = LinearSegmentedColormap.from_list('p6_heatmap', list(zip(positions, colors)), N=256)
 
-    # プロット作成（論文形式：下マージン拡大）
-    fig, ax = plt.subplots(figsize=(12, 11))
-    plt.subplots_adjust(left=0.08, right=0.92, top=0.95, bottom=0.12)  # キャプション用スペース確保
+    # プロット作成（論文形式：下部にキャプションスペース確保、アスペクト比を元画像に一致）
+    fig, ax = plt.subplots(figsize=(14, 14))
+    plt.subplots_adjust(left=0.08, right=0.82, top=0.88, bottom=0.12)  # プロット領域を正方形に保つ
 
-    # ヒートマップ描画
-    im = ax.imshow(ssim_2d, cmap=cmap, vmin=0.0, vmax=1.0, aspect='auto')
+    # ヒートマップ描画（aspect='equal'で元画像の比率を保つ）
+    im = ax.imshow(ssim_2d, cmap=cmap, vmin=0.0, vmax=1.0, aspect='equal')
 
     # カラーバー追加（英語）
     cbar = plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
@@ -729,32 +733,22 @@ def generate_p6_heatmap(ssim_2d, original_img, output_path, patch_size=16):
     min_ssim = np.min(ssim_2d)
     max_ssim = np.max(ssim_2d)
 
-    stats_text = f'Statistics:\n'
-    stats_text += f'Mean SSIM: {mean_ssim:.4f}\n'
-    stats_text += f'Std Dev: {std_ssim:.4f}\n'
-    stats_text += f'Min: {min_ssim:.4f}\n'
-    stats_text += f'Max: {max_ssim:.4f}\n'
-    stats_text += f'\nPatch Size: {patch_size}×{patch_size}px\n'
-    stats_text += f'Grid: {ssim_2d.shape[0]}×{ssim_2d.shape[1]}'
-
-    # テキストボックスを右上に配置
-    ax.text(0.98, 0.98, stats_text,
-            transform=ax.transAxes,
-            fontsize=10,
-            verticalalignment='top',
-            horizontalalignment='right',
-            bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
-
-    # 図の下にキャプション追加（論文形式）
-    caption_text = (
-        f'Figure: P6 Local Quality Variance Heatmap\n'
+    # 図の下にキャプション追加（論文形式：タイトル + 統計情報）
+    caption_title = f'Figure: Local Quality Distribution Map (LQD Map)\nLFV Pattern Detection (P6 Analysis Method)'
+    caption_stats = (
         f'Patch Size: {patch_size}×{patch_size}px | '
         f'Grid: {ssim_2d.shape[0]}×{ssim_2d.shape[1]} blocks | '
-        f'Mean: {mean_ssim:.4f} | Std: {std_ssim:.4f} | '
-        f'Range: [{min_ssim:.4f}, {max_ssim:.4f}]'
+        f'Mean SSIM: {mean_ssim:.4f} | Std Dev: {std_ssim:.4f} | '
+        f'Min: {min_ssim:.4f} | Max: {max_ssim:.4f}'
     )
-    fig.text(0.5, 0.03, caption_text,
-             ha='center', va='center', fontsize=11, weight='bold')
+
+    # キャプションタイトル（太字）
+    fig.text(0.5, 0.06, caption_title,
+             ha='center', va='center', fontsize=12, weight='bold')
+
+    # 統計情報（通常フォント）
+    fig.text(0.5, 0.03, caption_stats,
+             ha='center', va='center', fontsize=10)
 
     # 低SSIM領域（ハルシネーション疑い）を強調表示
     threshold = 0.7
@@ -785,15 +779,18 @@ def generate_p6_heatmap(ssim_2d, original_img, output_path, patch_size=16):
     return output_path
 
 def generate_p6_heatmap_interactive(ssim_2d, output_html_path, patch_size=16):
-    """P6ヒートマップのインタラクティブHTML版を生成（論文補足資料用）
+    """Generate interactive LQD Map (Local Quality Distribution Map) in HTML format
+
+    Interactive visualization for LFV (Local Fidelity Variance) pattern detection.
+    Useful as supplementary material for academic papers (P6 analysis method).
 
     Args:
-        ssim_2d: 2D SSIM マップ (rows x cols)
-        output_html_path: HTML保存先パス
-        patch_size: パッチサイズ（デフォルト16）
+        ssim_2d: 2D SSIM map (rows x cols)
+        output_html_path: HTML output path
+        patch_size: Patch size (default 16)
 
     Returns:
-        output_html_path: 保存されたHTMLファイルのパス
+        output_html_path: Path to the saved HTML file
     """
     try:
         import plotly.graph_objects as go
@@ -867,7 +864,8 @@ def generate_p6_heatmap_interactive(ssim_2d, output_html_path, patch_size=16):
     # 図の下にキャプション追加（論文形式）
     fig.add_annotation(
         text=(
-            f'<b>Figure: P6 Local Quality Variance Heatmap (Interactive)</b><br>'
+            f'<b>Figure: Local Quality Distribution Map (LQD Map) - Interactive</b><br>'
+            f'<b>LFV Pattern Detection (P6 Analysis Method)</b><br>'
             f'Patch Size: {patch_size}×{patch_size}px | '
             f'Grid: {ssim_2d.shape[0]}×{ssim_2d.shape[1]} blocks | '
             f'Mean SSIM: {mean_ssim:.4f} | Std: {std_ssim:.4f} | '
@@ -949,7 +947,10 @@ def generate_p6_heatmap_interactive(ssim_2d, output_html_path, patch_size=16):
     return output_html_path
 
 def export_p6_data_csv(ssim_2d, output_csv_path, patch_size=16):
-    """Export P6 data to CSV format (for reproducibility and verification)
+    """Export LQD Map (Local Quality Distribution Map) data to CSV format
+
+    This data is used for LFV (Local Fidelity Variance) pattern detection (P6 analysis method).
+    Provides raw patch-wise SSIM values for reproducibility and verification.
 
     Args:
         ssim_2d: 2D SSIM map (rows x cols)
@@ -2836,7 +2837,7 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
     print("  - detailed_analysis.png: 詳細分析可視化（12枚の分析画像）")
     print("  - difference.png: 差分画像")
     print("  - heatmap.png: 差分ヒートマップ")
-    print("  - p6_local_quality_heatmap.png: *P6局所品質ばらつきヒートマップ*")
+    print("  - p6_local_quality_heatmap.png: *LQD Map (Local Quality Distribution Map) - LFV Pattern Detection*")
     print("  - comparison.png: 3枚並べて比較")
     print("  - edges_*.png: エッジ検出結果")
     print("  - analysis_results.json: 分析結果データ（JSON形式）")
