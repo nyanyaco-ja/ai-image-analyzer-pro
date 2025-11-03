@@ -1107,64 +1107,72 @@ def create_detailed_visualizations(img1_rgb, img2_rgb, img1_gray, img2_gray, out
     fig = plt.figure(figsize=(20, 13))  # 高さ増加（キャプション用）
 
     # 1. Original images
-    plt.subplot(3, 4, 1)
+    ax1 = plt.subplot(3, 4, 1)
     plt.imshow(img1_rgb)
-    plt.title('Original (Ground Truth)', fontsize=12, fontweight='bold')
     plt.axis('off')
+    ax1.text(0.5, -0.05, 'Original (Ground Truth)', transform=ax1.transAxes,
+             ha='center', va='top', fontsize=12, fontweight='bold')
 
-    plt.subplot(3, 4, 2)
+    ax2 = plt.subplot(3, 4, 2)
     plt.imshow(img2_rgb)
-    plt.title('AI Processed', fontsize=12, fontweight='bold')
     plt.axis('off')
+    ax2.text(0.5, -0.05, 'AI Processed', transform=ax2.transAxes,
+             ha='center', va='top', fontsize=12, fontweight='bold')
 
     # 2. Histograms
-    plt.subplot(3, 4, 3)
+    ax3 = plt.subplot(3, 4, 3)
     for i, color in enumerate(['r', 'g', 'b']):
         hist = cv2.calcHist([img1_rgb], [i], None, [256], [0, 256])
         plt.plot(hist, color=color, alpha=0.7, linewidth=1.5)
-    plt.title('Histogram - Original', fontsize=11)
     plt.xlim([0, 256])
     plt.xlabel('Brightness', fontsize=9)
     plt.ylabel('Pixels', fontsize=9)
+    ax3.text(0.5, -0.25, 'Histogram - Original', transform=ax3.transAxes,
+             ha='center', va='top', fontsize=11)
 
-    plt.subplot(3, 4, 4)
+    ax4 = plt.subplot(3, 4, 4)
     for i, color in enumerate(['r', 'g', 'b']):
         hist = cv2.calcHist([img2_rgb], [i], None, [256], [0, 256])
         plt.plot(hist, color=color, alpha=0.7, linewidth=1.5)
-    plt.title('Histogram - AI Processed', fontsize=11)
     plt.xlim([0, 256])
     plt.xlabel('Brightness', fontsize=9)
     plt.ylabel('Pixels', fontsize=9)
+    ax4.text(0.5, -0.25, 'Histogram - AI Processed', transform=ax4.transAxes,
+             ha='center', va='top', fontsize=11)
 
     # 3. Edge detection
     edges1 = cv2.Canny(img1_gray, 100, 200)
     edges2 = cv2.Canny(img2_gray, 100, 200)
 
-    plt.subplot(3, 4, 5)
+    ax5 = plt.subplot(3, 4, 5)
     plt.imshow(edges1, cmap='gray')
-    plt.title('Edge Detection - Original', fontsize=11)
     plt.axis('off')
+    ax5.text(0.5, -0.05, 'Edge Detection - Original', transform=ax5.transAxes,
+             ha='center', va='top', fontsize=11)
 
-    plt.subplot(3, 4, 6)
+    ax6 = plt.subplot(3, 4, 6)
     plt.imshow(edges2, cmap='gray')
-    plt.title('Edge Detection - AI Processed', fontsize=11)
     plt.axis('off')
+    ax6.text(0.5, -0.05, 'Edge Detection - AI Processed', transform=ax6.transAxes,
+             ha='center', va='top', fontsize=11)
 
     # 4. Difference
     diff = cv2.absdiff(img1_rgb, img2_rgb)
     diff_gray = cv2.cvtColor(diff, cv2.COLOR_RGB2GRAY)
 
-    plt.subplot(3, 4, 7)
+    ax7 = plt.subplot(3, 4, 7)
     plt.imshow(diff)
-    plt.title('Absolute Difference', fontsize=11)
     plt.axis('off')
+    ax7.text(0.5, -0.05, 'Absolute Difference', transform=ax7.transAxes,
+             ha='center', va='top', fontsize=11)
 
-    plt.subplot(3, 4, 8)
+    ax8 = plt.subplot(3, 4, 8)
     plt.imshow(diff_gray, cmap='hot')
-    plt.title('Difference Heatmap', fontsize=11)
     plt.axis('off')
     cb = plt.colorbar(fraction=0.046, pad=0.04)
     cb.ax.tick_params(labelsize=8)
+    ax8.text(0.5, -0.05, 'Difference Heatmap', transform=ax8.transAxes,
+             ha='center', va='top', fontsize=11)
 
     # 5. FFT (Frequency domain)
     f1 = np.fft.fft2(img1_gray)
@@ -1173,33 +1181,37 @@ def create_detailed_visualizations(img1_rgb, img2_rgb, img1_gray, img2_gray, out
     magnitude1 = np.log(np.abs(np.fft.fftshift(f1)) + 1)
     magnitude2 = np.log(np.abs(np.fft.fftshift(f2)) + 1)
 
-    plt.subplot(3, 4, 9)
+    ax9 = plt.subplot(3, 4, 9)
     plt.imshow(magnitude1, cmap='gray')
-    plt.title('Frequency Spectrum - Original', fontsize=11)
     plt.axis('off')
+    ax9.text(0.5, -0.05, 'Frequency Spectrum - Original', transform=ax9.transAxes,
+             ha='center', va='top', fontsize=11)
 
-    plt.subplot(3, 4, 10)
+    ax10 = plt.subplot(3, 4, 10)
     plt.imshow(magnitude2, cmap='gray')
-    plt.title('Frequency Spectrum - AI Processed', fontsize=11)
     plt.axis('off')
+    ax10.text(0.5, -0.05, 'Frequency Spectrum - AI Processed', transform=ax10.transAxes,
+             ha='center', va='top', fontsize=11)
 
     # 6. Sharpness visualization (Laplacian)
     lap1 = cv2.Laplacian(img1_gray, cv2.CV_64F)
     lap2 = cv2.Laplacian(img2_gray, cv2.CV_64F)
 
-    plt.subplot(3, 4, 11)
+    ax11 = plt.subplot(3, 4, 11)
     im1 = plt.imshow(np.abs(lap1), cmap='viridis')
-    plt.title('Sharpness Map - Original', fontsize=11)
     plt.axis('off')
     cb1 = plt.colorbar(im1, fraction=0.046, pad=0.04)
     cb1.ax.tick_params(labelsize=8)
+    ax11.text(0.5, -0.05, 'Sharpness Map - Original', transform=ax11.transAxes,
+             ha='center', va='top', fontsize=11)
 
-    plt.subplot(3, 4, 12)
+    ax12 = plt.subplot(3, 4, 12)
     im2 = plt.imshow(np.abs(lap2), cmap='viridis')
-    plt.title('Sharpness Map - AI Processed', fontsize=11)
     plt.axis('off')
     cb2 = plt.colorbar(im2, fraction=0.046, pad=0.04)
     cb2.ax.tick_params(labelsize=8)
+    ax12.text(0.5, -0.05, 'Sharpness Map - AI Processed', transform=ax12.transAxes,
+             ha='center', va='top', fontsize=11)
 
     plt.tight_layout(rect=[0, 0.06, 1, 1])  # 下マージン確保（キャプション用）
 
@@ -1251,9 +1263,11 @@ def create_comparison_report(results, img1_name, img2_name, output_dir):
     ax1.set_yticklabels(categories)
     ax1.set_xlim(0, 100)
     ax1.set_xlabel('Score', fontsize=11, fontweight='bold')
-    ax1.set_title('Score Breakdown', fontsize=13, fontweight='bold', pad=10)
     ax1.legend(fontsize=10)
     ax1.grid(axis='x', alpha=0.3)
+    # タイトルを図の下に配置（論文形式）
+    ax1.text(0.5, -0.15, 'Score Breakdown', transform=ax1.transAxes,
+             ha='center', va='top', fontsize=13, fontweight='bold')
 
     # Total score
     ax2 = plt.subplot(2, 3, 2)
@@ -1264,11 +1278,14 @@ def create_comparison_report(results, img1_name, img2_name, output_dir):
              color=['#3498db', '#e74c3c' if total_score < 70 else '#f39c12' if total_score < 90 else '#2ecc71'])
     ax2.set_xlim(0, 100)
     ax2.set_xlabel('Total Score', fontsize=11, fontweight='bold')
-    ax2.set_title('Overall Evaluation', fontsize=13, fontweight='bold', pad=10)
     ax2.grid(axis='x', alpha=0.3)
 
     for i, (score, name) in enumerate(zip([img1_score, total_score], ['Original', 'AI Processed'])):
         ax2.text(score + 2, i, f'{score:.1f}', va='center', fontsize=12, fontweight='bold')
+
+    # タイトルを図の下に配置（論文形式）
+    ax2.text(0.5, -0.15, 'Overall Evaluation', transform=ax2.transAxes,
+             ha='center', va='top', fontsize=13, fontweight='bold')
 
     # Key metrics
     ax3 = plt.subplot(2, 3, 3)
@@ -1314,18 +1331,23 @@ Color Diff (ΔE): {delta_e_display}
 
     ax3.text(0.1, 0.5, info_text, fontsize=11, family='monospace',
              verticalalignment='center', bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.3))
-    ax3.set_title('Detailed Data', fontsize=13, fontweight='bold', pad=10)
+    # タイトルを図の下に配置（論文形式）
+    ax3.text(0.5, -0.05, 'Detailed Data', transform=ax3.transAxes,
+             ha='center', va='top', fontsize=13, fontweight='bold')
 
     # Edge comparison
     ax4 = plt.subplot(2, 3, 4)
     edge_data = [results['edges']['img1_density'], results['edges']['img2_density']]
     ax4.bar(['Original', 'AI Processed'], edge_data, color=['#3498db', '#9b59b6'])
     ax4.set_ylabel('Edge Density (%)', fontsize=11, fontweight='bold')
-    ax4.set_title('Edge Preservation', fontsize=13, fontweight='bold', pad=10)
     ax4.grid(axis='y', alpha=0.3)
 
     for i, val in enumerate(edge_data):
         ax4.text(i, val, f'{val:,}', ha='center', va='bottom', fontsize=10, fontweight='bold')
+
+    # タイトルを図の下に配置（論文形式）
+    ax4.text(0.5, -0.15, 'Edge Preservation', transform=ax4.transAxes,
+             ha='center', va='top', fontsize=13, fontweight='bold')
 
     # Noise and artifacts
     ax5 = plt.subplot(2, 3, 5)
@@ -1340,11 +1362,14 @@ Color Diff (ΔE): {delta_e_display}
     ax5.bar(x + width/2, [artifact1, artifact2], width, label='Artifact', color='#c0392b')
 
     ax5.set_ylabel('Value (lower is better)', fontsize=11, fontweight='bold')
-    ax5.set_title('Noise and Artifacts', fontsize=13, fontweight='bold', pad=10)
     ax5.set_xticks(x)
     ax5.set_xticklabels(['Original', 'AI Processed'])
     ax5.legend(fontsize=10)
     ax5.grid(axis='y', alpha=0.3)
+
+    # タイトルを図の下に配置（論文形式）
+    ax5.text(0.5, -0.15, 'Noise and Artifacts', transform=ax5.transAxes,
+             ha='center', va='top', fontsize=13, fontweight='bold')
 
     # Frequency analysis
     ax6 = plt.subplot(2, 3, 6)
@@ -1360,12 +1385,15 @@ Color Diff (ΔE): {delta_e_display}
     ax6.bar(x + width/2, freq2, width, label='AI Processed', color='#9b59b6')
 
     ax6.set_ylabel('Ratio (%)', fontsize=11, fontweight='bold')
-    ax6.set_title('Frequency Components', fontsize=13, fontweight='bold', pad=10)
     ax6.set_xticks(x)
     ax6.set_xticklabels(['Low Freq', 'High Freq'])
     ax6.legend(fontsize=10)
     ax6.set_ylim(0, 100)
     ax6.grid(axis='y', alpha=0.3)
+
+    # タイトルを図の下に配置（論文形式）
+    ax6.text(0.5, -0.15, 'Frequency Components', transform=ax6.transAxes,
+             ha='center', va='top', fontsize=13, fontweight='bold')
 
     plt.tight_layout(rect=[0, 0.08, 1, 1])  # 下マージン確保（キャプション用）
 
