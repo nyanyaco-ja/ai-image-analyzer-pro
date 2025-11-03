@@ -65,5 +65,6 @@ RELEASE_NOTES_*.md
 # 全てのマークダウンファイル（README.md除く）
 *.md
 !README.md
+!HALLUCINATION_DETECTION_PATTERNS.md
 
 0.20.0
