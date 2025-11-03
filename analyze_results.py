@@ -185,49 +185,49 @@ def analyze_correlations(df, output_dir):
 
 def suggest_thresholds(df, output_dir):
     """
-    根拠のある閾値を提案
+    Suggest evidence-based thresholds
     """
 
-    print(f"\n[TIP] 推奨閾値の提案:")
+    print(f"\n[TIP] Recommended Threshold Suggestions:")
     print(f"{'='*80}")
 
     thresholds = {}
 
-    # 各指標の統計値から閾値を決定
-    # 17項目すべての閾値を提案
+    # Determine thresholds from statistical values for each metric
+    # Propose thresholds for all 17 metrics
     metrics_config = {
-        'ssim': {'direction': 'high', 'percentile': 25, 'name': 'SSIM（構造類似性）'},
-        'ms_ssim': {'direction': 'high', 'percentile': 25, 'name': 'MS-SSIM（マルチスケールSSIM）'},
-        'psnr': {'direction': 'high', 'percentile': 25, 'name': 'PSNR（信号対雑音比）'},
-        'lpips': {'direction': 'low', 'percentile': 75, 'name': 'LPIPS（知覚的類似度）'},
-        'sharpness': {'direction': 'high', 'percentile': 25, 'name': 'シャープネス'},
-        'contrast': {'direction': 'high', 'percentile': 25, 'name': 'コントラスト'},
-        'entropy': {'direction': 'high', 'percentile': 25, 'name': 'エントロピー（情報量）'},
-        'noise': {'direction': 'low', 'percentile': 75, 'name': 'ノイズレベル'},
-        'edge_density': {'direction': 'high', 'percentile': 25, 'name': 'エッジ密度'},
-        'artifact_total': {'direction': 'low', 'percentile': 75, 'name': 'アーティファクト'},
-        'delta_e': {'direction': 'low', 'percentile': 75, 'name': '色差（ΔE）'},
-        'high_freq_ratio': {'direction': 'high', 'percentile': 25, 'name': '高周波成分比率'},
-        'texture_complexity': {'direction': 'high', 'percentile': 25, 'name': 'テクスチャ複雑度'},
-        'local_quality_mean': {'direction': 'high', 'percentile': 25, 'name': '局所品質平均'},
-        'histogram_corr': {'direction': 'high', 'percentile': 25, 'name': 'ヒストグラム相関'},
-        'lab_L_mean': {'direction': 'neutral', 'percentile': 50, 'name': 'LAB明度（参考値）'},
-        'total_score': {'direction': 'high', 'percentile': 25, 'name': '総合スコア'},
+        'ssim': {'direction': 'high', 'percentile': 25, 'name': 'SSIM (Structural Similarity)'},
+        'ms_ssim': {'direction': 'high', 'percentile': 25, 'name': 'MS-SSIM (Multi-Scale SSIM)'},
+        'psnr': {'direction': 'high', 'percentile': 25, 'name': 'PSNR (Peak Signal-to-Noise Ratio)'},
+        'lpips': {'direction': 'low', 'percentile': 75, 'name': 'LPIPS (Perceptual Similarity)'},
+        'sharpness': {'direction': 'high', 'percentile': 25, 'name': 'Sharpness'},
+        'contrast': {'direction': 'high', 'percentile': 25, 'name': 'Contrast'},
+        'entropy': {'direction': 'high', 'percentile': 25, 'name': 'Entropy (Information Content)'},
+        'noise': {'direction': 'low', 'percentile': 75, 'name': 'Noise Level'},
+        'edge_density': {'direction': 'high', 'percentile': 25, 'name': 'Edge Density'},
+        'artifact_total': {'direction': 'low', 'percentile': 75, 'name': 'Artifacts'},
+        'delta_e': {'direction': 'low', 'percentile': 75, 'name': 'Color Difference (ΔE)'},
+        'high_freq_ratio': {'direction': 'high', 'percentile': 25, 'name': 'High Frequency Ratio'},
+        'texture_complexity': {'direction': 'high', 'percentile': 25, 'name': 'Texture Complexity'},
+        'local_quality_mean': {'direction': 'high', 'percentile': 25, 'name': 'Local Quality Mean'},
+        'histogram_corr': {'direction': 'high', 'percentile': 25, 'name': 'Histogram Correlation'},
+        'lab_L_mean': {'direction': 'neutral', 'percentile': 50, 'name': 'LAB Lightness (Reference)'},
+        'total_score': {'direction': 'high', 'percentile': 25, 'name': 'Total Score'},
     }
 
     for metric, config in metrics_config.items():
         data = df[metric].dropna()
 
         if config['direction'] == 'neutral':
-            # 中立的な指標（明度など）：中央値を参考値として表示
+            # Neutral metric (e.g., lightness): Display median as reference value
             threshold = np.percentile(data, config['percentile'])
-            condition = f"参考値: {threshold:.4f}"
+            condition = f"Reference: {threshold:.4f}"
         elif config['direction'] == 'high':
-            # 高い方が良い指標：25パーセンタイル以上を推奨
+            # Higher is better: Recommend 25th percentile or above
             threshold = np.percentile(data, config['percentile'])
             condition = f">= {threshold:.4f}"
         else:
-            # 低い方が良い指標：75パーセンタイル以下を推奨
+            # Lower is better: Recommend 75th percentile or below
             threshold = np.percentile(data, config['percentile'])
             condition = f"<= {threshold:.4f}"
 
@@ -241,21 +241,21 @@ def suggest_thresholds(df, output_dir):
             'max': data.max()
         }
 
-        print(f"{config['name']:30s}: {condition:20s} (平均: {data.mean():.4f}, 標準偏差: {data.std():.4f})")
+        print(f"{config['name']:35s}: {condition:20s} (mean: {data.mean():.4f}, std: {data.std():.4f})")
 
     print(f"{'='*80}")
-    print(f"[TIP] 解釈:")
-    print(f"   - これらの閾値は、全データの統計分布に基づいています")
-    print(f"   - 25パーセンタイル = 上位75%の品質を「合格」とする基準")
-    print(f"   - 75パーセンタイル = 下位75%の品質を「合格」とする基準")
+    print(f"[TIP] Interpretation:")
+    print(f"   - These thresholds are based on statistical distribution of all data")
+    print(f"   - 25th percentile = Standard to pass top 75% quality")
+    print(f"   - 75th percentile = Standard to pass bottom 75% quality")
     print(f"{'='*80}\n")
 
-    # JSON保存
+    # Save JSON
     import json
     with open(output_dir / 'recommended_thresholds.json', 'w', encoding='utf-8') as f:
         json.dump(thresholds, f, indent=2, ensure_ascii=False)
 
-    print(f"[SAVE] 閾値保存: {output_dir}/recommended_thresholds.json\n")
+    print(f"[SAVE] Thresholds saved: {output_dir}/recommended_thresholds.json\n")
 
 
 def suggest_hallucination_logic(df, output_dir):
