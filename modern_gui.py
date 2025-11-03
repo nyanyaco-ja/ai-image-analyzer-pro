@@ -756,7 +756,7 @@ class ModernImageAnalyzerGUI(
 
         img_before_title = ctk.CTkLabel(
             img_before_container,
-            text="[FILE] 元画像 (Before)",
+            text=self.i18n.t('gui.original_before'),
             font=("Arial", 12, "bold"),
             text_color="#FFA500"
         )
@@ -765,7 +765,7 @@ class ModernImageAnalyzerGUI(
         self.preview_img_before_label = tk.Label(
             img_before_container,
             bg="#0a0e27",
-            text="元画像を選択してください",
+            text=self.i18n.t('gui.select_original_prompt'),
             fg="#888888",
             font=("Arial", 10)
         )
@@ -777,7 +777,7 @@ class ModernImageAnalyzerGUI(
 
         img1_title = ctk.CTkLabel(
             img1_container,
-            text="[SR] 超解像結果1 (After)",
+            text=self.i18n.t('gui.sr_result_1'),
             font=("Arial", 12, "bold"),
             text_color="#00ff88"
         )
@@ -786,7 +786,7 @@ class ModernImageAnalyzerGUI(
         self.preview_img1_label = tk.Label(
             img1_container,
             bg="#0a0e27",
-            text="超解像結果1を選択してください",
+            text=self.i18n.t('gui.select_sr1_prompt'),
             fg="#888888",
             font=("Arial", 10)
         )
@@ -798,7 +798,7 @@ class ModernImageAnalyzerGUI(
 
         img2_title = ctk.CTkLabel(
             img2_container,
-            text="[SR] 超解像結果2 (After)",
+            text=self.i18n.t('gui.sr_result_2'),
             font=("Arial", 12, "bold"),
             text_color="#00ff88"
         )
@@ -807,7 +807,7 @@ class ModernImageAnalyzerGUI(
         self.preview_img2_label = tk.Label(
             img2_container,
             bg="#0a0e27",
-            text="超解像結果2を選択してください",
+            text=self.i18n.t('gui.select_sr2_prompt'),
             fg="#888888",
             font=("Arial", 10)
         )
@@ -855,7 +855,7 @@ class ModernImageAnalyzerGUI(
         # バッチ処理進捗エリア
         batch_progress_title = ctk.CTkLabel(
             self.batch_right_frame,
-            text="[STATS] バッチ処理進捗",
+            text=self.i18n.t('gui.batch_progress_title'),
             font=("Arial", 18, "bold"),
             text_color="#4A90E2"
         )
@@ -867,7 +867,7 @@ class ModernImageAnalyzerGUI(
 
         self.batch_status_label = ctk.CTkLabel(
             self.batch_progress_frame,
-            text="バッチ処理を開始してください",
+            text=self.i18n.t('gui.batch_start_prompt'),
             font=("Arial", 14),
             text_color="#888888"
         )
@@ -888,7 +888,7 @@ class ModernImageAnalyzerGUI(
         # 結果表示テキストエリア
         batch_result_label = ctk.CTkLabel(
             self.batch_right_frame,
-            text="[LOG] 処理結果ログ",
+            text=self.i18n.t('gui.batch_log_title'),
             font=("Arial", 16, "bold"),
             text_color="#4A90E2"
         )
@@ -909,7 +909,7 @@ class ModernImageAnalyzerGUI(
         # 論文用処理進捗エリア
         academic_progress_title = ctk.CTkLabel(
             self.academic_right_frame,
-            text="[STATS] 論文用ベンチマーク評価進捗",
+            text=self.i18n.t('gui.academic_progress_title'),
             font=("Arial", 18, "bold"),
             text_color="#9b59b6"
         )
@@ -921,7 +921,7 @@ class ModernImageAnalyzerGUI(
 
         self.academic_status_label = ctk.CTkLabel(
             self.academic_progress_frame,
-            text="論文用評価を開始してください（推奨: 15,000枚）",
+            text=self.i18n.t('gui.academic_start_prompt'),
             font=("Arial", 14),
             text_color="#888888"
         )
@@ -942,7 +942,7 @@ class ModernImageAnalyzerGUI(
         # 結果表示テキストエリア
         academic_result_label = ctk.CTkLabel(
             self.academic_right_frame,
-            text="[LOG] 処理結果ログ",
+            text=self.i18n.t('gui.academic_log_title'),
             font=("Arial", 16, "bold"),
             text_color="#9b59b6"
         )
@@ -1063,7 +1063,7 @@ class ModernImageAnalyzerGUI(
             self.preview_img1_label.image = photo  # 参照を保持
         except Exception as e:
             self.preview_img1_label.configure(
-                text=f"画像読み込みエラー:\n{str(e)}",
+                text=self.i18n.t('gui.image_load_error').format(error=str(e)),
                 image=""
             )
 
@@ -1078,7 +1078,7 @@ class ModernImageAnalyzerGUI(
             self.preview_img2_label.image = photo  # 参照を保持
         except Exception as e:
             self.preview_img2_label.configure(
-                text=f"画像読み込みエラー:\n{str(e)}",
+                text=self.i18n.t('gui.image_load_error').format(error=str(e)),
                 image=""
             )
 
@@ -1093,7 +1093,7 @@ class ModernImageAnalyzerGUI(
             self.preview_img_before_label.image = photo  # 参照を保持
         except Exception as e:
             self.preview_img_before_label.configure(
-                text=f"画像読み込みエラー:\n{str(e)}",
+                text=self.i18n.t('gui.image_load_error').format(error=str(e)),
                 image=""
             )
 
@@ -1142,7 +1142,7 @@ class ModernImageAnalyzerGUI(
         self.progress.set(0)
         self.progress.start()
         self.current_step = "初期化中..."
-        self.status_label.configure(text=f"分析中: {self.current_step}", text_color="#00ffff")
+        self.status_label.configure(text=self.i18n.t('gui.status_analyzing').format(step=self.current_step), text_color="#00ffff")
         self.result_text.delete("1.0", tk.END)
         self.interpretation_text.delete("1.0", tk.END)
 
@@ -1157,7 +1157,7 @@ class ModernImageAnalyzerGUI(
     def update_progress_display(self):
         """進捗状況を定期的に更新（最適化版）"""
         if self.current_step and self.analyze_btn.cget('state') == 'disabled':
-            self.status_label.configure(text=f"分析中: {self.current_step}")
+            self.status_label.configure(text=self.i18n.t('gui.status_analyzing').format(step=self.current_step))
             # 100ms→300msに変更してパフォーマンス向上
             self.root.after(300, self.update_progress_display)
 
@@ -1265,7 +1265,7 @@ class ModernImageAnalyzerGUI(
                 self.interpretation_text.insert(tk.END, "\n\n")
 
         # ステータス更新
-        self.status_label.configure(text=f"[OK] 精度評価 - {len(all_results)}件完了", text_color="#00ff88")
+        self.status_label.configure(text=self.i18n.t('gui.status_analysis_complete').format(count=len(all_results)), text_color="#00ff88")
 
         output_folder = self.output_dir.get() or 'analysis_results'
         messagebox.showinfo(
@@ -1322,7 +1322,7 @@ class ModernImageAnalyzerGUI(
 
             self.status_label.configure(text=f"[OK] {summary_msg}", text_color=color)
         else:
-            self.status_label.configure(text="[OK] 分析完了", text_color="#00ff88")
+            self.status_label.configure(text=self.i18n.t('gui.status_complete'), text_color="#00ff88")
 
         output_folder = self.output_dir.get() or 'analysis_results'
         messagebox.showinfo(
@@ -1336,7 +1336,7 @@ class ModernImageAnalyzerGUI(
         self.progress.stop()
         self.progress.set(0)
         self.analyze_btn.configure(state='normal')
-        self.status_label.configure(text="[ERROR] エラーが発生しました", text_color="#ff4444")
+        self.status_label.configure(text=self.i18n.t('gui.status_error'), text_color="#ff4444")
 
         self.result_text.insert("1.0", f"エラー:\n{error_msg}")
         messagebox.showerror("エラー", f"分析中にエラーが発生しました:\n{error_msg}")
@@ -1351,7 +1351,7 @@ class ModernImageAnalyzerGUI(
     def clear_results(self):
         self.result_text.delete("1.0", tk.END)
         self.interpretation_text.delete("1.0", tk.END)
-        self.status_label.configure(text="結果をクリアしました", text_color="#888888")
+        self.status_label.configure(text=self.i18n.t('gui.status_cleared'), text_color="#888888")
         self.progress.set(0)
         self.analysis_results = None
 
@@ -1441,7 +1441,7 @@ class ModernImageAnalyzerGUI(
         else:
             self.current_language = 'ja'
             self.i18n.set_language('ja')
-            self.lang_button.configure(text="🇯🇵 日本語")
+            self.lang_button.configure(text=self.i18n.t('gui.lang_japanese'))
 
         # UI全体を更新
         self.update_ui_language()
