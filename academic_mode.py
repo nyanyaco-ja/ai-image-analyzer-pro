@@ -19,22 +19,22 @@ class AcademicModeMixin:
         info_frame = ctk.CTkFrame(self.academic_mode_frame, fg_color="#2d1b4e", corner_radius=10)
         info_frame.pack(fill=tk.X, pady=(0, 20))
 
-        info_title = ctk.CTkLabel(
+        self.academic_info_title = ctk.CTkLabel(
             info_frame,
             text=self.i18n.t('academic.title'),
             font=("Arial", 18, "bold"),
             text_color="#9b59b6"
         )
-        info_title.pack(anchor="w", padx=15, pady=(15, 5))
+        self.academic_info_title.pack(anchor="w", padx=15, pady=(15, 5))
 
-        info_text = ctk.CTkLabel(
+        self.academic_info_text = ctk.CTkLabel(
             info_frame,
             text=self.i18n.t('academic.description'),
             font=("Arial", 13),
             text_color="#cccccc",
             justify="left"
         )
-        info_text.pack(anchor="w", padx=15, pady=(0, 15))
+        self.academic_info_text.pack(anchor="w", padx=15, pady=(0, 15))
 
         # === アコーディオン: 処理フロー ===
         self.workflow_accordion = AccordionSection(

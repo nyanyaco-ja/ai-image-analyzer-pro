@@ -18,22 +18,22 @@ class BatchModeMixin:
         info_frame = ctk.CTkFrame(self.batch_mode_frame, fg_color="#2d3748", corner_radius=10)
         info_frame.pack(fill=tk.X, pady=(0, 20))
 
-        info_title = ctk.CTkLabel(
+        self.batch_info_title = ctk.CTkLabel(
             info_frame,
             text=self.i18n.t('batch.title'),
             font=("Arial", 18, "bold"),
             text_color="#4A90E2"
         )
-        info_title.pack(anchor="w", padx=15, pady=(15, 5))
+        self.batch_info_title.pack(anchor="w", padx=15, pady=(15, 5))
 
-        info_text = ctk.CTkLabel(
+        self.batch_info_text = ctk.CTkLabel(
             info_frame,
             text=self.i18n.t('batch.description'),
             font=("Arial", 13),
             text_color="#cccccc",
             justify="left"
         )
-        info_text.pack(anchor="w", padx=15, pady=(0, 15))
+        self.batch_info_text.pack(anchor="w", padx=15, pady=(0, 15))
 
         # === アコーディオン: 評価モード選択 ===
         self.batch_evaluation_mode = tk.StringVar(value="image")
@@ -133,13 +133,13 @@ class BatchModeMixin:
 
         # 元画像フォルダ
         self.batch_original_dir = tk.StringVar()
-        original_label = ctk.CTkLabel(
+        self.batch_original_label = ctk.CTkLabel(
             self.folder_accordion.content_frame,
             text=self.i18n.t('batch.original_folder_label'),
             font=("Arial", 14, "bold"),
             text_color="#00ff88"
         )
-        original_label.pack(anchor="w", padx=15, pady=(5, 5))
+        self.batch_original_label.pack(anchor="w", padx=15, pady=(5, 5))
 
         original_frame = ctk.CTkFrame(self.folder_accordion.content_frame, fg_color="transparent")
         original_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
@@ -167,13 +167,13 @@ class BatchModeMixin:
         self.batch_original_browse_btn.pack(side=tk.RIGHT)
 
         # 超解像モデルフォルダ（複数）
-        upscaled_label = ctk.CTkLabel(
+        self.batch_upscaled_label = ctk.CTkLabel(
             self.folder_accordion.content_frame,
             text=self.i18n.t('batch.model_folder_label'),
             font=("Arial", 14, "bold"),
             text_color="#ffffff"
         )
-        upscaled_label.pack(anchor="w", padx=15, pady=(10, 5))
+        self.batch_upscaled_label.pack(anchor="w", padx=15, pady=(10, 5))
 
         # モデルフォルダ入力欄（5個）
         self.batch_model_vars = []

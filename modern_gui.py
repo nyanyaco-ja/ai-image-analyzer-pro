@@ -1558,6 +1558,22 @@ class ModernImageAnalyzerGUI(
         if hasattr(self, 'academic_result_label'):
             self.academic_result_label.configure(text=self.i18n.t('gui.academic_log_title'))
 
+        # バッチモードのタイトルと説明
+        if hasattr(self, 'batch_info_title'):
+            self.batch_info_title.configure(text=self.i18n.t('batch.title'))
+        if hasattr(self, 'batch_info_text'):
+            self.batch_info_text.configure(text=self.i18n.t('batch.description'))
+        if hasattr(self, 'batch_original_label'):
+            self.batch_original_label.configure(text=self.i18n.t('batch.original_folder_label'))
+        if hasattr(self, 'batch_upscaled_label'):
+            self.batch_upscaled_label.configure(text=self.i18n.t('batch.model_folder_label'))
+
+        # アカデミックモードのタイトルと説明
+        if hasattr(self, 'academic_info_title'):
+            self.academic_info_title.configure(text=self.i18n.t('academic.title'))
+        if hasattr(self, 'academic_info_text'):
+            self.academic_info_text.configure(text=self.i18n.t('academic.description'))
+
 def main():
     root = ctk.CTk()
     app = ModernImageAnalyzerGUI(root)
