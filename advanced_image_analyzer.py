@@ -683,7 +683,7 @@ def generate_p6_heatmap(ssim_2d, original_img, output_path, patch_size=16):
 
     # プロット作成（論文形式：下マージン拡大）
     fig, ax = plt.subplots(figsize=(12, 11))
-    plt.subplots_adjust(bottom=0.18)  # 下マージン拡大（キャプション用）
+    plt.subplots_adjust(left=0.08, right=0.92, top=0.95, bottom=0.12)  # キャプション用スペース確保
 
     # ヒートマップ描画
     im = ax.imshow(ssim_2d, cmap=cmap, vmin=0.0, vmax=1.0, aspect='auto')
@@ -741,7 +741,7 @@ def generate_p6_heatmap(ssim_2d, original_img, output_path, patch_size=16):
         f'Mean: {mean_ssim:.4f} | Std: {std_ssim:.4f} | '
         f'Range: [{min_ssim:.4f}, {max_ssim:.4f}]'
     )
-    fig.text(0.5, 0.06, caption_text,
+    fig.text(0.5, 0.03, caption_text,
              ha='center', va='center', fontsize=11, weight='bold')
 
     # 低SSIM領域（ハルシネーション疑い）を強調表示
@@ -1201,11 +1201,11 @@ def create_detailed_visualizations(img1_rgb, img2_rgb, img1_gray, img2_gray, out
     cb2 = plt.colorbar(im2, fraction=0.046, pad=0.04)
     cb2.ax.tick_params(labelsize=8)
 
-    plt.tight_layout(rect=[0, 0.04, 1, 1])  # 下マージン確保
+    plt.tight_layout(rect=[0, 0.06, 1, 1])  # 下マージン確保（キャプション用）
 
     # 図の下にキャプション追加（論文形式）
-    fig.text(0.5, 0.01, 'Figure: Detailed Image Analysis Visualization',
-             ha='center', va='bottom', fontsize=16, weight='bold')
+    fig.text(0.5, 0.015, 'Figure: Detailed Image Analysis Visualization',
+             ha='center', va='center', fontsize=16, weight='bold')
 
     print(f"[DEBUG] Saving detailed_analysis.png...")
     print(f"  output_dir: {repr(output_dir)}")
@@ -1367,11 +1367,11 @@ Color Diff (ΔE): {delta_e_display}
     ax6.set_ylim(0, 100)
     ax6.grid(axis='y', alpha=0.3)
 
-    plt.tight_layout(rect=[0, 0.06, 1, 1])  # 下マージン確保
+    plt.tight_layout(rect=[0, 0.08, 1, 1])  # 下マージン確保（キャプション用）
 
     # 図の下にキャプション追加（論文形式）
     fig.text(0.5, 0.02, 'Figure: Image Comparison Analysis Report',
-             ha='center', va='bottom', fontsize=16, weight='bold')
+             ha='center', va='center', fontsize=16, weight='bold')
 
     print(f"[DEBUG] Saving comparison_report.png...")
     print(f"  output_dir: {repr(output_dir)}")
