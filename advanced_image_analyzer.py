@@ -582,23 +582,35 @@ def analyze_local_quality(img1, img2, patch_size=16):
     h, w = img1.shape[:2]
     ssim_list = []
 
-    # パッチのグリッドサイズを計算
-    rows = (h - patch_size) // patch_size + 1
-    cols = (w - patch_size) // patch_size + 1
+    # パッチのグリッドサイズを計算（端まで含める）
+    rows = (h + patch_size - 1) // patch_size  # 切り上げ除算
+    cols = (w + patch_size - 1) // patch_size
     ssim_2d = np.zeros((rows, cols))
 
     row_idx = 0
-    for y in range(0, h - patch_size, patch_size):
+    for y in range(0, h, patch_size):  # 端まで処理
         col_idx = 0
-        for x in range(0, w - patch_size, patch_size):
-            patch1 = img1[y:y+patch_size, x:x+patch_size]
-            patch2 = img2[y:y+patch_size, x:x+patch_size]
+        for x in range(0, w, patch_size):  # 端まで処理
+            # 画像境界を超えないようクリッピング
+            y_end = min(y + patch_size, h)
+            x_end = min(x + patch_size, w)
 
-            if patch1.shape[:2] == (patch_size, patch_size):
+            patch1 = img1[y:y_end, x:x_end]
+            patch2 = img2[y:y_end, x:x_end]
+
+            # パッチサイズが小さすぎる場合はスキップ（SSIM計算できない）
+            if patch1.shape[0] >= 7 and patch1.shape[1] >= 7:  # SSIMの最小サイズ
                 local_ssim = ssim(patch1, patch2, channel_axis=2)
                 ssim_list.append(local_ssim)
                 ssim_2d[row_idx, col_idx] = local_ssim
-                col_idx += 1
+            else:
+                # 小さすぎるパッチは隣接パッチと同じ値を使用
+                if col_idx > 0:
+                    ssim_2d[row_idx, col_idx] = ssim_2d[row_idx, col_idx - 1]
+                elif row_idx > 0:
+                    ssim_2d[row_idx, col_idx] = ssim_2d[row_idx - 1, 0]
+
+            col_idx += 1
         row_idx += 1
 
     return np.array(ssim_list), ssim_2d, (rows, cols)
