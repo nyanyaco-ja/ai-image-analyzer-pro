@@ -22,6 +22,7 @@ import pandas as pd
 from multiprocessing import Pool, cpu_count
 from functools import partial
 from advanced_image_analyzer import analyze_images
+from i18n import I18n
 
 def process_single_pair(args):
     """
@@ -107,6 +108,10 @@ def batch_analyze(config_file, progress_callback=None):
     with open(config_file, 'r', encoding='utf-8') as f:
         config = json.load(f)
 
+    # i18n初期化（設定ファイルから言語を取得、デフォルトは日本語）
+    language = config.get('language', 'ja')
+    i18n = I18n(language)
+
     original_dir = Path(config['original_dir'])
     upscaled_dirs = {k: Path(v) for k, v in config['upscaled_dirs'].items()}
     output_csv = config['output_csv']
@@ -130,21 +135,21 @@ def batch_analyze(config_file, progress_callback=None):
     # JPG画像がある場合は警告
     if len(jpg_images) > 0:
         print(f"\n{'='*60}")
-        print(f"[WARNING] JPGファイルが検出されました ({len(jpg_images)}枚)")
+        print(i18n.t('batch_analyzer.warning_jpg_detected').format(count=len(jpg_images)))
         print(f"{'='*60}")
-        print(f"JPGは非可逆圧縮形式のため、すでに画質が劣化しています。")
-        print(f"正確な評価のためには、元データからPNG形式で再出力することを強く推奨します。")
+        print(i18n.t('batch_analyzer.jpg_lossy_warning'))
+        print(i18n.t('batch_analyzer.jpg_recommend_png'))
         print(f"")
-        print(f"【JPGの問題点】")
-        print(f"  - ブロックノイズ（8×8ピクセル単位の圧縮アーティファクト）")
-        print(f"  - 高周波成分の損失（細かいディテールが消失）")
-        print(f"  - 色情報の劣化（色滲み、バンディング）")
-        print(f"  - AI超解像の劣化と区別不可能")
+        print(i18n.t('batch_analyzer.jpg_problems_title'))
+        print(i18n.t('batch_analyzer.jpg_problem_1'))
+        print(i18n.t('batch_analyzer.jpg_problem_2'))
+        print(i18n.t('batch_analyzer.jpg_problem_3'))
+        print(i18n.t('batch_analyzer.jpg_problem_4'))
         print(f"")
-        print(f"【推奨対応】")
-        print(f"  1. 元のソフトウェア/カメラからPNG形式で再出力")
-        print(f"  2. TIFF等の可逆形式から変換")
-        print(f"  3. 医療用途・論文発表には必ずPNG形式を使用")
+        print(i18n.t('batch_analyzer.jpg_recommended_actions'))
+        print(i18n.t('batch_analyzer.jpg_action_1'))
+        print(i18n.t('batch_analyzer.jpg_action_2'))
+        print(i18n.t('batch_analyzer.jpg_action_3'))
         print(f"{'='*60}\n")
 
     original_images = sorted(png_images + jpg_images)
@@ -152,10 +157,10 @@ def batch_analyze(config_file, progress_callback=None):
     # 処理枚数制限
     if limit > 0 and limit < len(original_images):
         original_images = original_images[:limit]
-        print(f"[INFO] 分割実行モード: 最初の{limit}枚のみ処理します")
+        print(i18n.t('batch_analyzer.info_limit_mode').format(limit=limit))
 
     if len(original_images) == 0:
-        print(f"[ERROR] 元画像が見つかりません: {original_dir}")
+        print(i18n.t('batch_analyzer.error_original_not_found').format(path=original_dir))
         return
 
     # 評価モード表示用辞書
@@ -167,17 +172,17 @@ def batch_analyze(config_file, progress_callback=None):
     }
 
     print(f"\n{'='*60}")
-    print(f"バッチ処理開始")
+    print(i18n.t('batch_analyzer.batch_start'))
     print(f"{'='*60}")
-    print(f"元画像ディレクトリ: {original_dir}")
-    print(f"元画像数: {len(original_images)}枚")
-    print(f"超解像モデル数: {len(upscaled_dirs)}種類")
+    print(i18n.t('batch_analyzer.original_dir').format(path=original_dir))
+    print(i18n.t('batch_analyzer.original_count').format(count=len(original_images)))
+    print(i18n.t('batch_analyzer.model_count').format(count=len(upscaled_dirs)))
     for model_name in upscaled_dirs.keys():
         print(f"   - {model_name}")
-    print(f"出力CSV: {output_csv}")
-    print(f"評価モード: {mode_names.get(evaluation_mode, evaluation_mode)}")
-    print(f"並列処理数: {num_workers}プロセス")
-    print(f"チェックポイント間隔: {checkpoint_interval}サンプルごと")
+    print(i18n.t('batch_analyzer.output_csv').format(path=output_csv))
+    print(i18n.t('batch_analyzer.evaluation_mode').format(mode=mode_names.get(evaluation_mode, evaluation_mode)))
+    print(i18n.t('batch_analyzer.parallel_workers').format(workers=num_workers))
+    print(i18n.t('batch_analyzer.checkpoint_interval').format(interval=checkpoint_interval))
     print(f"{'='*60}\n")
 
     # 超解像モデルフォルダのJPG検出
@@ -273,20 +278,20 @@ def batch_analyze(config_file, progress_callback=None):
             model_counts[model] = model_counts.get(model, 0) + 1
 
         print(f"\n{'='*60}")
-        print(f"[COMPLETED] バッチ処理完了！")
+        print(i18n.t('batch_analyzer.batch_complete'))
         print(f"{'='*60}")
-        print(f"  成功: {processed} / {total_pairs}")
-        print(f"  エラー: {errors} / {total_pairs}")
-        print(f"  総処理時間: {total_time/60:.1f}分 ({total_time/3600:.2f}時間)")
-        print(f"  平均処理速度: {avg_time_per_sample:.2f}秒/サンプル")
-        print(f"  並列化効率: {num_workers}プロセス使用")
-        print(f"\nモデル別処理件数:")
+        print(i18n.t('batch_analyzer.success_total').format(success=processed, total=total_pairs))
+        print(i18n.t('batch_analyzer.error_total').format(errors=errors, total=total_pairs))
+        print(i18n.t('batch_analyzer.total_time').format(minutes=total_time/60, hours=total_time/3600))
+        print(i18n.t('batch_analyzer.avg_time').format(seconds=avg_time_per_sample))
+        print(i18n.t('batch_analyzer.parallel_efficiency').format(workers=num_workers))
+        print(i18n.t('batch_analyzer.model_counts'))
         for model, count in model_counts.items():
-            print(f"   {model}: {count}件")
-        print(f"\n結果CSV: {output_csv}")
-        print(f"詳細レポート: {output_detail_dir}")
+            print(i18n.t('batch_analyzer.model_count_item').format(model=model, count=count))
+        print(i18n.t('batch_analyzer.result_csv').format(path=output_csv))
+        print(i18n.t('batch_analyzer.detail_report').format(path=output_detail_dir))
         if checkpoint_file.exists():
-            print(f"チェックポイント: {checkpoint_file}")
+            print(i18n.t('batch_analyzer.checkpoint_file').format(path=checkpoint_file))
         print(f"{'='*60}\n")
 
         # 簡易統計を表示
