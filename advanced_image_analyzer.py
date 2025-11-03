@@ -681,52 +681,49 @@ def generate_p6_heatmap(ssim_2d, original_img, output_path, patch_size=16):
     colors = [color for _, color in color_positions]
     cmap = LinearSegmentedColormap.from_list('p6_heatmap', list(zip(positions, colors)), N=256)
 
-    # プロット作成
-    fig, ax = plt.subplots(figsize=(12, 10))
+    # プロット作成（論文形式：下マージン拡大）
+    fig, ax = plt.subplots(figsize=(12, 11))
+    plt.subplots_adjust(bottom=0.15)  # 下マージン拡大
 
     # ヒートマップ描画
     im = ax.imshow(ssim_2d, cmap=cmap, vmin=0.0, vmax=1.0, aspect='auto')
 
-    # カラーバー追加
+    # カラーバー追加（英語）
     cbar = plt.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
-    cbar.set_label('局所SSIM (パッチ単位)', fontsize=12)
+    cbar.set_label('Local SSIM', fontsize=12)
 
-    # カラーバーに品質ラベルを追加（学術的基準）
-    cbar.ax.text(1.5, 0.975, '忠実', transform=cbar.ax.transAxes,
+    # カラーバーに品質ラベルを追加（学術的基準・英語）
+    cbar.ax.text(1.5, 0.975, 'Faithful', transform=cbar.ax.transAxes,
                  fontsize=10, va='center')  # 0.95-1.0
-    cbar.ax.text(1.5, 0.925, '良好', transform=cbar.ax.transAxes,
+    cbar.ax.text(1.5, 0.925, 'Good', transform=cbar.ax.transAxes,
                  fontsize=10, va='center')  # 0.90-0.95
-    cbar.ax.text(1.5, 0.85, 'やや低下', transform=cbar.ax.transAxes,
+    cbar.ax.text(1.5, 0.85, 'Slight loss', transform=cbar.ax.transAxes,
                  fontsize=10, va='center')  # 0.80-0.90
-    cbar.ax.text(1.5, 0.75, '低下', transform=cbar.ax.transAxes,
+    cbar.ax.text(1.5, 0.75, 'Degraded', transform=cbar.ax.transAxes,
                  fontsize=10, va='center')  # 0.70-0.80
-    cbar.ax.text(1.5, 0.35, 'ハルシネ\nーション疑', transform=cbar.ax.transAxes,
+    cbar.ax.text(1.5, 0.35, 'Halluci-\nnation', transform=cbar.ax.transAxes,
                  fontsize=9, va='center')  # 0.00-0.70
 
-    # タイトル設定
-    ax.set_title('P6: 局所品質ばらつき検出ヒートマップ\n(64×64パッチ単位のSSIM分布)',
-                 fontsize=14, pad=15)
-
-    # 軸ラベル
-    ax.set_xlabel(f'パッチ列 (各パッチ={patch_size}px)', fontsize=11)
-    ax.set_ylabel(f'パッチ行 (各パッチ={patch_size}px)', fontsize=11)
+    # 軸ラベル（英語）
+    ax.set_xlabel(f'Patch Column (each patch = {patch_size}px)', fontsize=11)
+    ax.set_ylabel(f'Patch Row (each patch = {patch_size}px)', fontsize=11)
 
     # グリッド追加
     ax.grid(True, alpha=0.3, linewidth=0.5)
 
-    # 統計情報を表示
+    # 統計情報を表示（英語）
     mean_ssim = np.mean(ssim_2d)
     std_ssim = np.std(ssim_2d)
     min_ssim = np.min(ssim_2d)
     max_ssim = np.max(ssim_2d)
 
-    stats_text = f'統計情報:\n'
-    stats_text += f'平均SSIM: {mean_ssim:.4f}\n'
-    stats_text += f'標準偏差: {std_ssim:.4f}\n'
-    stats_text += f'最小値: {min_ssim:.4f}\n'
-    stats_text += f'最大値: {max_ssim:.4f}\n'
-    stats_text += f'\nパッチサイズ: {patch_size}×{patch_size}px\n'
-    stats_text += f'グリッド: {ssim_2d.shape[0]}×{ssim_2d.shape[1]}'
+    stats_text = f'Statistics:\n'
+    stats_text += f'Mean SSIM: {mean_ssim:.4f}\n'
+    stats_text += f'Std Dev: {std_ssim:.4f}\n'
+    stats_text += f'Min: {min_ssim:.4f}\n'
+    stats_text += f'Max: {max_ssim:.4f}\n'
+    stats_text += f'\nPatch Size: {patch_size}×{patch_size}px\n'
+    stats_text += f'Grid: {ssim_2d.shape[0]}×{ssim_2d.shape[1]}'
 
     # テキストボックスを右上に配置
     ax.text(0.98, 0.98, stats_text,
@@ -735,6 +732,17 @@ def generate_p6_heatmap(ssim_2d, original_img, output_path, patch_size=16):
             verticalalignment='top',
             horizontalalignment='right',
             bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+
+    # 図の下にキャプション追加（論文形式）
+    caption_text = (
+        f'Figure: P6 Local Quality Variance Heatmap\n'
+        f'Patch Size: {patch_size}×{patch_size}px | '
+        f'Grid: {ssim_2d.shape[0]}×{ssim_2d.shape[1]} blocks | '
+        f'Mean: {mean_ssim:.4f} | Std: {std_ssim:.4f} | '
+        f'Range: [{min_ssim:.4f}, {max_ssim:.4f}]'
+    )
+    fig.text(0.5, 0.02, caption_text,
+             ha='center', va='bottom', fontsize=11, weight='bold')
 
     # 低SSIM領域（ハルシネーション疑い）を強調表示
     threshold = 0.7
@@ -929,20 +937,20 @@ def generate_p6_heatmap_interactive(ssim_2d, output_html_path, patch_size=16):
     return output_html_path
 
 def export_p6_data_csv(ssim_2d, output_csv_path, patch_size=16):
-    """P6データをCSV形式で出力（再現性・追試用）
+    """Export P6 data to CSV format (for reproducibility and verification)
 
     Args:
-        ssim_2d: 2D SSIM マップ (rows x cols)
-        output_csv_path: CSV保存先パス
-        patch_size: パッチサイズ（デフォルト16）
+        ssim_2d: 2D SSIM map (rows x cols)
+        output_csv_path: CSV save path
+        patch_size: Patch size (default 16)
 
     Returns:
-        output_csv_path: 保存されたCSVファイルのパス
+        output_csv_path: Path to saved CSV file
     """
     try:
         import pandas as pd
     except ImportError:
-        # pandasがない場合は手動でCSV作成
+        # Fallback to manual CSV creation without pandas
         import csv
 
         with open(output_csv_path, 'w', newline='', encoding='utf-8') as f:
@@ -965,7 +973,7 @@ def export_p6_data_csv(ssim_2d, output_csv_path, patch_size=16):
         print(f"  [OK] CSV data saved (without pandas): {output_csv_path}")
         return output_csv_path
 
-    # pandasがある場合
+    # With pandas available
     rows, cols = ssim_2d.shape
     data = []
 
@@ -984,7 +992,7 @@ def export_p6_data_csv(ssim_2d, output_csv_path, patch_size=16):
     df = pd.DataFrame(data)
     df.to_csv(output_csv_path, index=False, encoding='utf-8')
 
-    # 統計情報も別ファイルで保存
+    # Save statistics to separate file
     stats_csv_path = output_csv_path.replace('.csv', '_statistics.csv')
     stats_df = pd.DataFrame([{
         'mean_ssim': np.mean(ssim_2d),
@@ -1212,15 +1220,15 @@ def create_detailed_visualizations(img1_rgb, img2_rgb, img1_gray, img2_gray, out
         plt.close()
 
 def create_comparison_report(results, img1_name, img2_name, output_dir):
-    """比較レポート画像を生成"""
+    """Generate comparison report image (English)"""
     fig = plt.figure(figsize=(16, 10))
-    fig.suptitle('画像比較分析レポート', fontsize=20, fontweight='bold', y=0.98)
+    fig.suptitle('Image Comparison Analysis Report', fontsize=20, fontweight='bold', y=0.98)
 
-    # スコア表示（両画像比較）
+    # Score comparison
     ax1 = plt.subplot(2, 3, 1)
     breakdown = results['total_score']['breakdown']
 
-    categories = ['シャープネス', 'コントラスト', 'エントロピー', 'ノイズ対策', 'エッジ保持', '歪み抑制', 'テクスチャ']
+    categories = ['Sharpness', 'Contrast', 'Entropy', 'Noise', 'Edge', 'Artifact', 'Texture']
     img1_values = [breakdown['img1']['sharpness'], breakdown['img1']['contrast'],
                    breakdown['img1']['entropy'], breakdown['img1']['noise'],
                    breakdown['img1']['edge'], breakdown['img1']['artifact'],
@@ -1233,90 +1241,90 @@ def create_comparison_report(results, img1_name, img2_name, output_dir):
     x = np.arange(len(categories))
     width = 0.35
 
-    bars1 = ax1.barh(x - width/2, img1_values, width, label='元画像', color='#3498db')
-    bars2 = ax1.barh(x + width/2, img2_values, width, label='AI処理結果', color='#e74c3c')
+    bars1 = ax1.barh(x - width/2, img1_values, width, label='Original', color='#3498db')
+    bars2 = ax1.barh(x + width/2, img2_values, width, label='AI Processed', color='#e74c3c')
 
     ax1.set_yticks(x)
     ax1.set_yticklabels(categories)
     ax1.set_xlim(0, 100)
-    ax1.set_xlabel('スコア', fontsize=11, fontweight='bold')
-    ax1.set_title('項目別スコア比較', fontsize=13, fontweight='bold', pad=10)
+    ax1.set_xlabel('Score', fontsize=11, fontweight='bold')
+    ax1.set_title('Score Breakdown', fontsize=13, fontweight='bold', pad=10)
     ax1.legend(fontsize=10)
     ax1.grid(axis='x', alpha=0.3)
 
-    # 総合スコア
+    # Total score
     ax2 = plt.subplot(2, 3, 2)
     total_score = results['total_score']['img2']
     img1_score = results['total_score']['img1']
 
-    ax2.barh(['元画像 (基準)', 'AI処理結果'], [img1_score, total_score],
+    ax2.barh(['Original (Reference)', 'AI Processed'], [img1_score, total_score],
              color=['#3498db', '#e74c3c' if total_score < 70 else '#f39c12' if total_score < 90 else '#2ecc71'])
     ax2.set_xlim(0, 100)
-    ax2.set_xlabel('総合スコア', fontsize=11, fontweight='bold')
-    ax2.set_title('総合評価', fontsize=13, fontweight='bold', pad=10)
+    ax2.set_xlabel('Total Score', fontsize=11, fontweight='bold')
+    ax2.set_title('Overall Evaluation', fontsize=13, fontweight='bold', pad=10)
     ax2.grid(axis='x', alpha=0.3)
 
-    for i, (score, name) in enumerate(zip([img1_score, total_score], ['元画像', 'AI処理結果'])):
+    for i, (score, name) in enumerate(zip([img1_score, total_score], ['Original', 'AI Processed'])):
         ax2.text(score + 2, i, f'{score:.1f}', va='center', fontsize=12, fontweight='bold')
 
-    # 主要指標
+    # Key metrics
     ax3 = plt.subplot(2, 3, 3)
     ax3.axis('off')
 
     delta_e_value = results['color_distribution'].get('delta_e', 0)
 
-    # SSIM/PSNR/delta_eは元画像の有無で形式が異なる
+    # SSIM/PSNR/delta_e format varies based on original image availability
     ssim_data = results['ssim']
     if isinstance(ssim_data, dict):
-        ssim_display = f"元画像: {ssim_data['img1_vs_original']:.4f}\n  AI処理結果: {ssim_data['img2_vs_original']:.4f}"
+        ssim_display = f"Original: {ssim_data['img1_vs_original']:.4f}\n  AI: {ssim_data['img2_vs_original']:.4f}"
     else:
         ssim_display = f"{ssim_data:.4f}"
 
     psnr_data = results['psnr']
     if isinstance(psnr_data, dict):
-        psnr_display = f"元画像: {psnr_data['img1_vs_original']:.2f} dB\n  AI処理結果: {psnr_data['img2_vs_original']:.2f} dB"
+        psnr_display = f"Original: {psnr_data['img1_vs_original']:.2f} dB\n  AI: {psnr_data['img2_vs_original']:.2f} dB"
     else:
         psnr_display = f"{psnr_data:.2f} dB"
 
     if isinstance(delta_e_value, dict):
-        delta_e_display = f"元画像: {delta_e_value['img1_vs_original']:.2f}\n  AI処理結果: {delta_e_value['img2_vs_original']:.2f}"
+        delta_e_display = f"Original: {delta_e_value['img1_vs_original']:.2f}\n  AI: {delta_e_value['img2_vs_original']:.2f}"
     else:
         delta_e_display = f"{delta_e_value:.2f}"
 
     info_text = f"""
-【主要指標】
+[Key Metrics]
 
 SSIM: {ssim_display}
-  (1.0 = 完全一致)
+  (1.0 = perfect match)
 
 PSNR: {psnr_display}
-  (30dB以上で視覚的に同等)
+  (>30dB: visually equivalent)
 
-シャープネス:
-  元画像: {results['sharpness']['img1']:.2f}
-  AI処理結果: {results['sharpness']['img2']:.2f}
-  差: {results['sharpness']['difference_pct']:+.1f}%
+Sharpness:
+  Original: {results['sharpness']['img1']:.2f}
+  AI: {results['sharpness']['img2']:.2f}
+  Diff: {results['sharpness']['difference_pct']:+.1f}%
 
-色差 (ΔE): {delta_e_display}
-  (< 5: 許容, > 10: 明確な違い)
+Color Diff (ΔE): {delta_e_display}
+  (<5: acceptable, >10: noticeable)
     """
 
     ax3.text(0.1, 0.5, info_text, fontsize=11, family='monospace',
              verticalalignment='center', bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.3))
-    ax3.set_title('詳細データ', fontsize=13, fontweight='bold', pad=10)
+    ax3.set_title('Detailed Data', fontsize=13, fontweight='bold', pad=10)
 
-    # エッジ比較
+    # Edge comparison
     ax4 = plt.subplot(2, 3, 4)
     edge_data = [results['edges']['img1_density'], results['edges']['img2_density']]
-    ax4.bar(['元画像', 'AI処理結果'], edge_data, color=['#3498db', '#9b59b6'])
-    ax4.set_ylabel('エッジ密度 (%)', fontsize=11, fontweight='bold')
-    ax4.set_title('エッジ保持率', fontsize=13, fontweight='bold', pad=10)
+    ax4.bar(['Original', 'AI Processed'], edge_data, color=['#3498db', '#9b59b6'])
+    ax4.set_ylabel('Edge Density (%)', fontsize=11, fontweight='bold')
+    ax4.set_title('Edge Preservation', fontsize=13, fontweight='bold', pad=10)
     ax4.grid(axis='y', alpha=0.3)
 
     for i, val in enumerate(edge_data):
         ax4.text(i, val, f'{val:,}', ha='center', va='bottom', fontsize=10, fontweight='bold')
 
-    # ノイズ・アーティファクト
+    # Noise and artifacts
     ax5 = plt.subplot(2, 3, 5)
     noise_data = [results['noise']['img1'], results['noise']['img2']]
     artifact1 = results['artifacts']['img1_block_noise'] + results['artifacts']['img1_ringing']
@@ -1325,17 +1333,17 @@ PSNR: {psnr_display}
     x = np.arange(2)
     width = 0.35
 
-    ax5.bar(x - width/2, noise_data, width, label='ノイズ', color='#e67e22')
-    ax5.bar(x + width/2, [artifact1, artifact2], width, label='アーティファクト', color='#c0392b')
+    ax5.bar(x - width/2, noise_data, width, label='Noise', color='#e67e22')
+    ax5.bar(x + width/2, [artifact1, artifact2], width, label='Artifact', color='#c0392b')
 
-    ax5.set_ylabel('値 (低い方が良い)', fontsize=11, fontweight='bold')
-    ax5.set_title('ノイズとアーティファクト', fontsize=13, fontweight='bold', pad=10)
+    ax5.set_ylabel('Value (lower is better)', fontsize=11, fontweight='bold')
+    ax5.set_title('Noise and Artifacts', fontsize=13, fontweight='bold', pad=10)
     ax5.set_xticks(x)
-    ax5.set_xticklabels(['元画像', 'AI処理結果'])
+    ax5.set_xticklabels(['Original', 'AI Processed'])
     ax5.legend(fontsize=10)
     ax5.grid(axis='y', alpha=0.3)
 
-    # 周波数分析
+    # Frequency analysis
     ax6 = plt.subplot(2, 3, 6)
     freq1 = [results['frequency_analysis']['img1']['low_freq_ratio'] * 100,
              results['frequency_analysis']['img1']['high_freq_ratio'] * 100]
@@ -1345,29 +1353,29 @@ PSNR: {psnr_display}
     x = np.arange(2)
     width = 0.35
 
-    ax6.bar(x - width/2, freq1, width, label='元画像', color='#3498db')
-    ax6.bar(x + width/2, freq2, width, label='AI処理結果', color='#9b59b6')
+    ax6.bar(x - width/2, freq1, width, label='Original', color='#3498db')
+    ax6.bar(x + width/2, freq2, width, label='AI Processed', color='#9b59b6')
 
-    ax6.set_ylabel('比率 (%)', fontsize=11, fontweight='bold')
-    ax6.set_title('周波数成分分布', fontsize=13, fontweight='bold', pad=10)
+    ax6.set_ylabel('Ratio (%)', fontsize=11, fontweight='bold')
+    ax6.set_title('Frequency Components', fontsize=13, fontweight='bold', pad=10)
     ax6.set_xticks(x)
-    ax6.set_xticklabels(['低周波', '高周波'])
+    ax6.set_xticklabels(['Low Freq', 'High Freq'])
     ax6.legend(fontsize=10)
     ax6.set_ylim(0, 100)
     ax6.grid(axis='y', alpha=0.3)
 
     plt.tight_layout()
 
-    print(f"[DEBUG] comparison_report.png 保存中...")
+    print(f"[DEBUG] Saving comparison_report.png...")
     print(f"  output_dir: {repr(output_dir)}")
 
     try:
         report_path = os.path.join(output_dir, 'comparison_report.png')
         print(f"  report_path: {report_path}")
         plt.savefig(report_path, dpi=150, bbox_inches='tight')
-        print(f"  [OK] 保存成功: {report_path}")
+        print(f"  [OK] Saved successfully: {report_path}")
     except Exception as e:
-        print(f"  [ERROR] 保存エラー: {e}")
+        print(f"  [ERROR] Save error: {e}")
         import traceback
         traceback.print_exc()
         raise
