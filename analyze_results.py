@@ -38,9 +38,11 @@ def analyze_batch_results(csv_file):
     print(f"[STATS] 総データ数: {len(df)}")
     print(f"{'='*80}\n")
 
-    # 出力ディレクトリ作成
-    output_dir = Path('analysis_output')
-    output_dir.mkdir(exist_ok=True)
+    # 出力ディレクトリ作成（タイムスタンプ付きサブフォルダ）
+    from datetime import datetime
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    output_dir = Path('analysis_output') / timestamp
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     # 1. 基本統計量
     print_basic_statistics(df)
@@ -62,6 +64,8 @@ def analyze_batch_results(csv_file):
 
     print(f"\n[OK] 分析完了！")
     print(f"[FOLDER] 結果保存先: {output_dir}/")
+
+    return str(output_dir)
 
 
 def print_basic_statistics(df):

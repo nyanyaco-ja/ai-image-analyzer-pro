@@ -48,19 +48,19 @@ class StatsAnalysisMixin:
             old_stdout = sys.stdout
             sys.stdout = captured_output = StringIO()
 
-            # 統計分析実行
-            analyze_batch_results(csv_path)
+            # 統計分析実行（出力ディレクトリのパスを取得）
+            output_dir = analyze_batch_results(csv_path)
 
             sys.stdout = old_stdout
             output = captured_output.getvalue()
 
-            self.root.after(0, self.display_stats_results, output, True)
+            self.root.after(0, self.display_stats_results, output, True, output_dir)
 
         except Exception as e:
             sys.stdout = old_stdout
-            self.root.after(0, self.display_stats_results, str(e), False)
+            self.root.after(0, self.display_stats_results, str(e), False, None)
 
-    def display_stats_results(self, output, success):
+    def display_stats_results(self, output, success, output_dir=None):
         """統計分析結果表示"""
         self.stats_analyze_btn.configure(state='normal')
 
@@ -69,30 +69,29 @@ class StatsAnalysisMixin:
 
         if success:
             self.batch_status_label.configure(
-                text="[OK] 統計分析完了！25種類のプロットが analysis_output/ に保存されました",
+                text=f"[OK] 統計分析完了！25種類のプロットが {output_dir}/ に保存されました",
                 text_color="#00ff88"
             )
 
             messagebox.showinfo(
                 "完了",
-                "統計分析が完了しました。\n\n"
-                "25種類の研究用プロット（300dpi）が\n"
-                "analysis_output/ フォルダに保存されました。\n\n"
-                "・ハルシネーション検出（4種類）\n"
-                "・品質トレードオフ（5種類）\n"
-                "・医療画像特化（4種類）\n"
-                "・分布・PCA分析（4種類）\n"
-                "・その他（6種類）"
+                f"統計分析が完了しました。\n\n"
+                f"25種類の研究用プロット（300dpi）が\n"
+                f"{output_dir}/ フォルダに保存されました。\n\n"
+                f"・ハルシネーション検出（4種類）\n"
+                f"・品質トレードオフ（5種類）\n"
+                f"・医療画像特化（4種類）\n"
+                f"・分布・PCA分析（4種類）\n"
+                f"・その他（6種類）"
             )
 
             # フォルダを開くか確認
             result = messagebox.askyesno(
                 "フォルダを開く",
-                "analysis_output フォルダを開きますか？"
+                f"{output_dir} フォルダを開きますか？"
             )
             if result:
-                output_dir = "analysis_output"
-                if os.path.exists(output_dir):
+                if output_dir and os.path.exists(output_dir):
                     os.startfile(output_dir)
         else:
             self.batch_status_label.configure(

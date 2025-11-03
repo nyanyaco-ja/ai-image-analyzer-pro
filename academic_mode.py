@@ -864,21 +864,21 @@ class AcademicModeMixin:
             old_stdout = sys.stdout
             sys.stdout = captured_output = StringIO()
 
-            # 統計分析実行
-            analyze_batch_results(csv_path)
+            # 統計分析実行（出力ディレクトリのパスを取得）
+            output_dir = analyze_batch_results(csv_path)
 
             sys.stdout = old_stdout
             output = captured_output.getvalue()
 
-            self.root.after(0, self.display_academic_stats_results, output, True)
+            self.root.after(0, self.display_academic_stats_results, output, True, output_dir)
 
         except Exception as e:
             import traceback
             error_detail = traceback.format_exc()
             sys.stdout = old_stdout
-            self.root.after(0, self.display_academic_stats_results, error_detail, False)
+            self.root.after(0, self.display_academic_stats_results, error_detail, False, None)
 
-    def display_academic_stats_results(self, output, success):
+    def display_academic_stats_results(self, output, success, output_dir=None):
         """論文用統計分析結果表示"""
         self.academic_stats_analyze_btn.configure(state='normal')
 
@@ -888,14 +888,30 @@ class AcademicModeMixin:
 
         if success:
             self.academic_status_label.configure(
-                text=self.i18n.t('academic.stats_complete'),
+                text=f"[OK] 統計分析完了！25種類のプロットが {output_dir}/ に保存されました",
                 text_color="#00ff88"
             )
 
             messagebox.showinfo(
-                self.i18n.t('messages.completed'),
-                self.i18n.t('academic.stats_complete_detail')
+                "完了",
+                f"統計分析が完了しました。\n\n"
+                f"25種類の研究用プロット（300dpi）が\n"
+                f"{output_dir}/ フォルダに保存されました。\n\n"
+                f"・ハルシネーション検出（4種類）\n"
+                f"・品質トレードオフ（5種類）\n"
+                f"・医療画像特化（4種類）\n"
+                f"・分布・PCA分析（4種類）\n"
+                f"・その他（6種類）"
             )
+
+            # フォルダを開くか確認
+            result = messagebox.askyesno(
+                "フォルダを開く",
+                f"{output_dir} フォルダを開きますか？"
+            )
+            if result:
+                if output_dir and os.path.exists(output_dir):
+                    os.startfile(output_dir)
         else:
             self.academic_status_label.configure(
                 text=self.i18n.t('academic.stats_error'),
