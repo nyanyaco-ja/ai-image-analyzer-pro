@@ -135,7 +135,7 @@ class BatchModeMixin:
         self.batch_original_dir = tk.StringVar()
         original_label = ctk.CTkLabel(
             self.folder_accordion.content_frame,
-            text="[FOLDER] 元画像フォルダ（必須・処理前・PNG推奨）",
+            text=self.i18n.t('batch.original_folder_label'),
             font=("Arial", 14, "bold"),
             text_color="#00ff88"
         )
@@ -169,7 +169,7 @@ class BatchModeMixin:
         # 超解像モデルフォルダ（複数）
         upscaled_label = ctk.CTkLabel(
             self.folder_accordion.content_frame,
-            text="[MODEL] 超解像モデルフォルダ（必須・最低1つ、最大5個）",
+            text=self.i18n.t('batch.model_folder_label'),
             font=("Arial", 14, "bold"),
             text_color="#ffffff"
         )
@@ -267,7 +267,7 @@ class BatchModeMixin:
         detail_frame = ctk.CTkFrame(self.output_csv_accordion.content_frame, fg_color="transparent")
         detail_frame.pack(fill=tk.X, padx=15, pady=(5, 15))
 
-        detail_label = ctk.CTkLabel(detail_frame, text="詳細:", width=80, anchor="w", font=("Arial", 12))
+        detail_label = ctk.CTkLabel(detail_frame, text=self.i18n.t('batch.detail_label'), width=80, anchor="w", font=("Arial", 12))
         detail_label.pack(side=tk.LEFT)
 
         detail_entry = ctk.CTkEntry(
@@ -297,7 +297,7 @@ class BatchModeMixin:
 
         append_checkbox = ctk.CTkCheckBox(
             append_mode_frame,
-            text="既存CSVにデータを追加（チェックなし = 上書きモード）",
+            text=self.i18n.t('batch.append_mode_label'),
             variable=self.batch_append_mode,
             font=("Arial", 13),
             text_color="#4A90E2",
@@ -317,7 +317,7 @@ class BatchModeMixin:
 
         limit_info = ctk.CTkLabel(
             self.detail_accordion.content_frame,
-            text="※ 0 = 全画像処理、10 = 最初の10枚のみ処理（テスト用）",
+            text=self.i18n.t('batch.limit_note'),
             font=("Arial", 11),
             text_color="#888888",
             justify="left"
@@ -331,7 +331,7 @@ class BatchModeMixin:
         # タイトル
         limit_title = ctk.CTkLabel(
             limit_container,
-            text="処理枚数制限:",
+            text=self.i18n.t('batch.limit_label'),
             font=("Arial", 13, "bold"),
             text_color="#4A90E2",
             anchor="w"
@@ -359,7 +359,7 @@ class BatchModeMixin:
 
         self.limit_value_label = ctk.CTkLabel(
             slider_frame,
-            text="全て",
+            text=self.i18n.t('batch.limit_all'),
             font=("Arial", 15, "bold"),
             text_color="#00ff88",
             width=90
@@ -372,7 +372,7 @@ class BatchModeMixin:
 
         entry_label = ctk.CTkLabel(
             entry_frame,
-            text="直接入力（大量処理用）:",
+            text=self.i18n.t('batch.limit_direct_input'),
             font=("Arial", 12),
             text_color="#888888",
             anchor="w"
@@ -384,7 +384,7 @@ class BatchModeMixin:
             width=140,
             height=40,
             font=("Arial", 14),
-            placeholder_text="0 = 全て処理",
+            placeholder_text=self.i18n.t('batch.limit_placeholder'),
             fg_color="#1e2740",
             border_color="#00ffff",
             text_color="#ffffff"
@@ -401,7 +401,7 @@ class BatchModeMixin:
         # === 並列処理設定 ===
         parallel_info = ctk.CTkLabel(
             self.detail_accordion.content_frame,
-            text="[PARALLEL] 並列処理設定（1000枚以上で効果的、少量は逆に遅くなります）",
+            text=self.i18n.t('batch.parallel_info'),
             font=("Arial", 11),
             text_color="#888888",
             justify="left"
@@ -416,7 +416,7 @@ class BatchModeMixin:
         self.use_parallel = tk.BooleanVar(value=False)  # デフォルトOFF
         parallel_checkbox = ctk.CTkCheckBox(
             parallel_frame,
-            text="並列処理を使用",
+            text=self.i18n.t('batch.use_parallel'),
             variable=self.use_parallel,
             command=self.toggle_parallel_settings,
             font=("Arial", 13),
@@ -432,7 +432,7 @@ class BatchModeMixin:
 
         workers_label = ctk.CTkLabel(
             workers_frame,
-            text="プロセス数:",
+            text=self.i18n.t('batch.num_workers'),
             font=("Arial", 12),
             text_color="#888888",
             anchor="w"
@@ -458,7 +458,7 @@ class BatchModeMixin:
 
         workers_info = ctk.CTkLabel(
             workers_frame,
-            text=f"（推奨: {max(1, cpu_count() - 1)}, 最大: {max_workers}）",
+            text=self.i18n.t('batch.workers_hint').format(recommended=max(1, cpu_count() - 1), max=max_workers),
             font=("Arial", 11),
             text_color="#666666"
         )
@@ -467,7 +467,7 @@ class BatchModeMixin:
         # P6パッチサイズ選択
         patch_info = ctk.CTkLabel(
             self.detail_accordion.content_frame,
-            text="P6ヒートマップ精度（パッチサイズ）:",
+            text=self.i18n.t('batch.patch_size_title'),
             font=("Arial", 13, "bold"),
             text_color="#4A90E2",
             justify="left"
@@ -476,7 +476,7 @@ class BatchModeMixin:
 
         patch_desc = ctk.CTkLabel(
             self.detail_accordion.content_frame,
-            text="大量処理には16×16（標準）を推奨、医療画像は8×8を選択",
+            text=self.i18n.t('batch.patch_size_desc'),
             font=("Arial", 11),
             text_color="#888888",
             justify="left"
@@ -492,7 +492,7 @@ class BatchModeMixin:
         # 8×8オプション
         patch_8 = ctk.CTkRadioButton(
             patch_frame,
-            text="8×8（超高精度、医療画像用）",
+            text=self.i18n.t('batch.patch_8x8'),
             variable=self.batch_patch_size,
             value=8,
             font=("Arial", 12),
@@ -505,7 +505,7 @@ class BatchModeMixin:
         # 16×16オプション（推奨）
         patch_16 = ctk.CTkRadioButton(
             patch_frame,
-            text="16×16（標準精度、論文標準）⭐ 推奨",
+            text=self.i18n.t('batch.patch_16x16'),
             variable=self.batch_patch_size,
             value=16,
             font=("Arial", 12),
@@ -518,7 +518,7 @@ class BatchModeMixin:
         # 32×32オプション
         patch_32 = ctk.CTkRadioButton(
             patch_frame,
-            text="32×32（高速、概要把握用）",
+            text=self.i18n.t('batch.patch_32x32'),
             variable=self.batch_patch_size,
             value=32,
             font=("Arial", 12),
@@ -554,7 +554,7 @@ class BatchModeMixin:
 
         stats_info = ctk.CTkLabel(
             self.stats_accordion.content_frame,
-            text="バッチ処理完了後、CSVファイルを統計分析して25種類の研究用プロットを生成します。",
+            text=self.i18n.t('batch.stats_desc'),
             font=("Arial", 13),
             text_color="#cccccc",
             justify="left"
@@ -570,7 +570,7 @@ class BatchModeMixin:
         csv_select_entry = ctk.CTkEntry(
             csv_select_frame,
             textvariable=self.stats_csv_path,
-            placeholder_text="results/batch_analysis.csv を選択...",
+            placeholder_text=self.i18n.t('batch.csv_placeholder'),
             height=45,
             font=("Arial", 13)
         )
@@ -578,7 +578,7 @@ class BatchModeMixin:
 
         csv_select_btn = ctk.CTkButton(
             csv_select_frame,
-            text="[FOLDER] CSV選択",
+            text=self.i18n.t('batch.csv_select_button'),
             command=self.browse_stats_csv,
             width=120,
             height=45,
@@ -610,7 +610,7 @@ class BatchModeMixin:
         # ハルシネーション抽出ボタン
         self.hallucination_extract_btn = ctk.CTkButton(
             button_frame,
-            text="[WARNING] ハルシネーション疑いデータ抽出",
+            text=self.i18n.t('batch.hallucination_warning'),
             command=self.extract_hallucination_suspects,
             height=45,
             corner_radius=10,
@@ -624,7 +624,7 @@ class BatchModeMixin:
         # クリーンデータセット抽出ボタン（NEW in v1.5）
         self.clean_dataset_btn = ctk.CTkButton(
             button_frame,
-            text="[EXTRACT] 正常データ抽出（AI学習用）",
+            text=self.i18n.t('batch.normal_data_extract'),
             command=self.extract_clean_dataset,
             height=45,
             corner_radius=10,
@@ -884,7 +884,7 @@ class BatchModeMixin:
         # UIを無効化
         self.batch_analyze_btn.configure(state='disabled')
         self.batch_progress.set(0)
-        self.batch_status_label.configure(text="バッチ処理を開始します...", text_color="#00ffff")
+        self.batch_status_label.configure(text=self.i18n.t('batch.status_starting'), text_color="#00ffff")
         self.batch_result_text.delete("1.0", tk.END)
 
         # 別スレッドで実行
@@ -896,8 +896,9 @@ class BatchModeMixin:
         """バッチ処理進捗更新（別スレッドから呼ばれる）"""
         progress = current / total if total > 0 else 0
         self.root.after(0, lambda: self.batch_progress.set(progress))
+        progress_text = self.i18n.t('batch.status_processing').format(current=current, total=total, message=message)
         self.root.after(0, lambda: self.batch_status_label.configure(
-            text=f"処理中: {current}/{total} - {message}",
+            text=progress_text,
             text_color="#4A90E2"
         ))
         self.root.after(0, lambda: self.batch_result_text.insert(tk.END, f"{message}\n"))
@@ -945,7 +946,7 @@ class BatchModeMixin:
 
         if success:
             self.batch_status_label.configure(
-                text=f"[OK] バッチ処理完了！CSVファイル: {csv_path}",
+                text=self.i18n.t('batch.status_complete').format(path=csv_path),
                 text_color="#00ff88"
             )
 
@@ -954,17 +955,18 @@ class BatchModeMixin:
                 self.stats_csv_path.set(csv_path)
 
             messagebox.showinfo(
-                "完了",
-                f"バッチ処理が完了しました。\n\n"
-                f"CSV: {csv_path}\n\n"
-                f"統計分析を実行して25種類のプロットを生成できます。"
+                self.i18n.t('messages.completed'),
+                self.i18n.t('batch.status_complete').format(path=csv_path)
             )
         else:
             self.batch_status_label.configure(
-                text="[ERROR] バッチ処理エラー",
+                text=self.i18n.t('batch.status_error'),
                 text_color="#ff4444"
             )
-            messagebox.showerror("エラー", f"バッチ処理中にエラーが発生しました:\n{output}")
+            messagebox.showerror(
+                self.i18n.t('messages.error'),
+                self.i18n.t('batch.error_batch_failed').format(output=output)
+            )
 
 
     def on_slider_change(self, value):
@@ -978,20 +980,20 @@ class BatchModeMixin:
 
         # ラベル更新
         if int_value == 0:
-            self.limit_value_label.configure(text="全て", text_color="#00ff88")
+            self.limit_value_label.configure(text=self.i18n.t('batch.limit_display_all'), text_color="#00ff88")
         else:
-            self.limit_value_label.configure(text=f"{int_value}枚", text_color="#00ffff")
+            self.limit_value_label.configure(text=self.i18n.t('batch.limit_display_count').format(count=int_value), text_color="#00ffff")
 
     def on_entry_typing(self, event=None):
         """入力中のリアルタイムフィードバック"""
         try:
             value = self.limit_entry.get().strip()
             if value == "" or value == "0":
-                self.limit_value_label.configure(text="全て", text_color="#00ff88")
+                self.limit_value_label.configure(text=self.i18n.t('batch.limit_display_all'), text_color="#00ff88")
             else:
                 int_value = int(value)
                 if int_value > 0:
-                    self.limit_value_label.configure(text=f"{int_value}枚", text_color="#00ffff")
+                    self.limit_value_label.configure(text=self.i18n.t('batch.limit_display_count').format(count=int_value), text_color="#00ffff")
         except ValueError:
             pass  # 入力中は無視
 
@@ -1018,21 +1020,21 @@ class BatchModeMixin:
 
             # ラベル更新
             if int_value == 0:
-                self.limit_value_label.configure(text="全て", text_color="#00ff88")
+                self.limit_value_label.configure(text=self.i18n.t('batch.limit_display_all'), text_color="#00ff88")
             else:
-                self.limit_value_label.configure(text=f"{int_value}枚", text_color="#00ffff")
+                self.limit_value_label.configure(text=self.i18n.t('batch.limit_display_count').format(count=int_value), text_color="#00ffff")
 
         except ValueError:
             # 無効な入力の場合は0にリセット
             self.limit_entry.delete(0, tk.END)
             self.limit_entry.insert(0, "0")
             self.batch_limit.set(0)
-            self.limit_value_label.configure(text="全て", text_color="#00ff88")
+            self.limit_value_label.configure(text=self.i18n.t('batch.limit_display_all'), text_color="#00ff88")
 
     def update_limit_label(self, *args):
         """処理枚数ラベル更新（trace用）"""
         limit = self.batch_limit.get()
         if limit == 0:
-            self.limit_value_label.configure(text="全て", text_color="#00ff88")
+            self.limit_value_label.configure(text=self.i18n.t('batch.limit_display_all'), text_color="#00ff88")
         else:
-            self.limit_value_label.configure(text=f"{limit}枚", text_color="#00ffff")
+            self.limit_value_label.configure(text=self.i18n.t('batch.limit_display_count').format(count=limit), text_color="#00ffff")
