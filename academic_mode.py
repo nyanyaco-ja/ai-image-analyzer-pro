@@ -486,23 +486,23 @@ class AcademicModeMixin:
         academic_workers_info.pack(side=tk.LEFT)
 
         # P6パッチサイズ選択
-        patch_info = ctk.CTkLabel(
+        self.academic_patch_info = ctk.CTkLabel(
             self.config_accordion.content_frame,
             text=self.i18n.t('academic.patch_size_title'),
             font=("Arial", 13, "bold"),
             text_color="#9b59b6",
             justify="left"
         )
-        patch_info.pack(anchor="w", padx=15, pady=(20, 5))
+        self.academic_patch_info.pack(anchor="w", padx=15, pady=(20, 5))
 
-        patch_desc = ctk.CTkLabel(
+        self.academic_patch_desc = ctk.CTkLabel(
             self.config_accordion.content_frame,
             text=self.i18n.t('academic.patch_size_desc'),
             font=("Arial", 11),
             text_color="#888888",
             justify="left"
         )
-        patch_desc.pack(anchor="w", padx=15, pady=(0, 5))
+        self.academic_patch_desc.pack(anchor="w", padx=15, pady=(0, 5))
 
         # パッチサイズ変数（デフォルト16）
         self.academic_patch_size = tk.IntVar(value=16)
@@ -511,7 +511,7 @@ class AcademicModeMixin:
         patch_frame.pack(fill=tk.X, padx=15, pady=(5, 15))
 
         # 8×8オプション
-        patch_8 = ctk.CTkRadioButton(
+        self.academic_patch_8 = ctk.CTkRadioButton(
             patch_frame,
             text=self.i18n.t('academic.patch_8x8'),
             variable=self.academic_patch_size,
@@ -521,10 +521,10 @@ class AcademicModeMixin:
             fg_color="#ff6b6b",
             hover_color="#ee5555"
         )
-        patch_8.pack(anchor="w", pady=(0, 5))
+        self.academic_patch_8.pack(anchor="w", pady=(0, 5))
 
         # 16×16オプション（推奨）
-        patch_16 = ctk.CTkRadioButton(
+        self.academic_patch_16 = ctk.CTkRadioButton(
             patch_frame,
             text=self.i18n.t('academic.patch_16x16'),
             variable=self.academic_patch_size,
@@ -534,10 +534,10 @@ class AcademicModeMixin:
             fg_color="#9b59b6",
             hover_color="#7d3c98"
         )
-        patch_16.pack(anchor="w", pady=(0, 5))
+        self.academic_patch_16.pack(anchor="w", pady=(0, 5))
 
         # 32×32オプション
-        patch_32 = ctk.CTkRadioButton(
+        self.academic_patch_32 = ctk.CTkRadioButton(
             patch_frame,
             text=self.i18n.t('academic.patch_32x32'),
             variable=self.academic_patch_size,
@@ -547,7 +547,7 @@ class AcademicModeMixin:
             fg_color="#4ecdc4",
             hover_color="#3db8af"
         )
-        patch_32.pack(anchor="w")
+        self.academic_patch_32.pack(anchor="w")
 
         # 実行ボタン
         self.academic_analyze_btn = ctk.CTkButton(

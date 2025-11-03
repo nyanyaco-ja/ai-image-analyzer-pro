@@ -373,19 +373,19 @@ class ModernImageAnalyzerGUI(
         self.mode_developer_desc.pack(anchor="w", padx=30, pady=(0, 15))
 
         # P6パッチサイズ選択
-        patch_label = ctk.CTkLabel(
+        self.patch_label = ctk.CTkLabel(
             mode_frame,
             text=self.i18n.t('gui.patch_size_title'),
             font=("Arial", 14, "bold"),
             text_color="#00ffff"
         )
-        patch_label.pack(anchor="w", padx=30, pady=(15, 8))
+        self.patch_label.pack(anchor="w", padx=30, pady=(15, 8))
 
         # パッチサイズ変数（デフォルト16）
         self.patch_size = tk.IntVar(value=16)
 
         # 8×8オプション
-        patch_8 = ctk.CTkRadioButton(
+        self.patch_8 = ctk.CTkRadioButton(
             mode_frame,
             text=self.i18n.t('gui.patch_8x8'),
             variable=self.patch_size,
@@ -395,18 +395,18 @@ class ModernImageAnalyzerGUI(
             fg_color="#ff6b6b",
             hover_color="#ee5555"
         )
-        patch_8.pack(anchor="w", padx=30, pady=(0, 5))
+        self.patch_8.pack(anchor="w", padx=30, pady=(0, 5))
 
-        patch_8_desc = ctk.CTkLabel(
+        self.patch_8_desc = ctk.CTkLabel(
             mode_frame,
             text=self.i18n.t('gui.patch_8x8_detail'),
             font=("Arial", 11),
             text_color="#888888"
         )
-        patch_8_desc.pack(anchor="w", padx=30, pady=(0, 8))
+        self.patch_8_desc.pack(anchor="w", padx=30, pady=(0, 8))
 
         # 16×16オプション（推奨）
-        patch_16 = ctk.CTkRadioButton(
+        self.patch_16 = ctk.CTkRadioButton(
             mode_frame,
             text=self.i18n.t('gui.patch_16x16'),
             variable=self.patch_size,
@@ -416,18 +416,18 @@ class ModernImageAnalyzerGUI(
             fg_color="#4A90E2",
             hover_color="#357ABD"
         )
-        patch_16.pack(anchor="w", padx=30, pady=(0, 5))
+        self.patch_16.pack(anchor="w", padx=30, pady=(0, 5))
 
-        patch_16_desc = ctk.CTkLabel(
+        self.patch_16_desc = ctk.CTkLabel(
             mode_frame,
             text=self.i18n.t('gui.patch_16x16_detail'),
             font=("Arial", 11),
             text_color="#888888"
         )
-        patch_16_desc.pack(anchor="w", padx=30, pady=(0, 8))
+        self.patch_16_desc.pack(anchor="w", padx=30, pady=(0, 8))
 
         # 32×32オプション
-        patch_32 = ctk.CTkRadioButton(
+        self.patch_32 = ctk.CTkRadioButton(
             mode_frame,
             text=self.i18n.t('gui.patch_32x32'),
             variable=self.patch_size,
@@ -437,15 +437,15 @@ class ModernImageAnalyzerGUI(
             fg_color="#4ecdc4",
             hover_color="#3db8af"
         )
-        patch_32.pack(anchor="w", padx=30, pady=(0, 5))
+        self.patch_32.pack(anchor="w", padx=30, pady=(0, 5))
 
-        patch_32_desc = ctk.CTkLabel(
+        self.patch_32_desc = ctk.CTkLabel(
             mode_frame,
             text=self.i18n.t('gui.patch_32x32_detail'),
             font=("Arial", 11),
             text_color="#888888"
         )
-        patch_32_desc.pack(anchor="w", padx=30, pady=(0, 15))
+        self.patch_32_desc.pack(anchor="w", padx=30, pady=(0, 15))
 
         # 元画像（必須）
         self.original_accordion = AccordionSection(input_section, self.i18n.t('sections.original_image_required'), bg_color="#1b3d1b", title_color="#00ff88", font_size=18)
@@ -1573,6 +1573,46 @@ class ModernImageAnalyzerGUI(
             self.academic_info_title.configure(text=self.i18n.t('academic.title'))
         if hasattr(self, 'academic_info_text'):
             self.academic_info_text.configure(text=self.i18n.t('academic.description'))
+
+        # パッチサイズセクション（単一画像分析タブ）
+        if hasattr(self, 'patch_label'):
+            self.patch_label.configure(text=self.i18n.t('gui.patch_size_title'))
+        if hasattr(self, 'patch_8'):
+            self.patch_8.configure(text=self.i18n.t('gui.patch_8x8'))
+        if hasattr(self, 'patch_8_desc'):
+            self.patch_8_desc.configure(text=self.i18n.t('gui.patch_8x8_detail'))
+        if hasattr(self, 'patch_16'):
+            self.patch_16.configure(text=self.i18n.t('gui.patch_16x16'))
+        if hasattr(self, 'patch_16_desc'):
+            self.patch_16_desc.configure(text=self.i18n.t('gui.patch_16x16_detail'))
+        if hasattr(self, 'patch_32'):
+            self.patch_32.configure(text=self.i18n.t('gui.patch_32x32'))
+        if hasattr(self, 'patch_32_desc'):
+            self.patch_32_desc.configure(text=self.i18n.t('gui.patch_32x32_detail'))
+
+        # パッチサイズセクション（バッチ処理タブ）
+        if hasattr(self, 'batch_patch_info'):
+            self.batch_patch_info.configure(text=self.i18n.t('batch.patch_size_title'))
+        if hasattr(self, 'batch_patch_desc'):
+            self.batch_patch_desc.configure(text=self.i18n.t('batch.patch_size_desc'))
+        if hasattr(self, 'batch_patch_8'):
+            self.batch_patch_8.configure(text=self.i18n.t('batch.patch_8x8'))
+        if hasattr(self, 'batch_patch_16'):
+            self.batch_patch_16.configure(text=self.i18n.t('batch.patch_16x16'))
+        if hasattr(self, 'batch_patch_32'):
+            self.batch_patch_32.configure(text=self.i18n.t('batch.patch_32x32'))
+
+        # パッチサイズセクション（アカデミック評価タブ）
+        if hasattr(self, 'academic_patch_info'):
+            self.academic_patch_info.configure(text=self.i18n.t('academic.patch_size_title'))
+        if hasattr(self, 'academic_patch_desc'):
+            self.academic_patch_desc.configure(text=self.i18n.t('academic.patch_size_desc'))
+        if hasattr(self, 'academic_patch_8'):
+            self.academic_patch_8.configure(text=self.i18n.t('academic.patch_8x8'))
+        if hasattr(self, 'academic_patch_16'):
+            self.academic_patch_16.configure(text=self.i18n.t('academic.patch_16x16'))
+        if hasattr(self, 'academic_patch_32'):
+            self.academic_patch_32.configure(text=self.i18n.t('academic.patch_32x32'))
 
 def main():
     root = ctk.CTk()
