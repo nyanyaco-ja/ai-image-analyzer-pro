@@ -68,7 +68,6 @@ class StatsAnalysisMixin:
         """統計分析実行"""
         old_stdout = sys.stdout
         try:
-            import sys
             from analyze_results import analyze_batch_results
 
             # ログエリアをクリア
