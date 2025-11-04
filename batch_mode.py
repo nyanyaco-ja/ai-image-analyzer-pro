@@ -649,8 +649,8 @@ class BatchModeMixin:
         )
         self.clean_dataset_btn.pack(fill=tk.X)
 
-        # 結果表示エリア
-        self.batch_result_text = ctk.CTkTextbox(
+        # 結果表示エリア（左パネル用・簡易ログ）
+        self.batch_left_log = ctk.CTkTextbox(
             self.batch_mode_frame,
             font=("Meiryo", 12),
             fg_color="#0a0e27",
@@ -658,7 +658,7 @@ class BatchModeMixin:
             corner_radius=10,
             height=200
         )
-        self.batch_result_text.pack(fill=tk.BOTH, expand=True)
+        self.batch_left_log.pack(fill=tk.BOTH, expand=True)
 
 
     def browse_batch_original(self):
