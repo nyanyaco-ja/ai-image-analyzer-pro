@@ -1523,6 +1523,9 @@ def generate_research_plots(df, output_dir):
     print(f"   - Plot 25: 空間依存性証明（分布比較）")
     print(f"   - Plot 26: 座標分布（BBI可視化）\n")
 
+    # 出力ディレクトリのパスを返す
+    return output_dir
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
