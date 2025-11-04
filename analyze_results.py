@@ -17,7 +17,7 @@ import seaborn as sns
 from pathlib import Path
 
 # Font settings for English (academic papers)
-plt.rcParams['font.family'] = ['DejaVu Sans', 'Arial', 'Helvetica', 'sans-serif']
+plt.rcParams['font.family'] = ['DejaVu Sans', 'Arial', 'sans-serif']
 plt.rcParams['axes.unicode_minus'] = False
 
 
@@ -130,7 +130,7 @@ def compare_models(df, output_dir):
     plt.tight_layout()
     # Place title at bottom for academic papers
     fig = plt.gcf()
-    fig.text(0.5, 0.02, 'Model Comparison by Total Score', ha='center', va='bottom', transform=fig.transFigure)
+    fig.text(0.5, -0.05, 'Model Comparison by Total Score', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'model_scores.png', dpi=150)
     plt.close()
 
@@ -559,7 +559,7 @@ def generate_research_plots(df, output_dir):
     plot1_path = output_dir / 'strategy_map_sharpness_vs_psnr.png'
     # Place title at bottom for academic papers
     fig = plt.gcf()
-    fig.text(0.5, 0.02, 'AI Model Strategy Map: Fidelity vs Clarity', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
+    fig.text(0.5, -0.05, 'AI Model Strategy Map: Fidelity vs Clarity', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(plot1_path, dpi=300, bbox_inches='tight')
     plt.close()
     print(f"[OK] Sharpness vs PSNR 散布図: {plot1_path}")
@@ -618,7 +618,7 @@ def generate_research_plots(df, output_dir):
     plot3_path = output_dir / 'correlation_ssim_vs_psnr.png'
     # Place title at bottom for academic papers
     fig = plt.gcf()
-    fig.text(0.5, 0.02, 'SSIM vs PSNR Correlation\nOutliers = Hallucination Candidates', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
+    fig.text(0.5, -0.05, 'SSIM vs PSNR Correlation\nOutliers = Hallucination Candidates', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(plot3_path, dpi=300, bbox_inches='tight')
     plt.close()
     print(f"[OK] SSIM vs PSNR 散布図: {plot3_path}")
@@ -650,7 +650,7 @@ def generate_research_plots(df, output_dir):
     plot4_path = output_dir / 'quality_noise_vs_artifact.png'
     # Place title at bottom for academic papers
     fig = plt.gcf()
-    fig.text(0.5, 0.02, 'Noise vs Artifacts\nLower-left is ideal (both low)', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
+    fig.text(0.5, -0.05, 'Noise vs Artifacts\nLower-left is ideal (both low)', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(plot4_path, dpi=300, bbox_inches='tight')
     plt.close()
     print(f"[OK] Noise vs Artifacts: {plot4_path}")
@@ -894,7 +894,7 @@ def generate_research_plots(df, output_dir):
     plt.tight_layout()
     # Place title at bottom for academic papers
     fig = plt.gcf()
-    fig.text(0.5, 0.02, 'Quality Tradeoff: Structural Similarity vs Noise', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
+    fig.text(0.5, -0.05, 'Quality Tradeoff: Structural Similarity vs Noise', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'tradeoff_psnr_vs_contrast.png', dpi=300, bbox_inches='tight')
     plt.close()
     print(f"[OK] トレードオフ②（PSNR×Contrast）")
@@ -914,7 +914,7 @@ def generate_research_plots(df, output_dir):
     plt.tight_layout()
     # Place title at bottom for academic papers
     fig = plt.gcf()
-    fig.text(0.5, 0.02, 'Quality Tradeoff: Fidelity vs Contrast Enhancement', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
+    fig.text(0.5, -0.05, 'Quality Tradeoff: Fidelity vs Contrast Enhancement', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'tradeoff_sharpness_vs_artifact.png', dpi=300, bbox_inches='tight')
     plt.close()
     print(f"[OK] トレードオフ③（Sharpness×Artifacts）")
@@ -934,7 +934,7 @@ def generate_research_plots(df, output_dir):
     plt.tight_layout()
     # Place title at bottom for academic papers
     fig = plt.gcf()
-    fig.text(0.5, 0.02, 'Quality Tradeoff: Sharpening vs Distortion', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
+    fig.text(0.5, -0.05, 'Quality Tradeoff: Sharpening vs Distortion', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'tradeoff_lpips_vs_msssim.png', dpi=300, bbox_inches='tight')
     plt.close()
     print(f"[OK] トレードオフ④（LPIPS×MS-SSIM）")
@@ -954,7 +954,7 @@ def generate_research_plots(df, output_dir):
     plt.tight_layout()
     # Place title at bottom for academic papers
     fig = plt.gcf()
-    fig.text(0.5, 0.02, 'Perception vs Structure: LPIPS vs MS-SSIM\nNegative correlation expected', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
+    fig.text(0.5, -0.05, 'Perception vs Structure: LPIPS vs MS-SSIM\nNegative correlation expected', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'tradeoff_texture_vs_highfreq.png', dpi=300, bbox_inches='tight')
     plt.close()
     print(f"[OK] トレードオフ⑤（テクスチャ×高周波）")
@@ -976,7 +976,7 @@ def generate_research_plots(df, output_dir):
     plt.tight_layout()
     # Place title at bottom for academic papers
     fig = plt.gcf()
-    fig.text(0.5, 0.02, 'Texture vs Frequency Component Consistency', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
+    fig.text(0.5, -0.05, 'Texture vs Frequency Component Consistency', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'medical_contrast_vs_histogram.png', dpi=300, bbox_inches='tight')
     plt.close()
     print(f"[OK] 医療特化①（Contrast×ヒストグラム）")
@@ -1013,7 +1013,7 @@ def generate_research_plots(df, output_dir):
     plt.tight_layout()
     # Place title at bottom for academic papers
     fig = plt.gcf()
-    fig.text(0.5, 0.02, 'Medical Image Quality: Contrast Enhancement vs Intensity Distribution', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
+    fig.text(0.5, -0.05, 'Medical Image Quality: Contrast Enhancement vs Intensity Distribution', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'medical_noise_vs_local_std.png', dpi=300, bbox_inches='tight')
     plt.close()
     print(f"[OK] 医療特化③（Noise×局所品質SD）")
@@ -1033,7 +1033,7 @@ def generate_research_plots(df, output_dir):
     plt.tight_layout()
     # Place title at bottom for academic papers
     fig = plt.gcf()
-    fig.text(0.5, 0.02, 'Medical Image Quality: Edge Preservation vs Local Quality', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
+    fig.text(0.5, -0.05, 'Medical Image Quality: Edge Preservation vs Local Quality', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'medical_deltae_vs_lab.png', dpi=300, bbox_inches='tight')
     plt.close()
     print(f"[OK] 医療特化④（色差×LAB Lightness）")
@@ -1054,7 +1054,7 @@ def generate_research_plots(df, output_dir):
     plt.tight_layout()
     # Place title at bottom for academic papers
     fig = plt.gcf()
-    fig.text(0.5, 0.02, 'Medical Image Quality: Local Noise Distribution', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
+    fig.text(0.5, -0.05, 'Medical Image Quality: Local Noise Distribution', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'distribution_total_score_histogram.png', dpi=300, bbox_inches='tight')
     plt.close()
     print(f"[OK] 分布①（Total Scoreヒストグラム）")
@@ -1092,7 +1092,7 @@ def generate_research_plots(df, output_dir):
     plt.tight_layout()
     # Place title at bottom for academic papers
     fig = plt.gcf()
-    fig.text(0.5, 0.02, 'Total Score Distribution by Model', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
+    fig.text(0.5, -0.05, 'Total Score Distribution by Model', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'pca_2d_projection.png', dpi=300, bbox_inches='tight')
     plt.close()
     print(f"[OK] 分布②（PCA 2次元プロット）")
@@ -1129,7 +1129,7 @@ def generate_research_plots(df, output_dir):
     plt.tight_layout()
     # Place title at bottom for academic papers
     fig = plt.gcf()
-    fig.text(0.5, 0.02, f'Principal Component Analysis (PCA): 17 Metrics to 2D\nCumulative variance: {sum(pca.explained_variance_ratio_)*100:.1f}%', ha='center', va='bottom', transform=fig.transFigure)
+    fig.text(0.5, -0.05, f'Principal Component Analysis (PCA): 17 Metrics to 2D\nCumulative variance: {sum(pca.explained_variance_ratio_)*100:.1f}%', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'percentile_bands.png', dpi=300, bbox_inches='tight')
     plt.close()
     print(f"[OK] 分布③（パーセンタイルバンド）")
@@ -1151,7 +1151,7 @@ def generate_research_plots(df, output_dir):
     plt.tight_layout()
     # Place title at bottom for academic papers
     fig = plt.gcf()
-    fig.text(0.5, 0.02, 'Percentile Band (25%-75%) Plot', fontsize=18, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
+    fig.text(0.5, -0.05, 'Percentile Band (25%-75%) Plot', fontsize=18, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'pca_cumulative_variance.png', dpi=300, bbox_inches='tight')
     plt.close()
     print(f"[OK] 分布④（PCA寄与率）")
