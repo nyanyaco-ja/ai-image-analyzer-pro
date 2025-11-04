@@ -550,7 +550,7 @@ def generate_research_plots(df, output_dir):
     # 領域ラベル
     max_psnr = df['psnr'].max()
     max_sharp = df['sharpness'].max()
-    plt.text(max_psnr * 0.95, max_sharp * 0.95, 'Ideal Region\n(High Fidelity Ideal Region\n（高忠実・高鮮明） Clarity)',
+    plt.text(max_psnr * 0.95, max_sharp * 0.95, 'Ideal Region\n(High Fidelity & Clarity)',
              fontsize=10, ha='right', va='top', bbox=dict(boxstyle='round', facecolor='lightgreen', alpha=0.5))
     plt.text(df['psnr'].min() * 1.05, max_sharp * 0.95, 'Over-processing\n(Low Fidelity)\nHallucination Risk',
              fontsize=10, ha='left', va='top', bbox=dict(boxstyle='round', facecolor='lightcoral', alpha=0.5))
@@ -760,7 +760,7 @@ def generate_research_plots(df, output_dir):
     if len(hallucination_candidates) > 0:
         plt.scatter(hallucination_candidates['ssim'], hallucination_candidates['psnr'],
                    color='red', s=200, marker='x', linewidths=3,
-                   label=f'Hallucination Suspected ({len(hallucination_candidates)}件)', zorder=10)
+                   label=f'Hallucination Suspected ({len(hallucination_candidates)} cases)', zorder=10)
 
     plt.axhline(y=psnr_low, color='orange', linestyle='--', alpha=0.5, label=f'PSNR Threshold ({psnr_low:.1f})')
     plt.axvline(x=ssim_high, color='orange', linestyle='--', alpha=0.5, label=f'SSIM Threshold ({ssim_high:.3f})')
@@ -791,7 +791,7 @@ def generate_research_plots(df, output_dir):
     if len(over_processed) > 0:
         plt.scatter(over_processed['sharpness'], over_processed['noise'],
                    color='red', s=200, marker='x', linewidths=3,
-                   label=f'Over-processing Suspected ({len(over_processed)}件)', zorder=10)
+                   label=f'Over-processing Suspected ({len(over_processed)} cases)', zorder=10)
 
     plt.axhline(y=noise_high, color='orange', linestyle='--', alpha=0.5)
     plt.axvline(x=sharp_high, color='orange', linestyle='--', alpha=0.5)
@@ -822,7 +822,7 @@ def generate_research_plots(df, output_dir):
     if len(unnatural_edges) > 0:
         plt.scatter(unnatural_edges['edge_density'], unnatural_edges['local_quality_std'],
                    color='red', s=200, marker='x', linewidths=3,
-                   label=f'Unnatural Edges Suspected ({len(unnatural_edges)}件)', zorder=10)
+                   label=f'Unnatural Edges Suspected ({len(unnatural_edges)} cases)', zorder=10)
 
     plt.xlabel('Edge Density', fontsize=14, fontweight='bold')
     plt.ylabel('Local Quality Std Dev', fontsize=14, fontweight='bold')
