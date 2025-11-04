@@ -10,21 +10,29 @@ python analyze_results.py results/batch_analysis.csv
 """
 
 import sys
+import argparse
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
+from translations import get_label, get_font_family
 
-# Font settings for English (academic papers)
-plt.rcParams['font.family'] = ['DejaVu Sans', 'Arial', 'sans-serif']
-plt.rcParams['axes.unicode_minus'] = False
+# Global language setting (will be set by command line argument)
+LANG = 'en'
 
 
-def analyze_batch_results(csv_file):
+def analyze_batch_results(csv_file, lang='en'):
     """
     バッチ処理結果の統計分析
     """
+    # Set global language
+    global LANG
+    LANG = lang
+
+    # Set font based on language
+    plt.rcParams['font.family'] = get_font_family(LANG)
+    plt.rcParams['axes.unicode_minus'] = False
 
     # CSV読み込み
     df = pd.read_csv(csv_file)
@@ -124,13 +132,13 @@ def compare_models(df, output_dir):
 
     plt.bar(range(len(model_scores)), model_scores.values)
     plt.xticks(range(len(model_scores)), model_scores.index, rotation=45, ha='right')
-    plt.ylabel('Total Score (Average)')
-    # TITLE_BOTTOM:{'Model Comparison by Total Score'}
+    plt.ylabel(get_label('total_score_avg', LANG))
+    # TITLE_BOTTOM:{get_label('model_comparison', LANG)}
     plt.grid(axis='y', alpha=0.3)
     plt.tight_layout()
     # Place title at bottom for academic papers
     fig = plt.gcf()
-    fig.text(0.5, -0.05, 'Model Comparison by Total Score', ha='center', va='bottom', transform=fig.transFigure)
+    fig.text(0.5, -0.05, get_label('model_comparison', LANG), ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'model_scores.png', dpi=150)
     plt.close()
 
@@ -199,23 +207,23 @@ def suggest_thresholds(df, output_dir):
     # Determine thresholds from statistical values for each metric
     # Propose thresholds for all 17 metrics
     metrics_config = {
-        'ssim': {'direction': 'high', 'percentile': 25, 'name': 'SSIM (Structural Similarity)'},
+        'ssim': {'direction': 'high', 'percentile': 25, 'name': get_label('ssim', LANG)},
         'ms_ssim': {'direction': 'high', 'percentile': 25, 'name': 'MS-SSIM (Multi-Scale SSIM)'},
         'psnr': {'direction': 'high', 'percentile': 25, 'name': 'PSNR (Peak Signal-to-Noise Ratio)'},
-        'lpips': {'direction': 'low', 'percentile': 75, 'name': 'LPIPS (Perceptual Similarity)'},
-        'sharpness': {'direction': 'high', 'percentile': 25, 'name': 'Sharpness'},
-        'contrast': {'direction': 'high', 'percentile': 25, 'name': 'Contrast'},
+        'lpips': {'direction': 'low', 'percentile': 75, 'name': get_label('lpips', LANG)},
+        'sharpness': {'direction': 'high', 'percentile': 25, 'name': get_label('sharpness_clarity', LANG)},
+        'contrast': {'direction': 'high', 'percentile': 25, 'name': get_label('contrast', LANG)},
         'entropy': {'direction': 'high', 'percentile': 25, 'name': 'Entropy (Information Content)'},
-        'noise': {'direction': 'low', 'percentile': 75, 'name': 'Noise Level'},
-        'edge_density': {'direction': 'high', 'percentile': 25, 'name': 'Edge Density'},
-        'artifact_total': {'direction': 'low', 'percentile': 75, 'name': 'Artifacts'},
+        'noise': {'direction': 'low', 'percentile': 75, 'name': get_label('noise', LANG)},
+        'edge_density': {'direction': 'high', 'percentile': 25, 'name': get_label('edge_density', LANG)},
+        'artifact_total': {'direction': 'low', 'percentile': 75, 'name': get_label('artifact_total', LANG)},
         'delta_e': {'direction': 'low', 'percentile': 75, 'name': 'Color Difference (ΔE)'},
-        'high_freq_ratio': {'direction': 'high', 'percentile': 25, 'name': 'High Frequency Ratio'},
-        'texture_complexity': {'direction': 'high', 'percentile': 25, 'name': 'Texture Complexity'},
-        'local_quality_mean': {'direction': 'high', 'percentile': 25, 'name': 'Local Quality Mean'},
-        'histogram_corr': {'direction': 'high', 'percentile': 25, 'name': 'Histogram Correlation'},
+        'high_freq_ratio': {'direction': 'high', 'percentile': 25, 'name': get_label('high_freq_ratio', LANG)},
+        'texture_complexity': {'direction': 'high', 'percentile': 25, 'name': get_label('texture_complexity', LANG)},
+        'local_quality_mean': {'direction': 'high', 'percentile': 25, 'name': get_label('local_quality_mean', LANG)},
+        'histogram_corr': {'direction': 'high', 'percentile': 25, 'name': get_label('histogram_corr', LANG)},
         'lab_L_mean': {'direction': 'neutral', 'percentile': 50, 'name': 'LAB Lightness (Reference)'},
-        'total_score': {'direction': 'high', 'percentile': 25, 'name': 'Total Score'},
+        'total_score': {'direction': 'high', 'percentile': 25, 'name': get_label('total_score', LANG)},
     }
 
     for metric, config in metrics_config.items():
@@ -537,29 +545,29 @@ def generate_research_plots(df, output_dir):
         plt.scatter(model_data['psnr'], model_data['sharpness'],
                    label=model, alpha=0.6, s=50)
 
-    plt.xlabel('PSNR (Fidelity) [dB]', fontsize=14, fontweight='bold')
-    plt.ylabel('Sharpness (Clarity)', fontsize=14, fontweight='bold')
-    # TITLE_BOTTOM:{'AI Model Strategy Map: Fidelity vs Clarity', fontsize=16, fontweight='bold'}
+    plt.xlabel(get_label('psnr_fidelity', LANG), fontsize=14, fontweight='bold')
+    plt.ylabel(get_label('sharpness', LANG), fontsize=14, fontweight='bold')
+    # TITLE_BOTTOM:{get_label('strategy_map', LANG), fontsize=16, fontweight='bold'}
     plt.legend(fontsize=12)
     plt.grid(True, alpha=0.3)
 
     # 戦略領域の注釈
-    plt.axhline(y=df['sharpness'].median(), color='red', linestyle='--', alpha=0.3, label='Median')
+    plt.axhline(y=df['sharpness'].median(), color='red', linestyle='--', alpha=0.3, label=get_label('median', LANG))
     plt.axvline(x=df['psnr'].median(), color='red', linestyle='--', alpha=0.3)
 
     # 領域ラベル
     max_psnr = df['psnr'].max()
     max_sharp = df['sharpness'].max()
-    plt.text(max_psnr * 0.95, max_sharp * 0.95, 'Ideal Region\n(High Fidelity & Clarity)',
+    plt.text(max_psnr * 0.95, max_sharp * 0.95, get_label('ideal_region_detail', LANG),
              fontsize=10, ha='right', va='top', bbox=dict(boxstyle='round', facecolor='lightgreen', alpha=0.5))
-    plt.text(df['psnr'].min() * 1.05, max_sharp * 0.95, 'Over-processing\n(Low Fidelity)\nHallucination Risk',
+    plt.text(df['psnr'].min() * 1.05, max_sharp * 0.95, get_label('over_processing', LANG),
              fontsize=10, ha='left', va='top', bbox=dict(boxstyle='round', facecolor='lightcoral', alpha=0.5))
 
     plt.tight_layout()
     plot1_path = output_dir / 'strategy_map_sharpness_vs_psnr.png'
     # Place title at bottom for academic papers
     fig = plt.gcf()
-    fig.text(0.5, -0.05, 'AI Model Strategy Map: Fidelity vs Clarity', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
+    fig.text(0.5, -0.05, get_label('strategy_map', LANG), fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(plot1_path, dpi=300, bbox_inches='tight')
     plt.close()
     print(f"[OK] Sharpness vs PSNR 散布図: {plot1_path}")
@@ -579,8 +587,8 @@ def generate_research_plots(df, output_dir):
     for patch, color in zip(bp['boxes'], colors):
         patch.set_facecolor(color)
 
-    plt.ylabel('LPIPS (Perceptual Similarity)', fontsize=14, fontweight='bold')
-    plt.xlabel('AI Model', fontsize=14, fontweight='bold')
+    plt.ylabel(get_label('lpips', LANG), fontsize=14, fontweight='bold')
+    plt.xlabel(get_label('ai_model', LANG), fontsize=14, fontweight='bold')
     # TITLE_BOTTOM:{'LPIPS Distribution by Model (Stability)\nSmaller box = More stable', fontsize=16, fontweight='bold'}
     plt.grid(axis='y', alpha=0.3)
     plt.xticks(rotation=45, ha='right')
@@ -600,8 +608,8 @@ def generate_research_plots(df, output_dir):
         plt.scatter(model_data['ssim'], model_data['psnr'],
                    label=model, alpha=0.6, s=50)
 
-    plt.xlabel('SSIM (Structural Similarity)', fontsize=14, fontweight='bold')
-    plt.ylabel('PSNR (Signal-to-Noise Ratio) [dB]', fontsize=14, fontweight='bold')
+    plt.xlabel(get_label('ssim', LANG), fontsize=14, fontweight='bold')
+    plt.ylabel(get_label('psnr', LANG), fontsize=14, fontweight='bold')
     # TITLE_BOTTOM:{'SSIM vs PSNR Correlation\nOutliers = Hallucination Candidates', fontsize=16, fontweight='bold'}
     plt.legend(fontsize=12)
     plt.grid(True, alpha=0.3)
@@ -632,8 +640,8 @@ def generate_research_plots(df, output_dir):
         plt.scatter(model_data['noise'], model_data['artifact_total'],
                    label=model, alpha=0.6, s=50)
 
-    plt.xlabel('Noise Level', fontsize=14, fontweight='bold')
-    plt.ylabel('Artifacts (Blocking + Ringing)', fontsize=14, fontweight='bold')
+    plt.xlabel(get_label('noise', LANG), fontsize=14, fontweight='bold')
+    plt.ylabel(get_label('artifacts', LANG), fontsize=14, fontweight='bold')
     # TITLE_BOTTOM:{'Noise vs Artifacts\nLower-left is ideal (both low)', fontsize=16, fontweight='bold'}
     plt.legend(fontsize=12)
     plt.grid(True, alpha=0.3)
@@ -643,14 +651,14 @@ def generate_research_plots(df, output_dir):
     low_artifact = df['artifact_total'].quantile(0.25)
     plt.axvline(x=low_noise, color='green', linestyle='--', alpha=0.3)
     plt.axhline(y=low_artifact, color='green', linestyle='--', alpha=0.3)
-    plt.fill_between([0, low_noise], 0, low_artifact, alpha=0.1, color='green', label='Ideal Region')
+    plt.fill_between([0, low_noise], 0, low_artifact, alpha=0.1, color='green', label=get_label('ideal_region', LANG))
     plt.legend(fontsize=12)
 
     plt.tight_layout()
     plot4_path = output_dir / 'quality_noise_vs_artifact.png'
     # Place title at bottom for academic papers
     fig = plt.gcf()
-    fig.text(0.5, -0.05, 'Noise vs Artifacts\nLower-left is ideal (both low)', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
+    fig.text(0.5, -0.05, get_label('noise_artifact', LANG), fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(plot4_path, dpi=300, bbox_inches='tight')
     plt.close()
     print(f"[OK] Noise vs Artifacts: {plot4_path}")
@@ -659,7 +667,7 @@ def generate_research_plots(df, output_dir):
     # 5. モデル別レーダーチャート（主要6指標）
     fig = plt.figure(figsize=(14, 10))
 
-    categories = ['SSIM', 'PSNR', 'Sharpness', 'Edge Density', 'Noise\n(Inverted)', 'Artifacts\n(Inverted)']
+    categories = ['SSIM', 'PSNR', get_label('sharpness_clarity', LANG), get_label('edge_density', LANG), get_label('noise_inverted', LANG), get_label('artifact_inverted', LANG)]
     num_vars = len(categories)
 
     # 正規化（0-1スケール）
@@ -707,7 +715,7 @@ def generate_research_plots(df, output_dir):
 
     # 6. 17項目のバイオリンプロット（分布の可視化）
     fig, axes = plt.subplots(3, 6, figsize=(24, 12))
-    # TITLE_BOTTOM:{'Distribution of 17 Metrics (Violin Plot)', fontsize=20, fontweight='bold'}
+    # TITLE_BOTTOM:{get_label('violin_plot', LANG), fontsize=20, fontweight='bold'}
 
     metrics_for_violin = [
         'ssim', 'ms_ssim', 'psnr', 'lpips', 'sharpness', 'contrast',
@@ -760,13 +768,13 @@ def generate_research_plots(df, output_dir):
     if len(hallucination_candidates) > 0:
         plt.scatter(hallucination_candidates['ssim'], hallucination_candidates['psnr'],
                    color='red', s=200, marker='x', linewidths=3,
-                   label=f'Hallucination Suspected ({len(hallucination_candidates)} cases)', zorder=10)
+                   label=f"{get_label('hallucination_suspected', LANG)} ({len(hallucination_candidates)} {get_label('cases', LANG)})", zorder=10)
 
-    plt.axhline(y=psnr_low, color='orange', linestyle='--', alpha=0.5, label=f'PSNR Threshold ({psnr_low:.1f})')
-    plt.axvline(x=ssim_high, color='orange', linestyle='--', alpha=0.5, label=f'SSIM Threshold ({ssim_high:.3f})')
+    plt.axhline(y=psnr_low, color='orange', linestyle='--', alpha=0.5, label=f"{get_label('psnr_threshold', LANG)} ({psnr_low:.1f})")
+    plt.axvline(x=ssim_high, color='orange', linestyle='--', alpha=0.5, label=f"{get_label('ssim_threshold', LANG)} ({ssim_high:.3f})")
 
-    plt.xlabel('SSIM (Structural Similarity)', fontsize=14, fontweight='bold')
-    plt.ylabel('PSNR [dB]', fontsize=14, fontweight='bold')
+    plt.xlabel(get_label('ssim', LANG), fontsize=14, fontweight='bold')
+    plt.ylabel(get_label('psnr_db', LANG), fontsize=14, fontweight='bold')
     # TITLE_BOTTOM:{'Hallucination Detection: High SSIM & Low PSNR\nLower-right = Mimicked structure, low fidelity', fontsize=16, fontweight='bold'}
     plt.legend(fontsize=10)
     plt.grid(True, alpha=0.3)
@@ -791,13 +799,13 @@ def generate_research_plots(df, output_dir):
     if len(over_processed) > 0:
         plt.scatter(over_processed['sharpness'], over_processed['noise'],
                    color='red', s=200, marker='x', linewidths=3,
-                   label=f'Over-processing Suspected ({len(over_processed)} cases)', zorder=10)
+                   label=f"{get_label('over_processing_suspected', LANG)} ({len(over_processed)} {get_label('cases', LANG)})", zorder=10)
 
     plt.axhline(y=noise_high, color='orange', linestyle='--', alpha=0.5)
     plt.axvline(x=sharp_high, color='orange', linestyle='--', alpha=0.5)
 
-    plt.xlabel('Sharpness', fontsize=14, fontweight='bold')
-    plt.ylabel('Noise Level', fontsize=14, fontweight='bold')
+    plt.xlabel(get_label('sharpness_clarity', LANG), fontsize=14, fontweight='bold')
+    plt.ylabel(get_label('noise', LANG), fontsize=14, fontweight='bold')
     # TITLE_BOTTOM:{'Over-processing Detection: High Sharpness & Noise\nUpper-right = Noise amplified by sharpening', fontsize=16, fontweight='bold'}
     plt.legend(fontsize=10)
     plt.grid(True, alpha=0.3)
@@ -822,10 +830,10 @@ def generate_research_plots(df, output_dir):
     if len(unnatural_edges) > 0:
         plt.scatter(unnatural_edges['edge_density'], unnatural_edges['local_quality_std'],
                    color='red', s=200, marker='x', linewidths=3,
-                   label=f'Unnatural Edges Suspected ({len(unnatural_edges)} cases)', zorder=10)
+                   label=f"{get_label('unnatural_edges_suspected', LANG)} ({len(unnatural_edges)} {get_label('cases', LANG)})", zorder=10)
 
-    plt.xlabel('Edge Density', fontsize=14, fontweight='bold')
-    plt.ylabel('Local Quality Std Dev', fontsize=14, fontweight='bold')
+    plt.xlabel(get_label('edge_density', LANG), fontsize=14, fontweight='bold')
+    plt.ylabel(get_label('local_quality_std', LANG), fontsize=14, fontweight='bold')
     # TITLE_BOTTOM:{'Unnatural Edge Detection: High Edge & Quality Variance\nUpper-right = Uneven edge addition', fontsize=16, fontweight='bold'}
     plt.legend(fontsize=10)
     plt.grid(True, alpha=0.3)
@@ -850,8 +858,8 @@ def generate_research_plots(df, output_dir):
     y_line = slope * x_line + intercept
     plt.plot(x_line, y_line, 'r--', label=f'Regression Line (R²={r_value**2:.3f})', linewidth=2)
 
-    plt.xlabel('High Frequency Ratio', fontsize=14, fontweight='bold')
-    plt.ylabel('Entropy (Information)', fontsize=14, fontweight='bold')
+    plt.xlabel(get_label('high_freq_ratio', LANG), fontsize=14, fontweight='bold')
+    plt.ylabel(get_label('entropy', LANG), fontsize=14, fontweight='bold')
     # TITLE_BOTTOM:{'Artificial Pattern Detection: High Freq vs Entropy\nOutliers = Repetitive pattern suspected', fontsize=16, fontweight='bold'}
     plt.legend(fontsize=10)
     plt.grid(True, alpha=0.3)
@@ -869,9 +877,9 @@ def generate_research_plots(df, output_dir):
         model_data = df[df['model'] == model]
         plt.scatter(model_data['ssim'], model_data['noise'],
                    label=model, alpha=0.6, s=50)
-    plt.xlabel('SSIM (Structural Similarity)', fontsize=14, fontweight='bold')
-    plt.ylabel('Noise Level', fontsize=14, fontweight='bold')
-    # TITLE_BOTTOM:{'Quality Tradeoff: Structural Similarity vs Noise', fontsize=16, fontweight='bold'}
+    plt.xlabel(get_label('ssim', LANG), fontsize=14, fontweight='bold')
+    plt.ylabel(get_label('noise', LANG), fontsize=14, fontweight='bold')
+    # TITLE_BOTTOM:{get_label('tradeoff_ssim_noise', LANG), fontsize=16, fontweight='bold'}
     plt.legend(fontsize=10)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -886,15 +894,15 @@ def generate_research_plots(df, output_dir):
         model_data = df[df['model'] == model]
         plt.scatter(model_data['psnr'], model_data['contrast'],
                    label=model, alpha=0.6, s=50)
-    plt.xlabel('PSNR [dB]', fontsize=14, fontweight='bold')
-    plt.ylabel('Contrast', fontsize=14, fontweight='bold')
-    # TITLE_BOTTOM:{'Quality Tradeoff: Fidelity vs Contrast Enhancement', fontsize=16, fontweight='bold'}
+    plt.xlabel(get_label('psnr_db', LANG), fontsize=14, fontweight='bold')
+    plt.ylabel(get_label('contrast', LANG), fontsize=14, fontweight='bold')
+    # TITLE_BOTTOM:{get_label('tradeoff_psnr_contrast', LANG), fontsize=16, fontweight='bold'}
     plt.legend(fontsize=10)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     # Place title at bottom for academic papers
     fig = plt.gcf()
-    fig.text(0.5, -0.05, 'Quality Tradeoff: Structural Similarity vs Noise', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
+    fig.text(0.5, -0.05, get_label('tradeoff_psnr_contrast', LANG), fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'tradeoff_psnr_vs_contrast.png', dpi=300, bbox_inches='tight')
     plt.close()
     print(f"[OK] トレードオフ②（PSNR×Contrast）")
@@ -906,15 +914,15 @@ def generate_research_plots(df, output_dir):
         model_data = df[df['model'] == model]
         plt.scatter(model_data['sharpness'], model_data['artifact_total'],
                    label=model, alpha=0.6, s=50)
-    plt.xlabel('Sharpness', fontsize=14, fontweight='bold')
-    plt.ylabel('Artifacts (Blocking + Ringing)', fontsize=14, fontweight='bold')
-    # TITLE_BOTTOM:{'Quality Tradeoff: Sharpening vs Distortion', fontsize=16, fontweight='bold'}
+    plt.xlabel(get_label('sharpness_clarity', LANG), fontsize=14, fontweight='bold')
+    plt.ylabel(get_label('artifacts', LANG), fontsize=14, fontweight='bold')
+    # TITLE_BOTTOM:{get_label('tradeoff_sharpness_artifact', LANG), fontsize=16, fontweight='bold'}
     plt.legend(fontsize=10)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     # Place title at bottom for academic papers
     fig = plt.gcf()
-    fig.text(0.5, -0.05, 'Quality Tradeoff: Fidelity vs Contrast Enhancement', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
+    fig.text(0.5, -0.05, get_label('tradeoff_sharpness_artifact', LANG), fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'tradeoff_sharpness_vs_artifact.png', dpi=300, bbox_inches='tight')
     plt.close()
     print(f"[OK] トレードオフ③（Sharpness×Artifacts）")
@@ -926,7 +934,7 @@ def generate_research_plots(df, output_dir):
         model_data = df[df['model'] == model]
         plt.scatter(model_data['lpips'], model_data['ms_ssim'],
                    label=model, alpha=0.6, s=50)
-    plt.xlabel('LPIPS (Perceptual Similarity)', fontsize=14, fontweight='bold')
+    plt.xlabel(get_label('lpips', LANG), fontsize=14, fontweight='bold')
     plt.ylabel('MS-SSIM', fontsize=14, fontweight='bold')
     # TITLE_BOTTOM:{'Perception vs Structure: LPIPS vs MS-SSIM\nNegative correlation expected', fontsize=16, fontweight='bold'}
     plt.legend(fontsize=10)
@@ -934,7 +942,7 @@ def generate_research_plots(df, output_dir):
     plt.tight_layout()
     # Place title at bottom for academic papers
     fig = plt.gcf()
-    fig.text(0.5, -0.05, 'Quality Tradeoff: Sharpening vs Distortion', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
+    fig.text(0.5, -0.05, get_label('tradeoff_lpips_msssim', LANG), fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'tradeoff_lpips_vs_msssim.png', dpi=300, bbox_inches='tight')
     plt.close()
     print(f"[OK] トレードオフ④（LPIPS×MS-SSIM）")
@@ -946,15 +954,15 @@ def generate_research_plots(df, output_dir):
         model_data = df[df['model'] == model]
         plt.scatter(model_data['texture_complexity'], model_data['high_freq_ratio'],
                    label=model, alpha=0.6, s=50)
-    plt.xlabel('Texture Complexity', fontsize=14, fontweight='bold')
-    plt.ylabel('High Frequency Ratio', fontsize=14, fontweight='bold')
-    # TITLE_BOTTOM:{'Texture vs Frequency Component Consistency', fontsize=16, fontweight='bold'}
+    plt.xlabel(get_label('texture_complexity', LANG), fontsize=14, fontweight='bold')
+    plt.ylabel(get_label('high_freq_ratio', LANG), fontsize=14, fontweight='bold')
+    # TITLE_BOTTOM:{get_label('tradeoff_texture_freq', LANG), fontsize=16, fontweight='bold'}
     plt.legend(fontsize=10)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     # Place title at bottom for academic papers
     fig = plt.gcf()
-    fig.text(0.5, -0.05, 'Perception vs Structure: LPIPS vs MS-SSIM\nNegative correlation expected', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
+    fig.text(0.5, -0.05, get_label('tradeoff_texture_freq', LANG), fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'tradeoff_texture_vs_highfreq.png', dpi=300, bbox_inches='tight')
     plt.close()
     print(f"[OK] トレードオフ⑤（テクスチャ×高周波）")
@@ -968,15 +976,15 @@ def generate_research_plots(df, output_dir):
         model_data = df[df['model'] == model]
         plt.scatter(model_data['contrast'], model_data['histogram_corr'],
                    label=model, alpha=0.6, s=50)
-    plt.xlabel('Contrast', fontsize=14, fontweight='bold')
-    plt.ylabel('Histogram Correlation', fontsize=14, fontweight='bold')
-    # TITLE_BOTTOM:{'Medical Image Quality: Contrast Enhancement vs Intensity Distribution', fontsize=16, fontweight='bold'}
+    plt.xlabel(get_label('contrast', LANG), fontsize=14, fontweight='bold')
+    plt.ylabel(get_label('histogram_corr', LANG), fontsize=14, fontweight='bold')
+    # TITLE_BOTTOM:{get_label('medical_contrast_histogram', LANG), fontsize=16, fontweight='bold'}
     plt.legend(fontsize=10)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     # Place title at bottom for academic papers
     fig = plt.gcf()
-    fig.text(0.5, -0.05, 'Texture vs Frequency Component Consistency', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
+    fig.text(0.5, -0.05, get_label('medical_contrast_histogram', LANG), fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'medical_contrast_vs_histogram.png', dpi=300, bbox_inches='tight')
     plt.close()
     print(f"[OK] 医療特化①（Contrast×ヒストグラム）")
@@ -988,12 +996,15 @@ def generate_research_plots(df, output_dir):
         model_data = df[df['model'] == model]
         plt.scatter(model_data['edge_density'], model_data['local_quality_mean'],
                    label=model, alpha=0.6, s=50)
-    plt.xlabel('Edge Density', fontsize=14, fontweight='bold')
-    plt.ylabel('Local Quality Mean', fontsize=14, fontweight='bold')
-    # TITLE_BOTTOM:{'Medical Image Quality: Edge Preservation vs Local Quality', fontsize=16, fontweight='bold'}
+    plt.xlabel(get_label('edge_density', LANG), fontsize=14, fontweight='bold')
+    plt.ylabel(get_label('local_quality_mean', LANG), fontsize=14, fontweight='bold')
+    # TITLE_BOTTOM:{get_label('medical_edge_quality', LANG), fontsize=16, fontweight='bold'}
     plt.legend(fontsize=10)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
+    # Place title at bottom for academic papers
+    fig = plt.gcf()
+    fig.text(0.5, -0.05, get_label('medical_edge_quality', LANG), fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'medical_edge_vs_local_quality.png', dpi=300, bbox_inches='tight')
     plt.close()
     print(f"[OK] 医療特化②（エッジ×局所品質）")
@@ -1005,15 +1016,15 @@ def generate_research_plots(df, output_dir):
         model_data = df[df['model'] == model]
         plt.scatter(model_data['noise'], model_data['local_quality_std'],
                    label=model, alpha=0.6, s=50)
-    plt.xlabel('Noise Level', fontsize=14, fontweight='bold')
-    plt.ylabel('Local Quality Std Dev', fontsize=14, fontweight='bold')
-    # TITLE_BOTTOM:{'Medical Image Quality: Local Noise Distribution', fontsize=16, fontweight='bold'}
+    plt.xlabel(get_label('noise', LANG), fontsize=14, fontweight='bold')
+    plt.ylabel(get_label('local_quality_std', LANG), fontsize=14, fontweight='bold')
+    # TITLE_BOTTOM:{get_label('medical_noise_std', LANG), fontsize=16, fontweight='bold'}
     plt.legend(fontsize=10)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     # Place title at bottom for academic papers
     fig = plt.gcf()
-    fig.text(0.5, -0.05, 'Medical Image Quality: Contrast Enhancement vs Intensity Distribution', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
+    fig.text(0.5, -0.05, get_label('medical_noise_std', LANG), fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'medical_noise_vs_local_std.png', dpi=300, bbox_inches='tight')
     plt.close()
     print(f"[OK] 医療特化③（Noise×局所品質SD）")
@@ -1025,15 +1036,15 @@ def generate_research_plots(df, output_dir):
         model_data = df[df['model'] == model]
         plt.scatter(model_data['delta_e'], model_data['lab_L_mean'],
                    label=model, alpha=0.6, s=50)
-    plt.xlabel('Color Difference ΔE', fontsize=14, fontweight='bold')
-    plt.ylabel('LAB Lightness', fontsize=14, fontweight='bold')
-    # TITLE_BOTTOM:{'Medical Image Quality: Color vs Lightness (Important for pathology)', fontsize=16, fontweight='bold'}
+    plt.xlabel(get_label('delta_e', LANG), fontsize=14, fontweight='bold')
+    plt.ylabel(get_label('lab_lightness', LANG), fontsize=14, fontweight='bold')
+    # TITLE_BOTTOM:{get_label('medical_deltae_lab', LANG), fontsize=16, fontweight='bold'}
     plt.legend(fontsize=10)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     # Place title at bottom for academic papers
     fig = plt.gcf()
-    fig.text(0.5, -0.05, 'Medical Image Quality: Edge Preservation vs Local Quality', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
+    fig.text(0.5, -0.05, get_label('medical_deltae_lab', LANG), fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'medical_deltae_vs_lab.png', dpi=300, bbox_inches='tight')
     plt.close()
     print(f"[OK] 医療特化④（色差×LAB Lightness）")
@@ -1046,15 +1057,15 @@ def generate_research_plots(df, output_dir):
     for model in df['model'].unique():
         model_data = df[df['model'] == model]['total_score']
         plt.hist(model_data, bins=20, alpha=0.5, label=model, edgecolor='black')
-    plt.xlabel('Total Score', fontsize=14, fontweight='bold')
-    plt.ylabel('Frequency', fontsize=14, fontweight='bold')
-    # TITLE_BOTTOM:{'Total Score Distribution by Model', fontsize=16, fontweight='bold'}
+    plt.xlabel(get_label('total_score', LANG), fontsize=14, fontweight='bold')
+    plt.ylabel(get_label('frequency', LANG), fontsize=14, fontweight='bold')
+    # TITLE_BOTTOM:{get_label('total_score_histogram', LANG), fontsize=16, fontweight='bold'}
     plt.legend(fontsize=12)
     plt.grid(axis='y', alpha=0.3)
     plt.tight_layout()
     # Place title at bottom for academic papers
     fig = plt.gcf()
-    fig.text(0.5, -0.05, 'Medical Image Quality: Local Noise Distribution', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
+    fig.text(0.5, -0.05, get_label('total_score_histogram', LANG), fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'distribution_total_score_histogram.png', dpi=300, bbox_inches='tight')
     plt.close()
     print(f"[OK] 分布①（Total Scoreヒストグラム）")
@@ -1084,15 +1095,15 @@ def generate_research_plots(df, output_dir):
         plt.scatter(X_pca[mask, 0], X_pca[mask, 1],
                    label=model, alpha=0.6, s=50)
 
-    plt.xlabel(f'PC1 ({pca.explained_variance_ratio_[0]*100:.1f}%)', fontsize=14, fontweight='bold')
-    plt.ylabel(f'PC2 ({pca.explained_variance_ratio_[1]*100:.1f}%)', fontsize=14, fontweight='bold')
+    plt.xlabel(f"{get_label('pc1', LANG)} ({pca.explained_variance_ratio_[0]*100:.1f}%)", fontsize=14, fontweight='bold')
+    plt.ylabel(f"{get_label('pc2', LANG)} ({pca.explained_variance_ratio_[1]*100:.1f}%)", fontsize=14, fontweight='bold')
     # TITLE_BOTTOM:{f'Principal Component Analysis (PCA): 17 Metrics to 2D\nCumulative variance: {sum(pca.explained_variance_ratio_)*100:.1f}%', fontsize=16, fontweight='bold'}
     plt.legend(fontsize=12)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     # Place title at bottom for academic papers
     fig = plt.gcf()
-    fig.text(0.5, -0.05, 'Total Score Distribution by Model', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
+    fig.text(0.5, -0.05, f"{get_label('pca_2d', LANG)}\n{get_label('cumulative_variance_prefix', LANG)} {sum(pca.explained_variance_ratio_)*100:.1f}%", fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'pca_2d_projection.png', dpi=300, bbox_inches='tight')
     plt.close()
     print(f"[OK] 分布②（PCA 2次元プロット）")
@@ -1100,10 +1111,10 @@ def generate_research_plots(df, output_dir):
 
     # 22. パーセンタイルバンドプロット（主要指標）
     fig, axes = plt.subplots(2, 3, figsize=(18, 10))
-    # TITLE_BOTTOM:{'Percentile Band (25%-75%) Plot', fontsize=18, fontweight='bold'}
+    # TITLE_BOTTOM:{get_label('percentile_bands', LANG), fontsize=18, fontweight='bold'}
 
     key_metrics = ['ssim', 'psnr', 'sharpness', 'noise', 'edge_density', 'total_score']
-    metric_names = ['SSIM', 'PSNR [dB]', 'Sharpness', 'Noise', 'Edge Density', 'Total Score']
+    metric_names = ['SSIM', get_label('psnr_db', LANG), get_label('sharpness_clarity', LANG), 'Noise', get_label('edge_density', LANG), get_label('total_score', LANG)]
 
     for idx, (metric, name) in enumerate(zip(key_metrics, metric_names)):
         ax = axes[idx // 3, idx % 3]
@@ -1142,16 +1153,16 @@ def generate_research_plots(df, output_dir):
     plt.figure(figsize=(12, 6))
     cumsum = np.cumsum(pca_full.explained_variance_ratio_)
     plt.plot(range(1, len(cumsum)+1), cumsum, 'bo-', linewidth=2, markersize=8)
-    plt.axhline(y=0.95, color='r', linestyle='--', label='95% Line')
-    plt.xlabel('Number of Components', fontsize=14, fontweight='bold')
-    plt.ylabel('Cumulative Variance Ratio', fontsize=14, fontweight='bold')
+    plt.axhline(y=0.95, color='r', linestyle='--', label=get_label('line_95', LANG))
+    plt.xlabel(get_label('num_components', LANG), fontsize=14, fontweight='bold')
+    plt.ylabel(get_label('cumulative_variance', LANG), fontsize=14, fontweight='bold')
     # TITLE_BOTTOM:{'PCACumulative Variance Ratio：何次元で95%説明できるか', fontsize=16, fontweight='bold'}
     plt.grid(True, alpha=0.3)
     plt.legend(fontsize=12)
     plt.tight_layout()
     # Place title at bottom for academic papers
     fig = plt.gcf()
-    fig.text(0.5, -0.05, 'Percentile Band (25%-75%) Plot', fontsize=18, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
+    fig.text(0.5, -0.05, get_label('pca_variance', LANG), fontsize=18, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'pca_cumulative_variance.png', dpi=300, bbox_inches='tight')
     plt.close()
     print(f"[OK] 分布④（PCA寄与率）")
@@ -1162,15 +1173,24 @@ def generate_research_plots(df, output_dir):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        print(f"\n使い方:")
-        print(f"  python analyze_results.py results/batch_analysis.csv\n")
+    parser = argparse.ArgumentParser(
+        description='Statistical analysis of batch image processing results'
+    )
+    parser.add_argument(
+        'csv_file',
+        help='Path to batch_analysis.csv file'
+    )
+    parser.add_argument(
+        '--lang',
+        choices=['ja', 'en'],
+        default='en',
+        help='Output language: ja (Japanese) or en (English, default)'
+    )
+
+    args = parser.parse_args()
+
+    if not Path(args.csv_file).exists():
+        print(f"[ERROR] CSV file not found: {args.csv_file}")
         sys.exit(1)
 
-    csv_file = sys.argv[1]
-
-    if not Path(csv_file).exists():
-        print(f"[ERROR] エラー: CSVファイルが見つかりません: {csv_file}")
-        sys.exit(1)
-
-    analyze_batch_results(csv_file)
+    analyze_batch_results(args.csv_file, lang=args.lang)
