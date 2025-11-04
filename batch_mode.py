@@ -607,6 +607,20 @@ class BatchModeMixin:
         )
         self.stats_analyze_btn.pack(fill=tk.X, pady=(0, 10))
 
+        # ログエクスポートボタン
+        self.export_log_btn = ctk.CTkButton(
+            button_frame,
+            text="[EXPORT] ログをファイル保存",
+            command=self.export_current_log,
+            height=40,
+            corner_radius=10,
+            font=("Arial", 13, "bold"),
+            fg_color="#2d7d46",
+            text_color="#ffffff",
+            hover_color="#236138"
+        )
+        self.export_log_btn.pack(fill=tk.X, pady=(0, 10))
+
         # ハルシネーション抽出ボタン
         self.hallucination_extract_btn = ctk.CTkButton(
             button_frame,
