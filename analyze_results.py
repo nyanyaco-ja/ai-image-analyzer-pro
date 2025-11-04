@@ -68,7 +68,7 @@ def analyze_batch_results(csv_file, lang='en'):
     suggest_hallucination_logic(df, output_dir)
 
     # 6. 研究用プロット生成
-    generate_research_plots(df, output_dir)
+    generate_research_plots(df, output_dir, csv_file)
 
     print(f"\n[OK] 分析完了！")
     print(f"[FOLDER] 結果保存先: {output_dir}/")
@@ -529,9 +529,14 @@ def suggest_hallucination_logic(df, output_dir):
     print(f"{'='*80}\n")
 
 
-def generate_research_plots(df, output_dir):
+def generate_research_plots(df, output_dir, csv_file):
     """
     研究用プロット画像を生成（論文・発表用）
+
+    Args:
+        df: バッチ処理結果のDataFrame
+        output_dir: 出力ディレクトリ
+        csv_file: CSVファイルのパス（BBI計算でdetailedディレクトリ検索に使用）
     """
 
     print(f"\n[STATS] 研究用プロット生成中:")
