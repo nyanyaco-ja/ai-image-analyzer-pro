@@ -860,110 +860,124 @@ class ModernImageAnalyzerGUI(
         # === バッチモード用の右パネル ===
         self.batch_right_frame = ctk.CTkFrame(self.right_panel, fg_color="transparent")
 
-        # バッチ処理進捗エリア
+        # 上部：進捗状況エリア（コンパクト）
+        batch_progress_section = ctk.CTkFrame(self.batch_right_frame, fg_color="transparent")
+        batch_progress_section.pack(fill=tk.X, padx=15, pady=(15, 5))
+
         self.batch_progress_title = ctk.CTkLabel(
-            self.batch_right_frame,
+            batch_progress_section,
             text=self.i18n.t('gui.batch_progress_title'),
-            font=("Arial", 18, "bold"),
+            font=("Arial", 16, "bold"),
             text_color="#4A90E2"
         )
-        self.batch_progress_title.pack(pady=(20, 10))
+        self.batch_progress_title.pack(pady=(0, 5), anchor="w")
 
         # 進捗表示フレーム
-        self.batch_progress_frame = ctk.CTkFrame(self.batch_right_frame, fg_color="#0a0e27", corner_radius=10)
-        self.batch_progress_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
+        self.batch_progress_frame = ctk.CTkFrame(batch_progress_section, fg_color="#0a0e27", corner_radius=10)
+        self.batch_progress_frame.pack(fill=tk.X, pady=(0, 0))
 
         self.batch_status_label = ctk.CTkLabel(
             self.batch_progress_frame,
             text=self.i18n.t('gui.batch_start_prompt'),
-            font=("Arial", 14),
+            font=("Arial", 12),
             text_color="#888888"
         )
-        self.batch_status_label.pack(pady=20)
+        self.batch_status_label.pack(pady=(10, 5))
 
-        # プログレスバー（既存のものを使用）
+        # プログレスバー
         self.batch_progress = ctk.CTkProgressBar(
             self.batch_progress_frame,
             width=400,
-            height=20,
+            height=15,
             corner_radius=10,
             fg_color="#2d3748",
             progress_color="#00ffff"
         )
-        self.batch_progress.pack(pady=(0, 20), padx=20)
+        self.batch_progress.pack(pady=(0, 10), padx=20)
         self.batch_progress.set(0)
 
-        # 結果表示テキストエリア
+        # 下部：詳細ログエリア
+        batch_log_section = ctk.CTkFrame(self.batch_right_frame, fg_color="transparent")
+        batch_log_section.pack(fill=tk.BOTH, expand=True, padx=15, pady=(5, 15))
+
         self.batch_result_label = ctk.CTkLabel(
-            self.batch_right_frame,
+            batch_log_section,
             text=self.i18n.t('gui.batch_log_title'),
             font=("Arial", 16, "bold"),
-            text_color="#4A90E2"
+            text_color="#00ff88"
         )
-        self.batch_result_label.pack(pady=(10, 5), padx=15, anchor="w")
+        self.batch_result_label.pack(pady=(0, 5), anchor="w")
 
         self.batch_result_text = ctk.CTkTextbox(
-            self.batch_right_frame,
+            batch_log_section,
             font=("Meiryo", 11),
             fg_color="#0a0e27",
             text_color="#00ff88",
-            corner_radius=10
+            corner_radius=10,
+            height=400
         )
-        self.batch_result_text.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 15))
+        self.batch_result_text.pack(fill=tk.BOTH, expand=True)
 
         # === 論文用ベンチマーク評価モード用の右パネル ===
         self.academic_right_frame = ctk.CTkFrame(self.right_panel, fg_color="transparent")
 
-        # 論文用処理進捗エリア
+        # 上部：進捗状況エリア（コンパクト）
+        academic_progress_section = ctk.CTkFrame(self.academic_right_frame, fg_color="transparent")
+        academic_progress_section.pack(fill=tk.X, padx=15, pady=(15, 5))
+
         self.academic_progress_title = ctk.CTkLabel(
-            self.academic_right_frame,
+            academic_progress_section,
             text=self.i18n.t('gui.academic_progress_title'),
-            font=("Arial", 18, "bold"),
+            font=("Arial", 16, "bold"),
             text_color="#9b59b6"
         )
-        self.academic_progress_title.pack(pady=(20, 10))
+        self.academic_progress_title.pack(pady=(0, 5), anchor="w")
 
         # 進捗表示フレーム
-        self.academic_progress_frame = ctk.CTkFrame(self.academic_right_frame, fg_color="#0a0e27", corner_radius=10)
-        self.academic_progress_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
+        self.academic_progress_frame = ctk.CTkFrame(academic_progress_section, fg_color="#0a0e27", corner_radius=10)
+        self.academic_progress_frame.pack(fill=tk.X, pady=(0, 0))
 
         self.academic_status_label = ctk.CTkLabel(
             self.academic_progress_frame,
             text=self.i18n.t('gui.academic_start_prompt'),
-            font=("Arial", 14),
+            font=("Arial", 12),
             text_color="#888888"
         )
-        self.academic_status_label.pack(pady=20)
+        self.academic_status_label.pack(pady=(10, 5))
 
         # プログレスバー
         self.academic_progress = ctk.CTkProgressBar(
             self.academic_progress_frame,
             width=400,
-            height=20,
+            height=15,
             corner_radius=10,
             fg_color="#2d3748",
             progress_color="#9b59b6"
         )
-        self.academic_progress.pack(pady=(0, 20), padx=20)
+        self.academic_progress.pack(pady=(0, 10), padx=20)
         self.academic_progress.set(0)
 
-        # 結果表示テキストエリア
+        # 下部：詳細ログエリア
+        academic_log_section = ctk.CTkFrame(self.academic_right_frame, fg_color="transparent")
+        academic_log_section.pack(fill=tk.BOTH, expand=True, padx=15, pady=(5, 15))
+
         self.academic_result_label = ctk.CTkLabel(
-            self.academic_right_frame,
+            academic_log_section,
             text=self.i18n.t('gui.academic_log_title'),
             font=("Arial", 16, "bold"),
-            text_color="#9b59b6"
+            text_color="#00ff88"
         )
-        self.academic_result_label.pack(pady=(10, 5), padx=15, anchor="w")
+        self.academic_result_label.pack(pady=(0, 5), anchor="w")
 
         self.academic_result_text = ctk.CTkTextbox(
-            self.academic_right_frame,
+            academic_log_section,
             font=("Meiryo", 11),
             fg_color="#0a0e27",
             text_color="#00ff88",
-            corner_radius=10
+            corner_radius=10,
+            height=400
         )
-        self.academic_result_text.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 15))
+        self.academic_result_text.pack(fill=tk.BOTH, expand=True)
 
         # バッチモード用のUIを作成（左パネル）
         self.create_batch_mode_ui()
