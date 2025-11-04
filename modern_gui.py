@@ -813,41 +813,49 @@ class ModernImageAnalyzerGUI(
         )
         self.preview_img2_label.pack(fill=tk.BOTH, expand=True)
 
-        # タブビュー（結果表示）
-        self.tabview = ctk.CTkTabview(
-            self.single_right_frame,
-            corner_radius=15,
-            fg_color="#1e2740",
-            segmented_button_fg_color="#2d3748",
-            segmented_button_selected_color="#00ffff",
-            segmented_button_selected_hover_color="#00cccc",
-            text_color="#ffffff"
+        # 上半分：解釈結果エリア
+        interpretation_frame = ctk.CTkFrame(self.single_right_frame, fg_color="transparent")
+        interpretation_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(15, 5))
+
+        interpretation_title = ctk.CTkLabel(
+            interpretation_frame,
+            text=self.i18n.t('gui.interpretation_title'),
+            font=("Arial", 16, "bold"),
+            text_color="#4A90E2"
         )
-        self.tabview.pack(fill=tk.BOTH, expand=True, padx=15, pady=15)
+        interpretation_title.pack(pady=(0, 5), padx=0, anchor="w")
 
-        # タブ作成（単一モード用）
-        self.tabview.add("[STATS] わかりやすい解釈")
-        self.tabview.add("[LOG] 詳細データ")
-
-        # わかりやすい解釈タブ
         self.interpretation_text = ctk.CTkTextbox(
-            self.tabview.tab("[STATS] わかりやすい解釈"),
+            interpretation_frame,
             font=("Meiryo", 11),
             fg_color="#0a0e27",
             text_color="#4A90E2",
-            corner_radius=10
+            corner_radius=10,
+            height=200
         )
-        self.interpretation_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        self.interpretation_text.pack(fill=tk.BOTH, expand=True)
 
-        # 詳細データタブ
+        # 下半分：詳細ログエリア
+        log_frame = ctk.CTkFrame(self.single_right_frame, fg_color="transparent")
+        log_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(5, 15))
+
+        log_title = ctk.CTkLabel(
+            log_frame,
+            text=self.i18n.t('gui.detailed_log_title'),
+            font=("Arial", 16, "bold"),
+            text_color="#00ff88"
+        )
+        log_title.pack(pady=(0, 5), padx=0, anchor="w")
+
         self.result_text = ctk.CTkTextbox(
-            self.tabview.tab("[LOG] 詳細データ"),
+            log_frame,
             font=("Meiryo", 11),
             fg_color="#0a0e27",
             text_color="#00ff88",
-            corner_radius=10
+            corner_radius=10,
+            height=300
         )
-        self.result_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        self.result_text.pack(fill=tk.BOTH, expand=True)
 
         # === バッチモード用の右パネル ===
         self.batch_right_frame = ctk.CTkFrame(self.right_panel, fg_color="transparent")

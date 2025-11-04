@@ -82,6 +82,8 @@
     "select_sr1_prompt": "超解像結果1を選択してください",
     "sr_result_2": "[SR] 超解像結果2 (After)",
     "select_sr2_prompt": "超解像結果2を選択してください",
+    "interpretation_title": "[STATS] わかりやすい解釈",
+    "detailed_log_title": "[LOG] 詳細データ",
     "batch_progress_title": "[STATS] バッチ処理進捗",
     "batch_start_prompt": "バッチ処理を開始してください",
     "batch_log_title": "[LOG] 処理結果ログ",

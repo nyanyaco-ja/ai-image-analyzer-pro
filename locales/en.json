@@ -82,6 +82,8 @@
     "select_sr1_prompt": "Please select super-resolution result 1",
     "sr_result_2": "[SR] Super-Resolution Result 2 (After)",
     "select_sr2_prompt": "Please select super-resolution result 2",
+    "interpretation_title": "[STATS] Easy Interpretation",
+    "detailed_log_title": "[LOG] Detailed Data",
     "batch_progress_title": "[STATS] Batch Processing Progress",
     "batch_start_prompt": "Please start batch processing",
     "batch_log_title": "[LOG] Processing Result Log",
