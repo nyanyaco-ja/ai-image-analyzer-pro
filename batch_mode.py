@@ -920,26 +920,31 @@ class BatchModeMixin:
 
     def run_batch_analysis(self, config):
         """バッチ処理実行"""
+        old_stdout = sys.stdout
+        old_stderr = sys.stderr
         try:
-            import sys
-            from io import StringIO
             from batch_analyzer import batch_analyze
             from pathlib import Path
+            from stats_analysis import TextRedirector
+
+            # ログエリアをクリア
+            self.root.after(0, lambda: self.batch_result_text.delete("1.0", tk.END))
 
             # 一時設定ファイル作成
             temp_config_path = "temp_batch_config.json"
             with open(temp_config_path, 'w', encoding='utf-8') as f:
                 json.dump(config, f, indent=2, ensure_ascii=False)
 
-            # 標準出力をキャプチャ
-            old_stdout = sys.stdout
-            sys.stdout = captured_output = StringIO()
+            # 標準出力と標準エラーをGUIにリアルタイム表示
+            text_redirector = TextRedirector(self.batch_result_text, self.root)
+            sys.stdout = text_redirector
+            sys.stderr = text_redirector
 
             # バッチ処理実行（進捗コールバック付き）
             batch_analyze(temp_config_path, progress_callback=self.update_batch_progress)
 
-            sys.stdout = old_stdout
-            output = captured_output.getvalue()
+            # 出力を取得
+            output = text_redirector.getvalue()
 
             # 一時ファイル削除
             if os.path.exists(temp_config_path):
@@ -948,15 +953,24 @@ class BatchModeMixin:
             self.root.after(0, self.display_batch_results, output, True, config['output_csv'])
 
         except Exception as e:
+            import traceback
+            error_detail = traceback.format_exc()
+            error_msg = f"[ERROR] バッチ処理中にエラーが発生しました:\n\n{str(e)}\n\n詳細:\n{error_detail}"
+            self.root.after(0, self.display_batch_results, error_msg, False, None)
+        finally:
+            # 必ず標準出力/エラーを復元
             sys.stdout = old_stdout
-            self.root.after(0, self.display_batch_results, str(e), False, None)
+            sys.stderr = old_stderr
 
     def display_batch_results(self, output, success, csv_path):
         """バッチ処理結果表示"""
         self.batch_analyze_btn.configure(state='normal')
         self.batch_progress.set(1 if success else 0)
 
-        self.batch_result_text.insert("1.0", output)
+        # ログは既にリアルタイム表示されているので、エラーの場合のみ再表示
+        if not success:
+            self.batch_result_text.delete("1.0", tk.END)
+            self.batch_result_text.insert("1.0", output)
 
         if success:
             self.batch_status_label.configure(
