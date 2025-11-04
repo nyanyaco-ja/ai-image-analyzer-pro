@@ -767,8 +767,7 @@ def generate_research_plots(df, output_dir):
 
     plt.xlabel('SSIM (Structural Similarity)', fontsize=14, fontweight='bold')
     plt.ylabel('PSNR [dB]', fontsize=14, fontweight='bold')
-    # TITLE_BOTTOM:{'Hallucination Detection: High SSIM & Low PSNR\nLower-right = Mimicked structure, low fidelity',
-              fontsize=16, fontweight='bold'}
+    # TITLE_BOTTOM:{'Hallucination Detection: High SSIM & Low PSNR\nLower-right = Mimicked structure, low fidelity', fontsize=16, fontweight='bold'}
     plt.legend(fontsize=10)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -799,8 +798,7 @@ def generate_research_plots(df, output_dir):
 
     plt.xlabel('Sharpness', fontsize=14, fontweight='bold')
     plt.ylabel('Noise Level', fontsize=14, fontweight='bold')
-    # TITLE_BOTTOM:{'Over-processing Detection: High Sharpness & Noise\nUpper-right = Noise amplified by sharpening',
-              fontsize=16, fontweight='bold'}
+    # TITLE_BOTTOM:{'Over-processing Detection: High Sharpness & Noise\nUpper-right = Noise amplified by sharpening', fontsize=16, fontweight='bold'}
     plt.legend(fontsize=10)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -828,8 +826,7 @@ def generate_research_plots(df, output_dir):
 
     plt.xlabel('Edge Density', fontsize=14, fontweight='bold')
     plt.ylabel('Local Quality Std Dev', fontsize=14, fontweight='bold')
-    # TITLE_BOTTOM:{'Unnatural Edge Detection: High Edge & Quality Variance\nUpper-right = Uneven edge addition',
-              fontsize=16, fontweight='bold'}
+    # TITLE_BOTTOM:{'Unnatural Edge Detection: High Edge & Quality Variance\nUpper-right = Uneven edge addition', fontsize=16, fontweight='bold'}
     plt.legend(fontsize=10)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -855,8 +852,7 @@ def generate_research_plots(df, output_dir):
 
     plt.xlabel('High Frequency Ratio', fontsize=14, fontweight='bold')
     plt.ylabel('Entropy (Information)', fontsize=14, fontweight='bold')
-    # TITLE_BOTTOM:{'Artificial Pattern Detection: High Freq vs Entropy\nOutliers = Repetitive pattern suspected',
-              fontsize=16, fontweight='bold'}
+    # TITLE_BOTTOM:{'Artificial Pattern Detection: High Freq vs Entropy\nOutliers = Repetitive pattern suspected', fontsize=16, fontweight='bold'}
     plt.legend(fontsize=10)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -1090,8 +1086,7 @@ def generate_research_plots(df, output_dir):
 
     plt.xlabel(f'PC1 ({pca.explained_variance_ratio_[0]*100:.1f}%)', fontsize=14, fontweight='bold')
     plt.ylabel(f'PC2 ({pca.explained_variance_ratio_[1]*100:.1f}%)', fontsize=14, fontweight='bold')
-    # TITLE_BOTTOM:{f'Principal Component Analysis (PCA): 17 Metrics to 2D\nCumulative variance: {sum(pca.explained_variance_ratio_)*100:.1f}%',
-              fontsize=16, fontweight='bold'}
+    # TITLE_BOTTOM:{f'Principal Component Analysis (PCA): 17 Metrics to 2D\nCumulative variance: {sum(pca.explained_variance_ratio_)*100:.1f}%', fontsize=16, fontweight='bold'}
     plt.legend(fontsize=12)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -1134,7 +1129,7 @@ def generate_research_plots(df, output_dir):
     plt.tight_layout()
     # Place title at bottom for academic papers
     fig = plt.gcf()
-    fig.text(0.5, 0.02, f'Principal Component Analysis (PCA): 17 Metrics to 2D\nCumulative variance: {sum(pca.explained_variance_ratio_)*100:.1f, ha='center', va='bottom', transform=fig.transFigure)
+    fig.text(0.5, 0.02, f'Principal Component Analysis (PCA): 17 Metrics to 2D\nCumulative variance: {sum(pca.explained_variance_ratio_)*100:.1f}%', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'percentile_bands.png', dpi=300, bbox_inches='tight')
     plt.close()
     print(f"[OK] 分布③（パーセンタイルバンド）")
