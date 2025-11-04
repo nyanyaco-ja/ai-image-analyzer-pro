@@ -48,8 +48,12 @@ class StatsAnalysisMixin:
             old_stdout = sys.stdout
             sys.stdout = captured_output = StringIO()
 
+            # GUIの現在の言語設定を取得（デフォルトは日本語）
+            lang = getattr(self, 'current_language', 'ja')
+
             # 統計分析実行（出力ディレクトリのパスを取得）
-            output_dir = analyze_batch_results(csv_path)
+            # 言語パラメータを渡す
+            output_dir = analyze_batch_results(csv_path, lang=lang)
 
             sys.stdout = old_stdout
             output = captured_output.getvalue()
