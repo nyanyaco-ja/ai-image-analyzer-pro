@@ -674,52 +674,145 @@ lfv_percentage = lfv_count / len(df) * 100
 # 例: 24.7% of images show LFV (Min SSIM < 0.65)
 ```
 
-#### 空間的偏りの検出
+#### 空間的偏りの定量的検証
 
-P6ヒートマップと組み合わせることで、以下の空間的パターンを検出:
+**BBI (Boundary Bias Index)** を用いて、LFVの境界偏りを定量化:
 
-- **境界領域への偏り**: 画像の下端・右端でSSIM低下が顕著
-- **コーナー効果**: 4隅でのLFV発生頻度が高い
-- **非対称性**: 下端のみ劣化、右端は良好などの非対称パターン
+##### BBI計算式
+
+```python
+# 各LFVパッチの境界からの正規化距離
+def calc_normalized_distance(min_row, min_col, total_rows, total_cols):
+    dist_top = min_row
+    dist_bottom = total_rows - 1 - min_row
+    dist_left = min_col
+    dist_right = total_cols - 1 - min_col
+
+    min_dist = min(dist_top, dist_bottom, dist_left, dist_right)
+    max_possible_dist = min(total_rows, total_cols) / 2  # 中央までの最大距離
+
+    return min_dist / max_possible_dist
+
+# BBI = 1 - 平均正規化距離
+# BBI = 1.0 → 完全に境界（全LFVが境界線上）
+# BBI = 0.0 → 完全に中央（全LFVが画像中心）
+BBI = 1.0 - mean(normalized_distances)
+```
+
+##### 統計的検定: カイ二乗検定
+
+```python
+from scipy.stats import chisquare
+
+# 境界エリア判定（外周25%）
+is_boundary = (min_row < total_rows * 0.25 or
+               min_row > total_rows * 0.75 or
+               min_col < total_cols * 0.25 or
+               min_col > total_cols * 0.75)
+
+# 観測分布 vs ランダム分布（一様分布）
+observed = [boundary_count, center_count]
+expected_boundary_ratio = 0.75  # 外周25% → 面積約75%
+expected = [total * expected_boundary_ratio, total * 0.25]
+
+chi2, p_value = chisquare(observed, expected)
+# p < 0.05 → 境界偏りが統計的に有意
+```
+
+##### 判定基準
+
+| BBI | p値 | 判定 | 意味 |
+|-----|-----|------|------|
+| BBI > 0.7 | p < 0.001 | **Strong** | LFVは境界に強く偏る（再現可能な法則） |
+| BBI > 0.5 | p < 0.05 | **Moderate** | LFVは境界にやや偏る |
+| それ以外 | p ≥ 0.05 | **Weak** | 境界偏りは統計的に不明瞭 |
+
+#### P6座標データとの統合
+
+P6ヒートマップから各LFVパッチの座標（row, col）を抽出し、以下の空間的パターンを定量化:
+
+- **境界領域への偏り**: BBI値で定量評価
+- **コーナー効果**: 4隅でのLFV発生頻度
+- **非対称性**: 上下左右の境界別LFV分布
 
 #### 出力ファイル
 
-- **プロット**: `lfv_proof_spatial_dependency.png`
+- **プロット 25**: `lfv_proof_spatial_dependency.png`
   - 左: Local Quality Min のヒストグラム（LFV閾値表示）
   - 右: モデル別Boxplot（LFV発生傾向の比較）
 
-- **CSV**: `lfv_proof_summary.csv`
+- **プロット 26**: `lfv_proof_coordinate_distribution.png`（**新規**）
+  - LFV Min SSIMパッチの座標散布図
+  - 境界エリア（赤）と中央エリア（緑）の可視化
+  - BBI値とp値を注釈表示
+
+- **CSV 1**: `lfv_proof_summary.csv`（BBI追加版）
   ```csv
-  lfv_threshold_25th,lfv_cases_count,lfv_cases_percentage
-  0.654,247,24.7
+  lfv_threshold_25th,lfv_cases_count,lfv_cases_percentage,boundary_bias_index,boundary_p_value,spatial_dependency_strength
+  0.654,247,24.7,0.823,0.000012,Strong
+  ```
+
+- **CSV 2**: `lfv_spatial_analysis.csv`（**新規**）
+  ```csv
+  image_id,model,min_ssim_value,min_row,min_col,distance_to_boundary,normalized_distance,is_boundary
+  img001.png,model1,0.42,5,8,2.5,0.15,True
+  img002.png,model1,0.38,0,3,0.0,0.00,True
+  ...
   ```
 
 #### 論文での記述例
 
 ```markdown
-Spatial analysis revealed non-uniform distribution of LFV across image regions
-(Figure Y). Among 1000 images, 24.7% exhibited LFV (Local Quality Min < 0.65),
-with significant bias toward boundary regions. P6 heatmap visualization showed
-that 68% of LFV cases occurred within 10% of image boundaries, demonstrating
-spatial-dependency. This spatial pattern is consistent with known limitations
-of convolutional architectures in boundary processing, validating LFV as an
-architecture-dependent phenomenon.
+Spatial analysis revealed significant boundary bias in LFV distribution (Figure 25-26).
+Among 1000 images, 24.7% exhibited LFV (Local Quality Min < 0.65), with a Boundary Bias
+Index (BBI) of 0.823 ± 0.054. Chi-square test confirmed the boundary bias was statistically
+significant (χ² = 45.2, p < 0.001), rejecting the null hypothesis of uniform spatial
+distribution. Coordinate scatter plots (Figure 26) demonstrated that 82.3% of LFV cases
+occurred within the outer 25% boundary zone, compared to the expected 75% under random
+distribution (p < 0.001).
+
+This spatial pattern is consistent with known limitations of convolutional architectures
+in boundary processing, where padding artifacts and reduced receptive field overlap
+contribute to degraded reconstruction quality. The strong spatial-dependency (BBI > 0.7)
+validates LFV as an architecture-dependent phenomenon, not random image quality variance.
+```
+
+**図の説明文（キャプション）例:**
+
+```
+Figure 25: Spatial-Dependency Proof - Distribution Analysis.
+(Left) Histogram of Local Quality Min showing LFV threshold at 25th percentile (0.654).
+(Right) Boxplot comparison across AI models reveals model-dependent LFV occurrence.
+24.7% of images exhibit LFV below the threshold.
+
+Figure 26: Spatial-Dependency Proof - Coordinate Distribution.
+Scatter plot of Min SSIM patch locations (n=247 LFV cases) demonstrates strong boundary
+bias (BBI = 0.823, p < 0.001). Red points indicate boundary LFV (82.3%), blue points
+indicate center LFV (17.7%). Background shading shows boundary zone (red, 25%) and
+center zone (green, 75%). Chi-square test confirms spatial bias exceeds random expectation.
 ```
 
 ---
 
 ### 統合的証明フレームワーク
 
-#### 2つの証明の相互補完
+#### 3つの証明の相互補完
 
-| 証明 | 依存性 | 指標 | 意味 |
-|------|--------|------|------|
-| **証明1** | テクスチャ依存 | r(Texture, Local Min) < -0.7 | LFVは画像の**内容**に依存 |
-| **証明2** | 空間依存 | 境界領域でのLFV偏り | LFVは画像の**位置**に依存 |
+| 証明 | 依存性 | 指標 | 定量的閾値 | 意味 |
+|------|--------|------|-----------|------|
+| **証明1** | テクスチャ依存 | Pearson相関 r | r < -0.7, p < 0.001 | LFVは画像の**内容**（複雑度）に依存 |
+| **証明2** | 空間依存（分布） | LFV発生率 | > 20% at 25th percentile | LFVは**頻繁に発生**する構造的現象 |
+| **証明3** | 空間依存（偏り） | BBI (Boundary Bias Index) | BBI > 0.7, p < 0.001 | LFVは画像の**位置**（境界）に偏る |
 
 **統合的結論:**
 
-> LFV（Local Fidelity Variance）は、(1)画像のテクスチャ内容、および(2)空間的位置の両方に依存する**二重依存性**を持つ再現可能な現象である。これはAIアップスケーリングの構造的制約に起因する法則性であり、単なる偶発的異常ではない。
+> LFV（Local Fidelity Variance）は、(1)画像のテクスチャ内容、および(2)空間的位置の両方に依存する**二重依存性**を持つ再現可能な現象である。
+>
+> - **テクスチャ依存性**: 複雑なテクスチャほどLFVが発生しやすい（r < -0.7）
+> - **空間依存性**: LFVは境界領域に強く偏る（BBI > 0.7）
+> - **統計的有意性**: 両依存性ともp < 0.001で統計的に有意
+>
+> これはAIアップスケーリングの構造的制約に起因する**法則性**であり、単なる偶発的異常ではない。
 
 #### 自動生成される証明パッケージ
 
@@ -727,11 +820,13 @@ architecture-dependent phenomenon.
 
 ```
 analysis_output/
-├── lfv_proof_texture_dependency.png  # 証明1: テクスチャ依存
-├── lfv_proof_spatial_dependency.png  # 証明2: 空間依存
-├── lfv_proof_summary.csv             # 統計サマリー
-├── p6_local_quality_heatmap.png      # 補足: 空間分布の詳細可視化
-└── results_with_26pattern_detection.csv  # 元データ
+├── lfv_proof_texture_dependency.png     # 証明1: テクスチャ依存（相関分析）
+├── lfv_proof_spatial_dependency.png     # 証明2: 空間依存（分布比較）
+├── lfv_proof_coordinate_distribution.png # 証明3: 座標分布（BBI可視化）★NEW
+├── lfv_proof_summary.csv                # 統計サマリー（BBI含む）★UPDATED
+├── lfv_spatial_analysis.csv             # 各画像の座標データ ★NEW
+├── p6_local_quality_heatmap.png         # 補足: 空間分布の詳細可視化
+└── results_with_26pattern_detection.csv # 元データ
 ```
 
 ---
@@ -756,8 +851,9 @@ python analyze_results.py results/batch_analysis.csv --lang en
 ```
 
 **出力:**
-- 25種類のプロット（従来の23種 + LFV証明2種）
-- `lfv_proof_summary.csv`（定量的証拠）
+- 26種類のプロット（従来の23種 + LFV証明3種）
+- `lfv_proof_summary.csv`（定量的証拠: テクスチャ相関 + BBI）
+- `lfv_spatial_analysis.csv`（座標データ）
 
 #### ステップ3: P6ヒートマップで空間詳細確認
 

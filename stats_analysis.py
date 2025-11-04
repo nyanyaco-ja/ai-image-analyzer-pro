@@ -122,19 +122,20 @@ class StatsAnalysisMixin:
 
         if success:
             self.batch_status_label.configure(
-                text=f"[OK] 統計分析完了！25種類のプロットが {output_dir}/ に保存されました",
+                text=f"[OK] 統計分析完了！26種類のプロットが {output_dir}/ に保存されました",
                 text_color="#00ff88"
             )
 
             messagebox.showinfo(
                 "完了",
                 f"統計分析が完了しました。\n\n"
-                f"25種類の研究用プロット（300dpi）が\n"
+                f"26種類の研究用プロット（300dpi）が\n"
                 f"{output_dir}/ フォルダに保存されました。\n\n"
                 f"・ハルシネーション検出（4種類）\n"
                 f"・品質トレードオフ（5種類）\n"
                 f"・医療画像特化（4種類）\n"
                 f"・分布・PCA分析（4種類）\n"
+                f"・LFV法則証明（3種類：相関・分布・座標）\n"
                 f"・その他（6種類）"
             )
 

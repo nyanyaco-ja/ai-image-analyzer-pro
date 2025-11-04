@@ -1291,21 +1291,237 @@ def generate_research_plots(df, output_dir):
     print(f"[OK] LFV証明②（空間依存性・境界偏り）")
 
 
-    # LFV証明サマリーをCSVに出力
+    # ===== 新規: BBI（Boundary Bias Index）計算と統計的検定 =====
+    print(f"\n[INFO] BBI (Boundary Bias Index) 計算を開始...")
+
+    # CSVファイルからdetailedディレクトリのパスを推定
+    csv_path = Path(csv_file)
+    # results/batch_analysis.csv → results/detailed_YYYYMMDD_HHMMSS/
+    results_dir = csv_path.parent
+    detailed_dirs = list(results_dir.glob('detailed_*'))
+
+    if not detailed_dirs:
+        print(f"[WARNING] 詳細データディレクトリ (detailed_*) が見つかりません。BBI計算をスキップします。")
+        bbi_mean = None
+        boundary_p_value = None
+        spatial_strength = 'N/A'
+    else:
+        # 最新のdetailedディレクトリを使用
+        detailed_dir = sorted(detailed_dirs)[-1]
+        print(f"[INFO] 詳細データディレクトリ: {detailed_dir}")
+
+        # LFVケースのみを抽出（25th percentile以下）
+        lfv_df = df[df['local_quality_min'] < threshold].copy()
+
+        # 各画像のMin SSIMパッチ座標を収集
+        spatial_data = []
+
+        for idx, row in lfv_df.iterrows():
+            image_id = row['image_id']
+            model = row['model']
+            min_ssim_value = row['local_quality_min']
+
+            # p6_local_quality_data.csvのパスを構築
+            p6_path = detailed_dir / model / image_id / 'p6_local_quality_data.csv'
+
+            if not p6_path.exists():
+                continue
+
+            try:
+                # p6データ読み込み
+                p6_df = pd.read_csv(p6_path)
+
+                # Min SSIMパッチを特定（最小値）
+                min_idx = p6_df['local_ssim'].idxmin()
+                min_row = p6_df.loc[min_idx, 'row']
+                min_col = p6_df.loc[min_idx, 'col']
+
+                # 画像のパッチサイズを取得（最大row/col + 1）
+                total_rows = p6_df['row'].max() + 1
+                total_cols = p6_df['col'].max() + 1
+
+                # 境界からの正規化距離を計算
+                dist_top = min_row
+                dist_bottom = total_rows - 1 - min_row
+                dist_left = min_col
+                dist_right = total_cols - 1 - min_col
+
+                min_dist = min(dist_top, dist_bottom, dist_left, dist_right)
+                max_possible_dist = min(total_rows, total_cols) / 2
+                normalized_dist = min_dist / max_possible_dist if max_possible_dist > 0 else 0
+
+                # 境界判定（外周25%エリア）
+                boundary_threshold = 0.25
+                is_boundary = (min_row < total_rows * boundary_threshold or
+                             min_row > total_rows * (1 - boundary_threshold) or
+                             min_col < total_cols * boundary_threshold or
+                             min_col > total_cols * (1 - boundary_threshold))
+
+                spatial_data.append({
+                    'image_id': image_id,
+                    'model': model,
+                    'min_ssim_value': min_ssim_value,
+                    'min_row': min_row,
+                    'min_col': min_col,
+                    'total_rows': total_rows,
+                    'total_cols': total_cols,
+                    'distance_to_boundary': min_dist,
+                    'normalized_distance': normalized_dist,
+                    'is_boundary': is_boundary
+                })
+
+            except Exception as e:
+                print(f"[WARNING] {image_id} の処理中にエラー: {str(e)}")
+                continue
+
+        if len(spatial_data) == 0:
+            print(f"[WARNING] 空間データが取得できませんでした。BBI計算をスキップします。")
+            bbi_mean = None
+            boundary_p_value = None
+            spatial_strength = 'N/A'
+        else:
+            spatial_df = pd.DataFrame(spatial_data)
+
+            # BBI計算: 1 - 平均正規化距離
+            # BBI = 1.0 → 完全に境界, BBI = 0.0 → 完全に中央
+            bbi_mean = 1.0 - spatial_df['normalized_distance'].mean()
+
+            # カイ二乗検定: 観測分布 vs ランダム分布（一様分布）
+            from scipy.stats import chisquare
+
+            boundary_count = spatial_df['is_boundary'].sum()
+            center_count = len(spatial_df) - boundary_count
+
+            # ランダムなら面積比で分布（外周25% → 約44%の面積）
+            # (1 - (1-0.25*2)^2) = 1 - 0.5^2 = 0.75 → 境界エリア
+            # より保守的に、外周25%を単純計算: 0.25 * 4 = 1.0 → 約43.75%
+            expected_boundary_ratio = 1 - (0.5 ** 2)  # 0.75
+            expected_boundary = len(spatial_df) * expected_boundary_ratio
+            expected_center = len(spatial_df) * (1 - expected_boundary_ratio)
+
+            observed = [boundary_count, center_count]
+            expected = [expected_boundary, expected_center]
+
+            chi2, boundary_p_value = chisquare(observed, expected)
+
+            # 強度判定
+            if bbi_mean > 0.7 and boundary_p_value < 0.001:
+                spatial_strength = 'Strong'
+            elif bbi_mean > 0.5 and boundary_p_value < 0.05:
+                spatial_strength = 'Moderate'
+            else:
+                spatial_strength = 'Weak'
+
+            # 空間データCSV出力
+            spatial_df.to_csv(output_dir / 'lfv_spatial_analysis.csv', index=False)
+            print(f"[OK] LFV空間分析データ（CSV出力: {len(spatial_df)}件）")
+
+            print(f"\n[STATS] BBI (Boundary Bias Index): {bbi_mean:.3f}")
+            print(f"[STATS] Boundary Bias p-value: {boundary_p_value:.6f}")
+            print(f"[STATS] Boundary LFV Cases: {boundary_count}/{len(spatial_df)} ({boundary_count/len(spatial_df)*100:.1f}%)")
+            print(f"[STATS] Spatial Dependency: {spatial_strength}")
+
+            # 26. Plot: LFV Min SSIMパッチ座標の散布図（境界偏り可視化）
+            plt.figure(figsize=(12, 10))
+
+            # 全画像で同じパッチサイズと仮定（最頻値を使用）
+            common_rows = spatial_df['total_rows'].mode()[0]
+            common_cols = spatial_df['total_cols'].mode()[0]
+
+            # 境界エリアを矩形で表示
+            boundary_width = common_cols * boundary_threshold
+            boundary_height = common_rows * boundary_threshold
+
+            # 背景に境界エリアを描画
+            from matplotlib.patches import Rectangle
+            ax = plt.gca()
+
+            # 4つの境界エリア（薄い赤）
+            boundary_rects = [
+                Rectangle((0, 0), common_cols, boundary_height,
+                         facecolor='red', alpha=0.1, label='Boundary Zone (25%)'),
+                Rectangle((0, common_rows - boundary_height), common_cols, boundary_height,
+                         facecolor='red', alpha=0.1),
+                Rectangle((0, 0), boundary_width, common_rows,
+                         facecolor='red', alpha=0.1),
+                Rectangle((common_cols - boundary_width, 0), boundary_width, common_rows,
+                         facecolor='red', alpha=0.1)
+            ]
+            for rect in boundary_rects[:1]:  # 最初の1つだけラベル付き
+                ax.add_patch(rect)
+            for rect in boundary_rects[1:]:
+                ax.add_patch(rect)
+
+            # 中央エリア（薄い緑）
+            center_rect = Rectangle(
+                (boundary_width, boundary_height),
+                common_cols - 2 * boundary_width,
+                common_rows - 2 * boundary_height,
+                facecolor='green', alpha=0.05, label='Center Zone (75%)'
+            )
+            ax.add_patch(center_rect)
+
+            # LFVパッチ座標をプロット
+            boundary_df = spatial_df[spatial_df['is_boundary'] == True]
+            center_df = spatial_df[spatial_df['is_boundary'] == False]
+
+            plt.scatter(boundary_df['min_col'], boundary_df['min_row'],
+                       c='red', s=80, alpha=0.6, edgecolors='darkred', linewidth=1,
+                       label=f'Boundary LFV ({len(boundary_df)})')
+            plt.scatter(center_df['min_col'], center_df['min_row'],
+                       c='blue', s=80, alpha=0.6, edgecolors='darkblue', linewidth=1,
+                       label=f'Center LFV ({len(center_df)})')
+
+            # 統計情報を注釈
+            stats_text = f'BBI = {bbi_mean:.3f}\np < {boundary_p_value:.6f}\n' + \
+                        f'Boundary: {boundary_count}/{len(spatial_df)} ({boundary_count/len(spatial_df)*100:.1f}%)\n' + \
+                        f'Spatial Dependency: {spatial_strength}'
+            plt.text(0.98, 0.98, stats_text,
+                    transform=ax.transAxes,
+                    fontsize=11, fontweight='bold',
+                    verticalalignment='top', horizontalalignment='right',
+                    bbox=dict(boxstyle='round', facecolor='white', alpha=0.9, edgecolor='black', linewidth=2))
+
+            plt.xlabel('Column (Horizontal Position)', fontsize=12, fontweight='bold')
+            plt.ylabel('Row (Vertical Position)', fontsize=12, fontweight='bold')
+            plt.xlim(-1, common_cols)
+            plt.ylim(-1, common_rows)
+            plt.gca().invert_yaxis()  # 画像座標系に合わせる
+            plt.legend(fontsize=10, loc='lower left')
+            plt.grid(True, alpha=0.3)
+
+            plt.tight_layout()
+
+            # タイトルを下に配置
+            fig = plt.gcf()
+            title_text = f'LFV Proof 3: Spatial Coordinate Distribution\nMin SSIM Patch Locations (Boundary Bias Index = {bbi_mean:.3f}, p < {boundary_p_value:.6f})'
+            fig.text(0.5, -0.05, title_text, fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
+            plt.savefig(output_dir / 'lfv_proof_coordinate_distribution.png', dpi=300, bbox_inches='tight')
+            plt.close()
+            print(f"[OK] LFV証明③（座標分布・BBI可視化）")
+
+
+    # LFV証明サマリーをCSVに出力（BBIと空間依存性を追加）
     lfv_summary = {
         'correlation_texture_localmin': [correlation],
         'correlation_p_value': [p_value],
         'lfv_threshold_25th': [threshold],
         'lfv_cases_count': [lfv_count],
         'lfv_cases_percentage': [lfv_count/len(df)*100],
-        'texture_dependency_strength': ['Strong' if correlation < -0.7 else 'Moderate' if correlation < -0.5 else 'Weak']
+        'texture_dependency_strength': ['Strong' if correlation < -0.7 else 'Moderate' if correlation < -0.5 else 'Weak'],
+        'boundary_bias_index': [bbi_mean if bbi_mean is not None else 'N/A'],
+        'boundary_p_value': [boundary_p_value if boundary_p_value is not None else 'N/A'],
+        'spatial_dependency_strength': [spatial_strength]
     }
     pd.DataFrame(lfv_summary).to_csv(output_dir / 'lfv_proof_summary.csv', index=False)
-    print(f"[OK] LFV証明サマリー（CSV出力）")
+    print(f"[OK] LFV証明サマリー（CSV出力 with BBI）")
 
     print(f"\n{'='*80}")
-    print(f"[OK] 全25種類の研究用プロット生成完了（LFV証明2種を含む）")
-    print(f"   論文・発表資料にそのまま使用できます（300dpi高解像度）\n")
+    print(f"[OK] 全26種類の研究用プロット生成完了（LFV証明3種を含む）")
+    print(f"   論文・発表資料にそのまま使用できます（300dpi高解像度）")
+    print(f"   - Plot 24: テクスチャ依存性証明（相関分析）")
+    print(f"   - Plot 25: 空間依存性証明（分布比較）")
+    print(f"   - Plot 26: 座標分布（BBI可視化）\n")
 
 
 if __name__ == '__main__':
