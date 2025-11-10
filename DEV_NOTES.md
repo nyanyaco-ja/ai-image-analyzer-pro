@@ -19,6 +19,19 @@
 - コード実行には影響なし（Windows側で正常に動作）
 - Pylanceが警告を表示するのみ
 
+**実際のインストール状況（確認済み）:**
+```bash
+(venv) PS C:\Projects\image_compare> python -c "import cv2; print(cv2.__version__)"
+4.12.0
+
+(venv) PS C:\Projects\image_compare> python -c "import customtkinter; print(customtkinter.__version__)"
+# 正常にインポート可能
+```
+
+- Windows仮想環境には**cv2 (OpenCV) 4.12.0**が正常にインストール済み
+- customtkinterも正常にインストール済み
+- バッチ処理でSSIM/PSNR計算が正常動作している証拠あり
+
 **対処:**
 - この警告は無視して問題なし
 - 実際のアプリケーションはWindows側のPython仮想環境で実行されるため正常動作
