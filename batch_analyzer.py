@@ -203,10 +203,21 @@ def batch_analyze(config_file, progress_callback=None, mapping_confirmation_call
     language = config.get('language', 'ja')
     i18n = I18n(language)
 
+    # タイムスタンプ生成（CSVとdetailed_*で共通使用）
+    from datetime import datetime
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
     original_dir = Path(config['original_dir'])
     upscaled_dirs = {k: Path(v) for k, v in config['upscaled_dirs'].items()}
-    output_csv = config['output_csv']
-    output_detail_dir = Path(config.get('output_detail_dir', 'results/detailed/'))
+
+    # CSVファイルパスを構築（タイムスタンプ付き）
+    base_output_csv = config['output_csv']
+    csv_path = Path(base_output_csv)
+    output_csv = str(csv_path.parent / f"{csv_path.stem}_{timestamp}{csv_path.suffix}")
+
+    # detailed_*ディレクトリをCSVと同じ場所に出力（タイムスタンプで対応付け）
+    output_detail_dir = csv_path.parent / f"detailed_{timestamp}"
+
     limit = config.get('limit', 0)  # 0 = 全て処理
     append_mode = config.get('append_mode', False)  # False = 上書き, True = 追加
     evaluation_mode = config.get('evaluation_mode', 'image')  # デフォルトは画像モード
@@ -637,7 +648,7 @@ def create_config_template():
             "chainer_combo2": "dataset/chainer_combo2/"
         },
         "output_csv": "results/batch_analysis.csv",
-        "output_detail_dir": "results/detailed/",
+        "_comment_detailed": "detailed_YYYYMMDD_HHMMSS/ is auto-generated in the same directory as output_csv",
         "num_workers": recommended_workers,
         "checkpoint_interval": 1000,
         "evaluation_mode": "academic",
