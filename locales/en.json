@@ -233,7 +233,18 @@
     "total_rows": "   Total rows: {count}",
     "model_avg_scores": "\nModel-wise average scores:",
     "overall_ranking": "Overall score ranking:",
-    "rank_item": "   {rank}. {model:20s} - {score:.2f} points"
+    "rank_item": "   {rank}. {model:20s} - {score:.2f} points",
+    "mapping_csv_generating": "[INFO] Generating image pair mapping table...",
+    "mapping_csv_complete": "[OK] Mapping CSV generation complete: {name}",
+    "mapping_total_pairs": "  Total pairs: {count}",
+    "mapping_matched": "  Matched: {count}",
+    "mapping_unmatched": "  Unmatched: {count}",
+    "mapping_warning_unmatched": "  [WARNING] Unmatched images found. Please check CSV and manually correct.",
+    "mapping_using_existing": "[INFO] Using existing mapping CSV",
+    "mapping_csv_generated": "[INFO] Mapping CSV has been generated.",
+    "user_cancelled": "\n[INFO] Batch processing cancelled by user.",
+    "config_not_found": "[ERROR] Config file not found: {config_file}",
+    "config_template_created": "\n[OK] Config template created successfully: {config_path}"
   },
   "metrics": {
     "ssim": "SSIM (Structural Similarity)",

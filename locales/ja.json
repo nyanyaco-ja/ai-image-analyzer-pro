@@ -233,7 +233,18 @@
     "total_rows": "   総行数: {count}",
     "model_avg_scores": "\nモデル別平均スコア:",
     "overall_ranking": "総合スコアランキング:",
-    "rank_item": "   {rank}位: {model:20s} - {score:.2f}点"
+    "rank_item": "   {rank}位: {model:20s} - {score:.2f}点",
+    "mapping_csv_generating": "[INFO] 画像ペア対応表を生成中...",
+    "mapping_csv_complete": "[OK] 対応表CSV生成完了: {name}",
+    "mapping_total_pairs": "  総ペア数: {count}",
+    "mapping_matched": "  マッチ成功: {count}",
+    "mapping_unmatched": "  マッチ失敗: {count}",
+    "mapping_warning_unmatched": "  [WARNING] マッチしない画像があります。CSVを確認して手動修正してください。",
+    "mapping_using_existing": "[INFO] 既存の対応表CSVを使用します",
+    "mapping_csv_generated": "[INFO] 対応表CSVが生成されました。",
+    "user_cancelled": "\n[INFO] ユーザーによりバッチ処理がキャンセルされました。",
+    "config_not_found": "[ERROR] 設定ファイルが見つかりません: {config_file}",
+    "config_template_created": "\n[OK] 設定ファイルテンプレート作成完了: {config_path}"
   },
   "metrics": {
     "ssim": "SSIM（構造類似性）",

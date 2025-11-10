@@ -127,7 +127,7 @@ def generate_mapping_csv(original_images, upscaled_dirs, output_dir):
     mapping_csv_path = output_dir / f"mapping_{timestamp}.csv"
 
     print(f"\n{'='*60}")
-    print(f"[INFO] 画像ペア対応表を生成中...")
+    print(i18n.t('batch_analyzer.mapping_csv_generating'))
     print(f"{'='*60}")
 
     mapping_data = []
@@ -172,12 +172,12 @@ def generate_mapping_csv(original_images, upscaled_dirs, output_dir):
     df = pd.DataFrame(mapping_data)
     df.to_csv(mapping_csv_path, index=False, encoding='utf-8-sig')
 
-    print(f"[OK] 対応表CSV生成完了: {mapping_csv_path.name}")
-    print(f"  総ペア数: {len(mapping_data)}")
-    print(f"  マッチ成功: {matched_count}")
-    print(f"  マッチ失敗: {unmatched_count}")
+    print(i18n.t('batch_analyzer.mapping_csv_complete').format(name=mapping_csv_path.name))
+    print(i18n.t('batch_analyzer.mapping_total_pairs').format(count=len(mapping_data)))
+    print(i18n.t('batch_analyzer.mapping_matched').format(count=matched_count))
+    print(i18n.t('batch_analyzer.mapping_unmatched').format(count=unmatched_count))
     if unmatched_count > 0:
-        print(f"  [WARNING] マッチしない画像があります。CSVを確認して手動修正してください。")
+        print(i18n.t('batch_analyzer.mapping_warning_unmatched'))
     print(f"{'='*60}\n")
 
     return mapping_csv_path, matched_count, unmatched_count
@@ -312,7 +312,7 @@ def batch_analyze(config_file, progress_callback=None, mapping_confirmation_call
 
     if manual_mapping_path.exists():
         print(f"\n{'='*60}")
-        print(f"[INFO] 既存の対応表CSVを使用します")
+        print(i18n.t('batch_analyzer.mapping_using_existing'))
         print(f"  {manual_mapping_path}")
         print(f"{'='*60}\n")
         mapping_csv_path = manual_mapping_path
@@ -327,11 +327,11 @@ def batch_analyze(config_file, progress_callback=None, mapping_confirmation_call
             # GUIモード: ダイアログで確認
             proceed = mapping_confirmation_callback(mapping_csv_path, matched_count, unmatched_count)
             if not proceed:
-                print(f"\n[INFO] ユーザーによりバッチ処理がキャンセルされました。")
+                print(i18n.t('batch_analyzer.user_cancelled'))
                 return
         else:
             # CLIモード: コンソールに情報表示
-            print(f"[INFO] 対応表CSVが生成されました。")
+            print(i18n.t('batch_analyzer.mapping_csv_generated'))
             print(f"  確認したい場合は、以下のファイルを開いてください:")
             print(f"  {mapping_csv_path}")
             print(f"  マッチング結果に問題がなければ、このまま処理を続行します。\n")
