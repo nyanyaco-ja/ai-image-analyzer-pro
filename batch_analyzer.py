@@ -266,12 +266,12 @@ def batch_analyze(config_file, progress_callback=None, mapping_confirmation_call
         print(i18n.t('batch_analyzer.error_original_not_found').format(path=original_dir))
         return
 
-    # 評価モード表示用辞書
-    mode_names = {
-        'image': '画像モード（医療画像・写真など）',
-        'document': '文書モード（カルテ・契約書など）',
-        'academic': '学術評価モード（論文用・標準ベンチマーク互換）',
-        'developer': '開発者モード（デバッグ用）'
+    # 評価モード表示用キー
+    mode_key_map = {
+        'image': 'eval_mode_image',
+        'document': 'eval_mode_document',
+        'academic': 'eval_mode_academic',
+        'developer': 'eval_mode_developer'
     }
 
     print(f"\n{'='*60}")
@@ -283,7 +283,8 @@ def batch_analyze(config_file, progress_callback=None, mapping_confirmation_call
     for model_name in upscaled_dirs.keys():
         print(f"   - {model_name}")
     print(i18n.t('batch_analyzer.output_csv').format(path=output_csv))
-    print(i18n.t('batch_analyzer.evaluation_mode').format(mode=mode_names.get(evaluation_mode, evaluation_mode)))
+    mode_key = mode_key_map.get(evaluation_mode, 'eval_mode_image')
+    print(i18n.t('batch_analyzer.evaluation_mode').format(mode=i18n.t(f'batch_analyzer.{mode_key}')))
     print(i18n.t('batch_analyzer.parallel_workers').format(workers=num_workers))
     print(i18n.t('batch_analyzer.checkpoint_interval').format(interval=checkpoint_interval))
     print(f"{'='*60}\n")
@@ -349,15 +350,16 @@ def batch_analyze(config_file, progress_callback=None, mapping_confirmation_call
         for model_name, upscaled_dir in upscaled_dirs.items():
             tasks.append((orig_img_path, model_name, upscaled_dir, output_detail_dir, evaluation_mode, patch_size))
 
-    print(f"処理タスク数: {len(tasks)}")
-    print(f"推定処理時間: {len(tasks) * 15 / num_workers / 60:.1f}分 (1サンプル15秒想定)")
+    print(i18n.t('batch_analyzer.task_count').format(count=len(tasks)))
+    estimated_minutes = len(tasks) * 15 / num_workers / 60
+    print(i18n.t('batch_analyzer.estimated_time').format(time=estimated_minutes))
     print(f"{'='*60}\n")
 
     # 開始時刻記録
     start_time = time.time()
 
     # 並列処理で実行
-    print(f"{num_workers}プロセスで並列処理開始...\n")
+    print(i18n.t('batch_analyzer.parallel_start').format(workers=num_workers) + "\n")
 
     with Pool(processes=num_workers) as pool:
         # imapを使って逐次的に結果を取得（メモリ効率化）
@@ -371,7 +373,11 @@ def batch_analyze(config_file, progress_callback=None, mapping_confirmation_call
 
                 # 進捗通知
                 if progress_callback:
-                    progress_callback(processed, total_pairs, f"完了: {result['image_id']} - {result['model']}")
+                    message = i18n.t('batch_analyzer.task_completed').format(
+                        image_id=result['image_id'],
+                        model=result['model']
+                    )
+                    progress_callback(processed, total_pairs, message)
             else:
                 # エラーメッセージを表示
                 print(f"\n{result}")
@@ -429,7 +435,7 @@ def batch_analyze(config_file, progress_callback=None, mapping_confirmation_call
         print(f"{'='*60}\n")
 
         # 簡易統計を表示
-        display_summary_statistics(all_results)
+        display_summary_statistics(all_results, i18n)
 
         # チェックポイントファイルを削除（正常終了時）
         if checkpoint_file.exists():
@@ -599,14 +605,14 @@ def save_results_to_csv(all_results, output_csv, append_mode=False):
         print(f"   総行数: {len(df_new)}")
 
 
-def display_summary_statistics(all_results):
+def display_summary_statistics(all_results, i18n):
     """
     簡易統計を表示
     """
 
     df = pd.DataFrame(all_results)
 
-    print(f"\nモデル別平均スコア:")
+    print(i18n.t('batch_analyzer.model_avg_scores'))
     print(f"{'='*80}")
 
     # 主要指標でグループ化
@@ -629,9 +635,9 @@ def display_summary_statistics(all_results):
     print(f"{'='*80}\n")
 
     # ランキング
-    print(f"総合スコアランキング:")
+    print(i18n.t('batch_analyzer.overall_ranking'))
     for i, (model, score) in enumerate(grouped['総合スコア'].items(), 1):
-        print(f"   {i}位: {model:20s} - {score:.2f}点")
+        print(i18n.t('batch_analyzer.rank_item').format(rank=i, model=model, score=score))
 
 
 def create_config_template():

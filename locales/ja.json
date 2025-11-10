@@ -251,7 +251,15 @@
     "mapping_proceed_title": "続行確認",
     "mapping_proceed_message": "対応表CSVを確認しました。\n\nこのまま分析を続行しますか？\n\n※マッチング結果を修正した場合は、\n  results/mapping.csv として保存してください。",
     "mapping_error_title": "エラー",
-    "mapping_error_message": "CSVファイルを開けませんでした: {error}"
+    "mapping_error_message": "CSVファイルを開けませんでした: {error}",
+    "eval_mode_image": "画像モード（医療画像・写真など）",
+    "eval_mode_document": "文書モード（カルテ・契約書など）",
+    "eval_mode_academic": "学術評価モード（論文用・標準ベンチマーク互換）",
+    "eval_mode_developer": "開発者モード（デバッグ用）",
+    "task_count": "処理タスク数: {count}",
+    "estimated_time": "推定処理時間: {time:.1f}分 (1サンプル15秒想定)",
+    "parallel_start": "{workers}プロセスで並列処理開始...",
+    "task_completed": "完了: {image_id} - {model}"
   },
   "metrics": {
     "ssim": "SSIM（構造類似性）",

@@ -251,7 +251,15 @@
     "mapping_proceed_title": "Continue Confirmation",
     "mapping_proceed_message": "Mapping CSV has been reviewed.\n\nContinue with analysis?\n\n※If you modified the mapping results,\n  please save as results/mapping.csv.",
     "mapping_error_title": "Error",
-    "mapping_error_message": "Failed to open CSV file: {error}"
+    "mapping_error_message": "Failed to open CSV file: {error}",
+    "eval_mode_image": "Image mode (medical images, photos, etc.)",
+    "eval_mode_document": "Document mode (medical records, contracts, etc.)",
+    "eval_mode_academic": "Academic evaluation mode (paper publication, standard benchmarks)",
+    "eval_mode_developer": "Developer mode (debugging)",
+    "task_count": "Processing tasks: {count}",
+    "estimated_time": "Estimated time: {time:.1f} min (15 sec/sample)",
+    "parallel_start": "Starting parallel processing with {workers} processes...",
+    "task_completed": "Completed: {image_id} - {model}"
   },
   "metrics": {
     "ssim": "SSIM (Structural Similarity)",
