@@ -919,21 +919,16 @@ class BatchModeMixin:
         import platform
 
         # ダイアログメッセージ
-        message = f"画像ペア対応表CSVが自動生成されました。\n\n"
-        message += f"マッチ成功: {matched_count} ペア\n"
-        message += f"マッチ失敗: {unmatched_count} ペア\n\n"
-
-        if unmatched_count > 0:
-            message += "⚠️ マッチしない画像があります！\n\n"
-
-        message += "対応表を確認しますか？\n\n"
-        message += "[はい] → CSVを開いて確認\n"
-        message += "[いいえ] → そのまま分析を続行\n"
-        message += "[キャンセル] → 処理を中止"
+        warning = self.i18n.t('batch_analyzer.mapping_dialog_warning') if unmatched_count > 0 else ""
+        message = self.i18n.t('batch_analyzer.mapping_dialog_message').format(
+            matched=matched_count,
+            unmatched=unmatched_count,
+            warning=warning
+        )
 
         # 確認ダイアログ
         result = messagebox.askyesnocancel(
-            "対応表CSV確認",
+            self.i18n.t('batch_analyzer.mapping_dialog_title'),
             message
         )
 
@@ -951,15 +946,15 @@ class BatchModeMixin:
 
                 # CSVを開いた後、続行確認
                 proceed = messagebox.askyesno(
-                    "続行確認",
-                    "対応表CSVを確認しました。\n\n"
-                    "このまま分析を続行しますか？\n\n"
-                    "※マッチング結果を修正した場合は、\n"
-                    "  results/mapping.csv として保存してください。"
+                    self.i18n.t('batch_analyzer.mapping_proceed_title'),
+                    self.i18n.t('batch_analyzer.mapping_proceed_message')
                 )
                 return proceed
             except Exception as e:
-                messagebox.showerror("エラー", f"CSVファイルを開けませんでした: {str(e)}")
+                messagebox.showerror(
+                    self.i18n.t('batch_analyzer.mapping_error_title'),
+                    self.i18n.t('batch_analyzer.mapping_error_message').format(error=str(e))
+                )
                 return False
         else:  # いいえ → そのまま続行
             return True

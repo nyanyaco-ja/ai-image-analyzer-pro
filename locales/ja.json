@@ -244,7 +244,14 @@
     "mapping_csv_generated": "[INFO] 対応表CSVが生成されました。",
     "user_cancelled": "\n[INFO] ユーザーによりバッチ処理がキャンセルされました。",
     "config_not_found": "[ERROR] 設定ファイルが見つかりません: {config_file}",
-    "config_template_created": "\n[OK] 設定ファイルテンプレート作成完了: {config_path}"
+    "config_template_created": "\n[OK] 設定ファイルテンプレート作成完了: {config_path}",
+    "mapping_dialog_title": "対応表CSV確認",
+    "mapping_dialog_message": "画像ペア対応表CSVが自動生成されました。\n\nマッチ成功: {matched} ペア\nマッチ失敗: {unmatched} ペア\n\n{warning}対応表を確認しますか？\n\n[はい] → CSVを開いて確認\n[いいえ] → そのまま分析を続行\n[キャンセル] → 処理を中止",
+    "mapping_dialog_warning": "⚠️ マッチしない画像があります！\n\n",
+    "mapping_proceed_title": "続行確認",
+    "mapping_proceed_message": "対応表CSVを確認しました。\n\nこのまま分析を続行しますか？\n\n※マッチング結果を修正した場合は、\n  results/mapping.csv として保存してください。",
+    "mapping_error_title": "エラー",
+    "mapping_error_message": "CSVファイルを開けませんでした: {error}"
   },
   "metrics": {
     "ssim": "SSIM（構造類似性）",

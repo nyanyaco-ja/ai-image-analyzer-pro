@@ -244,7 +244,14 @@
     "mapping_csv_generated": "[INFO] Mapping CSV has been generated.",
     "user_cancelled": "\n[INFO] Batch processing cancelled by user.",
     "config_not_found": "[ERROR] Config file not found: {config_file}",
-    "config_template_created": "\n[OK] Config template created successfully: {config_path}"
+    "config_template_created": "\n[OK] Config template created successfully: {config_path}",
+    "mapping_dialog_title": "Mapping CSV Confirmation",
+    "mapping_dialog_message": "Image pair mapping CSV has been auto-generated.\n\nMatched: {matched} pairs\nUnmatched: {unmatched} pairs\n\n{warning}Do you want to review the mapping table?\n\n[Yes] → Open CSV for review\n[No] → Continue analysis as-is\n[Cancel] → Abort processing",
+    "mapping_dialog_warning": "⚠️ Unmatched images found!\n\n",
+    "mapping_proceed_title": "Continue Confirmation",
+    "mapping_proceed_message": "Mapping CSV has been reviewed.\n\nContinue with analysis?\n\n※If you modified the mapping results,\n  please save as results/mapping.csv.",
+    "mapping_error_title": "Error",
+    "mapping_error_message": "Failed to open CSV file: {error}"
   },
   "metrics": {
     "ssim": "SSIM (Structural Similarity)",
