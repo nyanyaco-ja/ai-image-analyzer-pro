@@ -40,24 +40,7 @@ def process_single_pair(args):
 
     try:
         # 超解像画像のパスを探す（PNG/JPG両対応、サフィックス対応）
-        upscaled_path = None
-
-        # まず完全一致を試す
-        for ext in ['.png', '.jpg', '.jpeg']:
-            candidate = upscaled_dir / f"{image_id}{ext}"
-            if candidate.exists():
-                upscaled_path = candidate
-                break
-
-        # 見つからない場合、サフィックス付きファイルを検索
-        if upscaled_path is None:
-            for ext in ['.png', '.jpg', '.jpeg']:
-                # image_id で始まるファイルを検索
-                pattern = f"{image_id}*{ext}"
-                matches = list(upscaled_dir.glob(pattern))
-                if matches:
-                    upscaled_path = matches[0]  # 最初にマッチしたものを使用
-                    break
+        upscaled_path, match_method = find_upscaled_image(orig_img_path, upscaled_dir)
 
         if upscaled_path is None:
             error_msg = f"[WARNING] 超解像画像が見つかりません: {model_name}/{image_id}"
@@ -94,6 +77,111 @@ def process_single_pair(args):
     except Exception as e:
         error_msg = f"[ERROR] {image_id} - {model_name}: {str(e)}"
         return (False, error_msg)
+
+
+def find_upscaled_image(original_path, upscaled_dir):
+    """
+    元画像に対応する超解像画像を検索
+
+    Args:
+        original_path: 元画像のPath
+        upscaled_dir: 超解像画像ディレクトリのPath
+
+    Returns:
+        tuple: (upscaled_path, match_method) またはNoneならマッチなし
+               match_method: 'exact_match' | 'suffix_match' | None
+    """
+    image_id = original_path.stem
+
+    # まず完全一致を試す
+    for ext in ['.png', '.jpg', '.jpeg']:
+        candidate = upscaled_dir / f"{image_id}{ext}"
+        if candidate.exists():
+            return (candidate, 'exact_match')
+
+    # 見つからない場合、サフィックス付きファイルを検索
+    for ext in ['.png', '.jpg', '.jpeg']:
+        pattern = f"{image_id}*{ext}"
+        matches = list(upscaled_dir.glob(pattern))
+        if matches:
+            return (matches[0], 'suffix_match')
+
+    return (None, None)
+
+
+def generate_mapping_csv(original_images, upscaled_dirs, output_dir):
+    """
+    画像ペアの対応表CSVを生成
+
+    Args:
+        original_images: 元画像のPathリスト
+        upscaled_dirs: {model_name: upscaled_dir_path}の辞書
+        output_dir: 出力ディレクトリ
+
+    Returns:
+        Path: 生成されたmapping CSVのパス
+    """
+    from datetime import datetime
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    mapping_csv_path = output_dir / f"mapping_{timestamp}.csv"
+
+    print(f"\n{'='*60}")
+    print(f"[INFO] 画像ペア対応表を生成中...")
+    print(f"{'='*60}")
+
+    mapping_data = []
+    pair_id = 1
+    total_original = len(original_images)
+    matched_count = 0
+    unmatched_count = 0
+
+    for orig_path in original_images:
+        for model_name, upscaled_dir in upscaled_dirs.items():
+            upscaled_path, match_method = find_upscaled_image(orig_path, upscaled_dir)
+
+            if upscaled_path:
+                mapping_data.append({
+                    'pair_id': pair_id,
+                    'original_name': orig_path.name,
+                    'original_path': str(orig_path.resolve()),
+                    'upscaled_name': upscaled_path.name,
+                    'upscaled_path': str(upscaled_path.resolve()),
+                    'model': model_name,
+                    'match_method': match_method,
+                    'verified': 'false'
+                })
+                matched_count += 1
+            else:
+                # マッチしない場合も記録（手動修正用）
+                mapping_data.append({
+                    'pair_id': pair_id,
+                    'original_name': orig_path.name,
+                    'original_path': str(orig_path.resolve()),
+                    'upscaled_name': 'NOT_FOUND',
+                    'upscaled_path': '',
+                    'model': model_name,
+                    'match_method': 'none',
+                    'verified': 'false'
+                })
+                unmatched_count += 1
+
+            pair_id += 1
+
+    # CSVに書き出し
+    df = pd.DataFrame(mapping_data)
+    df.to_csv(mapping_csv_path, index=False, encoding='utf-8-sig')
+
+    print(f"[OK] 対応表CSV生成完了: {mapping_csv_path.name}")
+    print(f"  総ペア数: {len(mapping_data)}")
+    print(f"  マッチ成功: {matched_count}")
+    print(f"  マッチ失敗: {unmatched_count}")
+    if unmatched_count > 0:
+        print(f"  [WARNING] マッチしない画像があります。CSVを確認して手動修正してください。")
+    print(f"{'='*60}\n")
+
+    return mapping_csv_path
+
 
 def batch_analyze(config_file, progress_callback=None):
     """
@@ -202,6 +290,26 @@ def batch_analyze(config_file, progress_callback=None):
         print(f"JPGは非可逆圧縮のため、AI処理の品質を正確に評価できません。")
         print(f"元のAI超解像ツールでPNG形式で出力し直すことを強く推奨します。")
         print(f"{'='*60}\n")
+
+    # ===== 画像ペア対応表の生成 =====
+    # 既存のmapping.csvがあれば優先、なければ自動生成
+    manual_mapping_path = output_dir / 'mapping.csv'
+
+    if manual_mapping_path.exists():
+        print(f"\n{'='*60}")
+        print(f"[INFO] 既存の対応表CSVを使用します")
+        print(f"  {manual_mapping_path}")
+        print(f"{'='*60}\n")
+        mapping_csv_path = manual_mapping_path
+    else:
+        # 自動生成
+        mapping_csv_path = generate_mapping_csv(original_images, upscaled_dirs, output_dir)
+
+        # ユーザーに確認を促す
+        print(f"[INFO] 対応表CSVが生成されました。")
+        print(f"  確認したい場合は、以下のファイルを開いてください:")
+        print(f"  {mapping_csv_path}")
+        print(f"  マッチング結果に問題がなければ、このまま処理を続行します。\n")
 
     # 結果を格納するリスト
     all_results = []
