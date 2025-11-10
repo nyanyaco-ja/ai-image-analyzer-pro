@@ -918,6 +918,67 @@ class BatchModeMixin:
         self.root.after(0, lambda: self.batch_result_text.insert(tk.END, f"{message}\n"))
         self.root.after(0, lambda: self.batch_result_text.see(tk.END))
 
+    def confirm_mapping_csv(self, mapping_csv_path, matched_count, unmatched_count):
+        """
+        対応表CSV確認ダイアログを表示
+
+        Args:
+            mapping_csv_path: 対応表CSVのパス
+            matched_count: マッチ成功数
+            unmatched_count: マッチ失敗数
+
+        Returns:
+            bool: True (続行) or False (中止)
+        """
+        import subprocess
+        import platform
+
+        # ダイアログメッセージ
+        message = f"画像ペア対応表CSVが自動生成されました。\n\n"
+        message += f"マッチ成功: {matched_count} ペア\n"
+        message += f"マッチ失敗: {unmatched_count} ペア\n\n"
+
+        if unmatched_count > 0:
+            message += "⚠️ マッチしない画像があります！\n\n"
+
+        message += "対応表を確認しますか？\n\n"
+        message += "[はい] → CSVを開いて確認\n"
+        message += "[いいえ] → そのまま分析を続行\n"
+        message += "[キャンセル] → 処理を中止"
+
+        # 確認ダイアログ
+        result = messagebox.askyesnocancel(
+            "対応表CSV確認",
+            message
+        )
+
+        if result is None:  # キャンセル
+            return False
+        elif result:  # はい → CSVを開く
+            try:
+                # OSに応じてCSVを開く
+                if platform.system() == 'Windows':
+                    os.startfile(str(mapping_csv_path))
+                elif platform.system() == 'Darwin':  # macOS
+                    subprocess.call(['open', str(mapping_csv_path)])
+                else:  # Linux
+                    subprocess.call(['xdg-open', str(mapping_csv_path)])
+
+                # CSVを開いた後、続行確認
+                proceed = messagebox.askyesno(
+                    "続行確認",
+                    "対応表CSVを確認しました。\n\n"
+                    "このまま分析を続行しますか？\n\n"
+                    "※マッチング結果を修正した場合は、\n"
+                    "  results/mapping.csv として保存してください。"
+                )
+                return proceed
+            except Exception as e:
+                messagebox.showerror("エラー", f"CSVファイルを開けませんでした: {str(e)}")
+                return False
+        else:  # いいえ → そのまま続行
+            return True
+
     def run_batch_analysis(self, config):
         """バッチ処理実行"""
         old_stdout = sys.stdout
@@ -940,8 +1001,12 @@ class BatchModeMixin:
             sys.stdout = text_redirector
             sys.stderr = text_redirector
 
-            # バッチ処理実行（進捗コールバック付き）
-            batch_analyze(temp_config_path, progress_callback=self.update_batch_progress)
+            # バッチ処理実行（進捗コールバック + 対応表確認コールバック付き）
+            batch_analyze(
+                temp_config_path,
+                progress_callback=self.update_batch_progress,
+                mapping_confirmation_callback=self.confirm_mapping_csv
+            )
 
             # 出力を取得
             output = text_redirector.getvalue()

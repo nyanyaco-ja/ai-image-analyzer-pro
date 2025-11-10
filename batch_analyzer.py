@@ -180,16 +180,19 @@ def generate_mapping_csv(original_images, upscaled_dirs, output_dir):
         print(f"  [WARNING] マッチしない画像があります。CSVを確認して手動修正してください。")
     print(f"{'='*60}\n")
 
-    return mapping_csv_path
+    return mapping_csv_path, matched_count, unmatched_count
 
 
-def batch_analyze(config_file, progress_callback=None):
+def batch_analyze(config_file, progress_callback=None, mapping_confirmation_callback=None):
     """
     バッチ処理の実行
 
     Args:
         config_file: 設定JSONファイルのパス
         progress_callback: 進捗通知用コールバック関数 (current, total, message)
+        mapping_confirmation_callback: 対応表CSV確認用コールバック
+            Args: (mapping_csv_path, matched_count, unmatched_count)
+            Returns: True (続行) or False (中止)
     """
 
     # 設定読み込み
@@ -304,13 +307,23 @@ def batch_analyze(config_file, progress_callback=None):
         mapping_csv_path = manual_mapping_path
     else:
         # 自動生成
-        mapping_csv_path = generate_mapping_csv(original_images, upscaled_dirs, output_dir)
+        mapping_csv_path, matched_count, unmatched_count = generate_mapping_csv(
+            original_images, upscaled_dirs, output_dir
+        )
 
-        # ユーザーに確認を促す
-        print(f"[INFO] 対応表CSVが生成されました。")
-        print(f"  確認したい場合は、以下のファイルを開いてください:")
-        print(f"  {mapping_csv_path}")
-        print(f"  マッチング結果に問題がなければ、このまま処理を続行します。\n")
+        # ユーザーに確認を促す（GUI用コールバック）
+        if mapping_confirmation_callback:
+            # GUIモード: ダイアログで確認
+            proceed = mapping_confirmation_callback(mapping_csv_path, matched_count, unmatched_count)
+            if not proceed:
+                print(f"\n[INFO] ユーザーによりバッチ処理がキャンセルされました。")
+                return
+        else:
+            # CLIモード: コンソールに情報表示
+            print(f"[INFO] 対応表CSVが生成されました。")
+            print(f"  確認したい場合は、以下のファイルを開いてください:")
+            print(f"  {mapping_csv_path}")
+            print(f"  マッチング結果に問題がなければ、このまま処理を続行します。\n")
 
     # 結果を格納するリスト
     all_results = []
