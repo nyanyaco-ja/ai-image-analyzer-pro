@@ -293,6 +293,7 @@ def batch_analyze(config_file, progress_callback=None):
 
     # ===== 画像ペア対応表の生成 =====
     # 既存のmapping.csvがあれば優先、なければ自動生成
+    output_dir = Path(output_csv).parent
     manual_mapping_path = output_dir / 'mapping.csv'
 
     if manual_mapping_path.exists():
