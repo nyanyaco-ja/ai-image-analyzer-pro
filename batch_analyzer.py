@@ -366,7 +366,7 @@ def batch_analyze(config_file, progress_callback=None, mapping_confirmation_call
         results_iter = pool.imap(process_single_pair, tasks)
 
         # プログレスバー付きで処理
-        for idx, (success, result) in enumerate(tqdm(results_iter, total=len(tasks), desc="バッチ処理中"), 1):
+        for idx, (success, result) in enumerate(tqdm(results_iter, total=len(tasks), desc=i18n.t('batch_analyzer.progress_desc')), 1):
             if success:
                 all_results.append(result)
                 processed += 1
@@ -400,7 +400,7 @@ def batch_analyze(config_file, progress_callback=None, mapping_confirmation_call
                 print(f"  成功: {processed}, エラー: {errors}")
                 print(f"{'='*60}\n")
 
-                save_results_to_csv(all_results, str(checkpoint_file), append_mode=False)
+                save_results_to_csv(all_results, str(checkpoint_file), append_mode=False, i18n=i18n)
                 print(f"[INFO] チェックポイント保存完了: {checkpoint_file}\n")
 
     # 処理時間計算
@@ -409,7 +409,7 @@ def batch_analyze(config_file, progress_callback=None, mapping_confirmation_call
 
     # 結果をCSV保存
     if len(all_results) > 0:
-        save_results_to_csv(all_results, output_csv, append_mode)
+        save_results_to_csv(all_results, output_csv, append_mode, i18n)
 
         # モデル別の処理件数を集計
         model_counts = {}
@@ -560,7 +560,7 @@ def extract_metrics_for_csv(image_id, model_name, results, original_path, upscal
     return row
 
 
-def save_results_to_csv(all_results, output_csv, append_mode=False):
+def save_results_to_csv(all_results, output_csv, append_mode=False, i18n=None):
     """
     結果をCSVファイルに保存
 
@@ -568,6 +568,7 @@ def save_results_to_csv(all_results, output_csv, append_mode=False):
         all_results: 分析結果のリスト
         output_csv: 出力CSVファイルパス
         append_mode: True = 追加モード, False = 上書きモード
+        i18n: I18nインスタンス
     """
 
     # DataFrameに変換
@@ -587,22 +588,22 @@ def save_results_to_csv(all_results, output_csv, append_mode=False):
         print(f"   既存データ: {len(df_existing)}行")
         print(f"   新規データ: {len(df_new)}行")
         print(f"   結合後: {len(df_combined)}行")
-        print(f"   ファイル: {output_csv}")
-        print(f"   画像数: {df_combined['image_id'].nunique()}")
-        print(f"   モデル数: {df_combined['model'].nunique()}")
+        print(i18n.t('batch_analyzer.csv_file_label').format(path=output_csv))
+        print(i18n.t('batch_analyzer.csv_image_count').format(count=df_combined['image_id'].nunique()))
+        print(i18n.t('batch_analyzer.csv_model_count').format(count=df_combined['model'].nunique()))
     else:
         # 上書きモード
         if append_mode:
-            print(f"\n[INFO] 追加モードですが既存CSVがないため新規作成します")
+            print(i18n.t('batch_analyzer.append_mode_create'))
         else:
-            print(f"\n[INFO] 上書きモードで保存中...")
+            print(i18n.t('batch_analyzer.overwrite_mode'))
 
         df_new.to_csv(output_csv, index=False, encoding='utf-8-sig')
 
-        print(f"   ファイル: {output_csv}")
-        print(f"   画像数: {df_new['image_id'].nunique()}")
-        print(f"   モデル数: {df_new['model'].nunique()}")
-        print(f"   総行数: {len(df_new)}")
+        print(i18n.t('batch_analyzer.csv_file_label').format(path=output_csv))
+        print(i18n.t('batch_analyzer.csv_image_count').format(count=df_new['image_id'].nunique()))
+        print(i18n.t('batch_analyzer.csv_model_count').format(count=df_new['model'].nunique()))
+        print(i18n.t('batch_analyzer.csv_total_rows').format(count=len(df_new)))
 
 
 def display_summary_statistics(all_results, i18n):

@@ -259,7 +259,12 @@
     "task_count": "処理タスク数: {count}",
     "estimated_time": "推定処理時間: {time:.1f}分 (1サンプル15秒想定)",
     "parallel_start": "{workers}プロセスで並列処理開始...",
-    "task_completed": "完了: {image_id} - {model}"
+    "task_completed": "完了: {image_id} - {model}",
+    "progress_desc": "バッチ処理中",
+    "csv_file_label": "   ファイル: {path}",
+    "csv_image_count": "   画像数: {count}",
+    "csv_model_count": "   モデル数: {count}",
+    "csv_total_rows": "   総行数: {count}"
   },
   "metrics": {
     "ssim": "SSIM（構造類似性）",

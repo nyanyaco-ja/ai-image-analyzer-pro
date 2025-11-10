@@ -259,7 +259,12 @@
     "task_count": "Processing tasks: {count}",
     "estimated_time": "Estimated time: {time:.1f} min (15 sec/sample)",
     "parallel_start": "Starting parallel processing with {workers} processes...",
-    "task_completed": "Completed: {image_id} - {model}"
+    "task_completed": "Completed: {image_id} - {model}",
+    "progress_desc": "Batch processing",
+    "csv_file_label": "   File: {path}",
+    "csv_image_count": "   Images: {count}",
+    "csv_model_count": "   Models: {count}",
+    "csv_total_rows": "   Total rows: {count}"
   },
   "metrics": {
     "ssim": "SSIM (Structural Similarity)",
