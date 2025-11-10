@@ -450,12 +450,30 @@ def extract_metrics_for_csv(image_id, model_name, results, original_path, upscal
     else:
         delta_e_score = delta_e_data if isinstance(delta_e_data, (int, float)) else 0
 
+    # 画像サイズ情報の取得
+    basic_info = results.get('basic_info', {})
+    img1_size = basic_info.get('img1_size', [0, 0])  # [width, height]
+    img2_size = basic_info.get('img2_size', [0, 0])  # [width, height]
+
+    # ファイル形式の取得
+    from pathlib import Path
+    original_format = Path(original_path).suffix.lstrip('.').lower()  # "png", "jpg"
+    upscaled_format = Path(upscaled_path).suffix.lstrip('.').lower()  # "png", "jpg"
+
     row = {
         # メタ情報
         'image_id': image_id,
         'model': model_name,
         'original_path': original_path,
         'upscaled_path': upscaled_path,
+
+        # 画像サイズ・フォーマット情報（DB用）
+        'original_width': img1_size[0],
+        'original_height': img1_size[1],
+        'original_format': original_format,
+        'upscaled_width': img2_size[0],
+        'upscaled_height': img2_size[1],
+        'upscaled_format': upscaled_format,
 
         # 1. SSIM（構造類似性）- 超解像画像のスコア
         'ssim': safe_extract(results, 'ssim', 'img2_vs_original'),
