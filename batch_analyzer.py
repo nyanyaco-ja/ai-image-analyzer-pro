@@ -109,7 +109,7 @@ def find_upscaled_image(original_path, upscaled_dir):
     return (None, None)
 
 
-def generate_mapping_csv(original_images, upscaled_dirs, output_dir):
+def generate_mapping_csv(original_images, upscaled_dirs, output_dir, i18n):
     """
     画像ペアの対応表CSVを生成
 
@@ -117,6 +117,7 @@ def generate_mapping_csv(original_images, upscaled_dirs, output_dir):
         original_images: 元画像のPathリスト
         upscaled_dirs: {model_name: upscaled_dir_path}の辞書
         output_dir: 出力ディレクトリ
+        i18n: I18nオブジェクト
 
     Returns:
         Path: 生成されたmapping CSVのパス
@@ -319,7 +320,7 @@ def batch_analyze(config_file, progress_callback=None, mapping_confirmation_call
     else:
         # 自動生成
         mapping_csv_path, matched_count, unmatched_count = generate_mapping_csv(
-            original_images, upscaled_dirs, output_dir
+            original_images, upscaled_dirs, output_dir, i18n
         )
 
         # ユーザーに確認を促す（GUI用コールバック）
