@@ -3,7 +3,7 @@
 
 26パターンのハルシネーション検出:
 - 9つの組み合わせパターン（複合異常）
-- 17の単独閾値判定（各指標の異常値）
+- 16の単独閾値判定（各指標の異常値）
 
 使い方:
 python analyze_results.py results/batch_analysis.csv
@@ -84,11 +84,11 @@ def print_basic_statistics(df):
     print(f"\n[STATS] 主要指標の基本統計量:")
     print(f"{'='*80}")
 
-    # 17項目すべて
+    # 16項目（total_scoreは除外）
     metrics = ['ssim', 'ms_ssim', 'psnr', 'lpips', 'sharpness', 'contrast',
                'entropy', 'noise', 'edge_density', 'artifact_total', 'delta_e',
                'high_freq_ratio', 'texture_complexity', 'local_quality_mean',
-               'histogram_corr', 'lab_L_mean', 'total_score']
+               'histogram_corr', 'lab_L_mean']
 
     stats = df[metrics].describe().T
     stats.columns = ['件数', '平均', '標準偏差', '最小', '25%', '50%', '75%', '最大']
@@ -105,20 +105,19 @@ def compare_models(df, output_dir):
     print(f"\n[RANK] モデル別ランキング:")
     print(f"{'='*80}")
 
-    # 主要指標でグループ化
+    # 主要指標でグループ化（total_score除外）
     model_comparison = df.groupby('model').agg({
         'ssim': ['mean', 'std'],
         'psnr': ['mean', 'std'],
         'lpips': ['mean', 'std'],
-        'total_score': ['mean', 'std'],
         'noise': ['mean', 'std'],
         'artifact_total': ['mean', 'std'],
         'sharpness': ['mean', 'std'],
         'edge_density': ['mean', 'std']
     }).round(4)
 
-    # Total Scoreでソート
-    model_comparison = model_comparison.sort_values(('total_score', 'mean'), ascending=False)
+    # SSIMでソート（高いほど良い）
+    model_comparison = model_comparison.sort_values(('ssim', 'mean'), ascending=False)
 
     print(model_comparison.to_string())
     print(f"{'='*80}\n")
@@ -126,13 +125,13 @@ def compare_models(df, output_dir):
     # CSV保存
     model_comparison.to_csv(output_dir / 'model_comparison.csv', encoding='utf-8-sig')
 
-    # Visualization: Model Total Score
+    # Visualization: Model SSIM Score
     plt.figure(figsize=(12, 6))
-    model_scores = df.groupby('model')['total_score'].mean().sort_values(ascending=False)
+    model_scores = df.groupby('model')['ssim'].mean().sort_values(ascending=False)
 
     plt.bar(range(len(model_scores)), model_scores.values)
     plt.xticks(range(len(model_scores)), model_scores.index, rotation=45, ha='right')
-    plt.ylabel(get_label('total_score_avg', LANG))
+    plt.ylabel('SSIM (Average)')
     # TITLE_BOTTOM:{get_label('model_comparison', LANG)}
     plt.grid(axis='y', alpha=0.3)
     plt.tight_layout()
@@ -153,11 +152,11 @@ def analyze_correlations(df, output_dir):
     print(f"\n[CORR] 相関分析:")
     print(f"{'='*80}")
 
-    # 数値列のみ抽出
+    # 数値列のみ抽出（total_score除外）
     numeric_cols = ['ssim', 'psnr', 'lpips', 'ms_ssim', 'sharpness', 'contrast',
                     'entropy', 'noise', 'edge_density', 'artifact_total', 'delta_e',
                     'high_freq_ratio', 'texture_complexity', 'local_quality_mean',
-                    'histogram_corr', 'lab_L_mean', 'total_score']
+                    'histogram_corr', 'lab_L_mean']
 
     corr_matrix = df[numeric_cols].corr()
 
@@ -165,7 +164,7 @@ def analyze_correlations(df, output_dir):
     plt.figure(figsize=(14, 12))
     sns.heatmap(corr_matrix, annot=True, fmt='.2f', cmap='coolwarm', center=0,
                 square=True, linewidths=0.5, cbar_kws={"shrink": 0.8})
-    # TITLE_BOTTOM:{'Correlation Matrix of 17 Metrics', fontsize=16, fontweight='bold'}
+    # TITLE_BOTTOM:{'Correlation Matrix of 16 Metrics', fontsize=16, fontweight='bold'}
     plt.tight_layout()
     plt.savefig(output_dir / 'correlation_matrix.png', dpi=150)
     plt.close()
@@ -223,7 +222,6 @@ def suggest_thresholds(df, output_dir):
         'local_quality_mean': {'direction': 'high', 'percentile': 25, 'name': get_label('local_quality_mean', LANG)},
         'histogram_corr': {'direction': 'high', 'percentile': 25, 'name': get_label('histogram_corr', LANG)},
         'lab_L_mean': {'direction': 'neutral', 'percentile': 50, 'name': 'LAB Lightness (Reference)'},
-        'total_score': {'direction': 'high', 'percentile': 25, 'name': get_label('total_score', LANG)},
     }
 
     for metric, config in metrics_config.items():
@@ -408,17 +406,17 @@ def suggest_hallucination_logic(df, output_dir):
     print(f"    該当: {len(pattern8)}件 ({len(pattern8)/len(df)*100:.1f}%)")
     print(f"    リスク: 中（Contrast強調で濃度分布が崩れている）")
 
-    # === パターン9: MS-SSIM低 × Total Score低 ===
+    # === パターン9: MS-SSIM低 × SSIM低 ===
     msssim_25 = df['ms_ssim'].quantile(0.25)
-    total_25 = df['total_score'].quantile(0.25)
-    pattern9 = df[(df['ms_ssim'] < msssim_25) & (df['total_score'] < total_25)]
+    ssim_25 = df['ssim'].quantile(0.25)
+    pattern9 = df[(df['ms_ssim'] < msssim_25) & (df['ssim'] < ssim_25)]
     detection_count[pattern9.index] += 1
     for idx in pattern9.index:
-        detected_patterns[idx].append('P9:MS-SSIM低×総合低')
+        detected_patterns[idx].append('P9:MS-SSIM低×SSIM低')
     pattern_stats['P9'] = {'count': len(pattern9), 'rate': len(pattern9)/len(df)*100}
 
-    print(f"\nP9: MS-SSIM低 × Total Score低（総合的低品質）")
-    print(f"    条件: MS-SSIM<{msssim_25:.4f} & 総合<{total_25:.2f}")
+    print(f"\nP9: MS-SSIM低 × SSIM低（総合的低品質）")
+    print(f"    条件: MS-SSIM<{msssim_25:.4f} & SSIM<{ssim_25:.4f}")
     print(f"    該当: {len(pattern9)}件 ({len(pattern9)/len(df)*100:.1f}%)")
     print(f"    リスク: 高（複数スケールで品質劣化）")
 
@@ -435,7 +433,7 @@ def suggest_hallucination_logic(df, output_dir):
         ('sharpness', 'Sharpness低'), ('contrast', 'Contrast低'), ('entropy', 'Entropy低'),
         ('edge_density', 'EdgeDensity低'), ('high_freq_ratio', 'HighFreq低'),
         ('texture_complexity', 'Texture低'), ('local_quality_mean', 'LocalQuality低'),
-        ('histogram_corr', 'HistCorr低'), ('total_score', 'TotalScore低')
+        ('histogram_corr', 'HistCorr低')
     ]
 
     print(f"\n高い方が良い指標（下位10%を異常検出）:")
@@ -726,7 +724,7 @@ def generate_research_plots(df, output_dir, csv_file):
         'ssim', 'ms_ssim', 'psnr', 'lpips', 'sharpness', 'contrast',
         'entropy', 'noise', 'edge_density', 'artifact_total', 'delta_e',
         'high_freq_ratio', 'texture_complexity', 'local_quality_mean',
-        'histogram_corr', 'lab_L_mean', 'total_score'
+        'histogram_corr', 'lab_L_mean'
     ]
 
     for i, metric in enumerate(metrics_for_violin):
@@ -1057,34 +1055,19 @@ def generate_research_plots(df, output_dir, csv_file):
 
     # ===== 分布・PCA系プロット =====
 
-    # 20. Total Scoreのヒストグラム（モデル別）
-    plt.figure(figsize=(12, 6))
-    for model in df['model'].unique():
-        model_data = df[df['model'] == model]['total_score']
-        plt.hist(model_data, bins=20, alpha=0.5, label=model, edgecolor='black')
-    plt.xlabel(get_label('total_score', LANG), fontsize=14, fontweight='bold')
-    plt.ylabel(get_label('frequency', LANG), fontsize=14, fontweight='bold')
-    # TITLE_BOTTOM:{get_label('total_score_histogram', LANG), fontsize=16, fontweight='bold'}
-    plt.legend(fontsize=12)
-    plt.grid(axis='y', alpha=0.3)
-    plt.tight_layout()
-    # Place title at bottom for academic papers
-    fig = plt.gcf()
-    fig.text(0.5, -0.05, get_label('total_score_histogram', LANG), fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
-    plt.savefig(output_dir / 'distribution_total_score_histogram.png', dpi=300, bbox_inches='tight')
-    plt.close()
-    print(f"[OK] 分布①（Total Scoreヒストグラム）")
+    # 20. Total Scoreヒストグラム（削除: total_scoreは分析対象外）
+    print(f"[SKIP] 分布①（Total Scoreヒストグラム: 分析対象外のためスキップ）")
 
 
     # 21. 主成分分析（PCA）プロット
     from sklearn.decomposition import PCA
     from sklearn.preprocessing import StandardScaler
 
-    # 17項目を標準化
+    # 16項目を標準化（total_score除外）
     metrics_for_pca = ['ssim', 'ms_ssim', 'psnr', 'lpips', 'sharpness', 'contrast',
                        'entropy', 'noise', 'edge_density', 'artifact_total', 'delta_e',
                        'high_freq_ratio', 'texture_complexity', 'local_quality_mean',
-                       'histogram_corr', 'lab_L_mean', 'total_score']
+                       'histogram_corr', 'lab_L_mean']
 
     X = df[metrics_for_pca].fillna(0)
     scaler = StandardScaler()
@@ -1102,7 +1085,7 @@ def generate_research_plots(df, output_dir, csv_file):
 
     plt.xlabel(f"{get_label('pc1', LANG)} ({pca.explained_variance_ratio_[0]*100:.1f}%)", fontsize=14, fontweight='bold')
     plt.ylabel(f"{get_label('pc2', LANG)} ({pca.explained_variance_ratio_[1]*100:.1f}%)", fontsize=14, fontweight='bold')
-    # TITLE_BOTTOM:{f'Principal Component Analysis (PCA): 17 Metrics to 2D\nCumulative variance: {sum(pca.explained_variance_ratio_)*100:.1f}%', fontsize=16, fontweight='bold'}
+    # TITLE_BOTTOM:{f'Principal Component Analysis (PCA): 16 Metrics to 2D\nCumulative variance: {sum(pca.explained_variance_ratio_)*100:.1f}%', fontsize=16, fontweight='bold'}
     plt.legend(fontsize=12)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -1118,8 +1101,8 @@ def generate_research_plots(df, output_dir, csv_file):
     fig, axes = plt.subplots(2, 3, figsize=(18, 10))
     # TITLE_BOTTOM:{get_label('percentile_bands', LANG), fontsize=18, fontweight='bold'}
 
-    key_metrics = ['ssim', 'psnr', 'sharpness', 'noise', 'edge_density', 'total_score']
-    metric_names = ['SSIM', get_label('psnr_db', LANG), get_label('sharpness_clarity', LANG), 'Noise', get_label('edge_density', LANG), get_label('total_score', LANG)]
+    key_metrics = ['ssim', 'psnr', 'sharpness', 'noise', 'edge_density', 'contrast']
+    metric_names = ['SSIM', get_label('psnr_db', LANG), get_label('sharpness_clarity', LANG), 'Noise', get_label('edge_density', LANG), get_label('contrast', LANG)]
 
     for idx, (metric, name) in enumerate(zip(key_metrics, metric_names)):
         ax = axes[idx // 3, idx % 3]
@@ -1145,7 +1128,7 @@ def generate_research_plots(df, output_dir, csv_file):
     plt.tight_layout()
     # Place title at bottom for academic papers
     fig = plt.gcf()
-    fig.text(0.5, -0.05, f'Principal Component Analysis (PCA): 17 Metrics to 2D\nCumulative variance: {sum(pca.explained_variance_ratio_)*100:.1f}%', ha='center', va='bottom', transform=fig.transFigure)
+    fig.text(0.5, -0.05, f'Principal Component Analysis (PCA): 16 Metrics to 2D\nCumulative variance: {sum(pca.explained_variance_ratio_)*100:.1f}%', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'percentile_bands.png', dpi=300, bbox_inches='tight')
     plt.close()
     print(f"[OK] 分布③（パーセンタイルバンド）")
