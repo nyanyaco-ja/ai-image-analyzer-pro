@@ -120,35 +120,14 @@ class ModernImageAnalyzerGUI(
         )
         self.subtitle_label.place(x=130, y=70)
 
-        # 言語切り替えボタン（右上、システムモニターの左）
-        lang_frame = ctk.CTkFrame(header_frame, fg_color="transparent")
-        lang_frame.place(x=700, y=30)
+        # 右上コンテナ（言語選択とシステムモニターを配置）
+        right_header_container = ctk.CTkFrame(header_frame, fg_color="transparent")
+        right_header_container.place(relx=1.0, x=-20, y=25, anchor="ne")
 
-        lang_label = ctk.CTkLabel(
-            lang_frame,
-            text="LANG",
-            font=("Arial", 20),
-            text_color="#4A90E2"
-        )
-        lang_label.pack(side=tk.LEFT, padx=(0, 10))
-
-        self.lang_button = ctk.CTkButton(
-            lang_frame,
-            text=self.i18n.t('gui.lang_japanese'),
-            command=self.toggle_language,
-            width=120,
-            height=35,
-            corner_radius=8,
-            font=("Arial", 12, "bold"),
-            fg_color="#2d3748",
-            hover_color="#4A90E2"
-        )
-        self.lang_button.pack(side=tk.LEFT)
-
-        # システムモニター（右上）
+        # システムモニター（CPU/GPU/RAM）を一番右に配置
         if MONITORING_AVAILABLE:
-            monitor_frame = ctk.CTkFrame(header_frame, fg_color="transparent")
-            monitor_frame.place(x=850, y=15)
+            monitor_frame = ctk.CTkFrame(right_header_container, fg_color="transparent")
+            monitor_frame.pack(side=tk.RIGHT, padx=(20, 0))
 
             # CPUメーター
             self.cpu_label = ctk.CTkLabel(
@@ -203,6 +182,31 @@ class ModernImageAnalyzerGUI(
                 highlightthickness=0
             )
             self.ram_canvas.grid(row=1, column=2, padx=10)
+
+        # 言語切り替えボタン（システムモニターの左）
+        lang_frame = ctk.CTkFrame(right_header_container, fg_color="transparent")
+        lang_frame.pack(side=tk.RIGHT, padx=(0, 20))
+
+        lang_label = ctk.CTkLabel(
+            lang_frame,
+            text="LANG",
+            font=("Arial", 20),
+            text_color="#4A90E2"
+        )
+        lang_label.pack(side=tk.LEFT, padx=(0, 10))
+
+        self.lang_button = ctk.CTkButton(
+            lang_frame,
+            text=self.i18n.t('gui.lang_japanese'),
+            command=self.toggle_language,
+            width=120,
+            height=35,
+            corner_radius=8,
+            font=("Arial", 12, "bold"),
+            fg_color="#2d3748",
+            hover_color="#4A90E2"
+        )
+        self.lang_button.pack(side=tk.LEFT)
 
         # モード切り替えボタンエリア
         mode_frame = ctk.CTkFrame(main_container, fg_color="#1e2740", height=60, corner_radius=0)
