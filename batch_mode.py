@@ -7,6 +7,7 @@ import json
 from datetime import datetime
 from ui_components import AccordionSection, get_timestamp_filename
 import customtkinter as ctk
+import cv2
 
 class BatchModeMixin:
     """バッチモード機能を提供するMixinクラス"""
@@ -678,9 +679,6 @@ class BatchModeMixin:
 
     def run_batch_bicubic_downscale(self):
         """バッチBicubic縮小を実行"""
-        import cv2
-        import os
-        from tkinter import messagebox
         import glob
 
         # 入力フォルダ確認
