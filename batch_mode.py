@@ -871,6 +871,7 @@ class BatchModeMixin:
             "original_dir": self.batch_original_dir.get(),
             "upscaled_dirs": valid_models,
             "output_csv": self.batch_output_csv.get(),
+            "language": self.current_language,  # GUI言語設定を引き継ぐ
             "limit": self.batch_limit.get(),  # 処理枚数制限
             "append_mode": self.batch_append_mode.get(),  # 追加モード
             "evaluation_mode": self.batch_evaluation_mode.get(),  # 評価モード（バッチ処理タブの設定）
