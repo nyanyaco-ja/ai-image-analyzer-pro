@@ -101,24 +101,28 @@ def get_system_usage():
 
     return usage_info
 
-def print_usage_status(stage_name):
+def print_usage_status(stage_name, i18n=None):
     """処理段階ごとの使用率を表示"""
     if not MONITORING_AVAILABLE:
         return
 
+    if i18n is None:
+        from i18n import I18n
+        i18n = I18n('ja')
+
     usage = get_system_usage()
 
-    print(f"\n[{stage_name}] システム使用状況:")
-    print(f"  CPU: {usage.get('cpu_percent', 0):.1f}% ({usage.get('cpu_count', 0)}コア)")
-    print(f"  RAM: {usage.get('ram_percent', 0):.1f}% ({usage.get('ram_used_gb', 0):.1f}/{usage.get('ram_total_gb', 0):.1f} GB)")
+    print(i18n.t('analyzer.system_usage').format(stage=stage_name))
+    print(i18n.t('analyzer.cpu_usage').format(percent=usage.get('cpu_percent', 0), count=usage.get('cpu_count', 0)))
+    print(i18n.t('analyzer.ram_usage').format(percent=usage.get('ram_percent', 0), used=usage.get('ram_used_gb', 0), total=usage.get('ram_total_gb', 0)))
 
     if usage.get('gpu_percent') is not None:
-        print(f"  GPU: {usage.get('gpu_percent', 0):.1f}% 使用中")
-        print(f"  VRAM: {usage.get('gpu_memory_percent', 0):.1f}% ({usage.get('gpu_memory_used_mb', 0):.0f}/{usage.get('gpu_memory_total_mb', 0):.0f} MB)")
+        print(i18n.t('analyzer.gpu_usage').format(percent=usage.get('gpu_percent', 0)))
+        print(i18n.t('analyzer.vram_usage').format(percent=usage.get('gpu_memory_percent', 0), used=usage.get('gpu_memory_used_mb', 0), total=usage.get('gpu_memory_total_mb', 0)))
         if usage.get('gpu_temp'):
-            print(f"  GPU温度: {usage.get('gpu_temp')}°C")
+            print(i18n.t('analyzer.gpu_temp').format(temp=usage.get('gpu_temp')))
     else:
-        print(f"  GPU: 未使用（CPU処理中）")
+        print(i18n.t('analyzer.gpu_unused'))
 
 def calculate_sharpness(image_gray):
     """シャープネス（鮮鋭度）計算 - ラプラシアン分散法"""
@@ -1459,7 +1463,7 @@ def imread_unicode(filename):
         print(f"画像読み込みエラー: {e}")
         return None
 
-def analyze_images(img1_path, img2_path, output_dir='analysis_results', original_path=None, evaluation_mode='image', comparison_mode='evaluation', patch_size=16):
+def analyze_images(img1_path, img2_path, output_dir='analysis_results', original_path=None, evaluation_mode='image', comparison_mode='evaluation', patch_size=16, i18n=None):
     """
     元画像とAI処理結果を詳細に比較分析する（精度評価）
 
@@ -1475,10 +1479,16 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
                 - 16: 標準的な精度（推奨、論文標準）
                 - 32: 高速だが粗い
                 - 64: 概要把握用
+    i18n: I18nインスタンス（翻訳用）
 
     Returns:
     results: 分析結果の辞書
     """
+
+    # i18nが渡されていない場合はデフォルトで日本語
+    if i18n is None:
+        from i18n import I18n
+        i18n = I18n('ja')
 
     # 出力ディレクトリのチェックとデフォルト値設定
     if output_dir is None or output_dir == '':
@@ -1515,22 +1525,22 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
 
     # 分析パターンの表示
     if evaluation_mode == "academic":
-        print("\n" + "=" * 80)
-        print("【分析パターン】学術評価モード（Academic Evaluation）")
-        print("=" * 80)
-        print(" 標準ベンチマーク方式: ×2 Scale Super-Resolution")
-        print(f"   Ground Truth（元画像）: {img1.shape[1]}x{img1.shape[0]}px")
-        print(f"   AI処理結果: {img2.shape[1]}x{img2.shape[0]}px")
-        print("   比較対象: DIV2K, Set5, Set14等との定量比較")
-        print("=" * 80)
+        print("\n" + i18n.t('analyzer.separator'))
+        print(i18n.t('analyzer.mode_academic'))
+        print(i18n.t('analyzer.separator'))
+        print(i18n.t('analyzer.usage_academic'))
+        print(i18n.t('analyzer.image_size_academic').format(w=img1.shape[1], h=img1.shape[0]))
+        print(i18n.t('analyzer.ai_result_size').format(w=img2.shape[1], h=img2.shape[0]))
+        print(i18n.t('analyzer.comparison_academic'))
+        print(i18n.t('analyzer.separator'))
     else:
-        print("\n" + "=" * 80)
-        print("【分析パターン】精度評価モード（元画像基準）")
-        print("=" * 80)
-        print(" 用途: AI超解像、画質改善、ノイズ除去等の精度評価")
-        print(f"   元画像: {img1.shape[1]}x{img1.shape[0]}px")
-        print(f"   AI処理結果: {img2.shape[1]}x{img2.shape[0]}px")
-        print("=" * 80)
+        print("\n" + i18n.t('analyzer.separator'))
+        print(i18n.t('analyzer.mode_evaluation'))
+        print(i18n.t('analyzer.separator'))
+        print(i18n.t('analyzer.usage_evaluation'))
+        print(i18n.t('analyzer.image_size_evaluation').format(w=img1.shape[1], h=img1.shape[0]))
+        print(i18n.t('analyzer.ai_result_size').format(w=img2.shape[1], h=img2.shape[0]))
+        print(i18n.t('analyzer.separator'))
 
     # RGB/グレースケール変換（元画像）
     img_original_rgb = cv2.cvtColor(img1, cv2.COLOR_BGR2RGB)
@@ -1555,28 +1565,28 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         'comparison_mode': comparison_mode
     }
 
-    print("=" * 80)
-    print("詳細画像比較分析レポート")
-    print("=" * 80)
-    print(" 比較対象: 元画像（処理前/Before） vs AI超解像結果（処理後/After）")
-    print("=" * 80)
+    print(i18n.t('analyzer.separator'))
+    print(i18n.t('analyzer.report_title'))
+    print(i18n.t('analyzer.separator'))
+    print(i18n.t('analyzer.comparison_evaluation'))
+    print(i18n.t('analyzer.separator'))
 
     # 1. 基本情報
-    print("\n【1. 基本情報】")
-    print(f"超解像結果1サイズ: {img1.shape[1]} x {img1.shape[0]} px")
-    print(f"超解像結果2サイズ: {img2.shape[1]} x {img2.shape[0]} px")
+    print(i18n.t('analyzer.section_1'))
+    print(i18n.t('analyzer.result_size_1').format(w=img1.shape[1], h=img1.shape[0]))
+    print(i18n.t('analyzer.result_size_2').format(w=img2.shape[1], h=img2.shape[0]))
 
     size1 = os.path.getsize(img1_path) / (1024 * 1024)
     size2 = os.path.getsize(img2_path) / (1024 * 1024)
-    print(f"超解像結果1ファイルサイズ: {size1:.2f} MB")
-    print(f"超解像結果2ファイルサイズ: {size2:.2f} MB")
-    print(f"サイズ差: {abs(size1 - size2):.2f} MB ({((size2/size1 - 1) * 100):+.1f}%)")
+    print(i18n.t('analyzer.filesize_1').format(size=size1))
+    print(i18n.t('analyzer.filesize_2').format(size=size2))
+    print(i18n.t('analyzer.filesize_diff').format(diff=abs(size1 - size2), percent=((size2/size1 - 1) * 100)))
 
     if img_original is not None:
         # original_path が None の場合は img1_path を使用（img1 = 元画像）
         original_file_path = original_path if original_path else img1_path
         size_original = os.path.getsize(original_file_path) / (1024 * 1024)
-        print(f"元画像（処理前）ファイルサイズ: {size_original:.2f} MB")
+        print(i18n.t('analyzer.original_filesize').format(size=size_original))
 
     # GPU/CPU情報
     print(f"\n計算デバイス情報:")
@@ -1602,11 +1612,11 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
     }
 
     # 2. 構造類似性（SSIM）
-    print("\n【2. 構造類似性（SSIM）】")
+    print(i18n.t('analyzer.section_2'))
     print("1.0 = 完全一致、0.0 = 全く違う")
     if GPU_AVAILABLE:
         print(f"[GPU処理] デバイス: {DEVICE}")
-    print_usage_status("SSIM計算開始（GPU使用）" if GPU_AVAILABLE else "SSIM計算開始（CPU使用）")
+    print_usage_status("SSIM計算開始（GPU使用）" if GPU_AVAILABLE else "SSIM計算開始（CPU使用）", i18n)
 
     if img_original_rgb is not None:
         if comparison_mode == 'evaluation':

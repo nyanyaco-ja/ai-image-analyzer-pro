@@ -29,14 +29,17 @@ def process_single_pair(args):
     単一の画像ペアを処理（並列処理用）
 
     Args:
-        args: (orig_img_path, model_name, upscaled_dir, output_detail_dir, evaluation_mode, patch_size)
+        args: (orig_img_path, model_name, upscaled_dir, output_detail_dir, evaluation_mode, patch_size, language)
 
     Returns:
         (success, result_or_error_message)
     """
-    orig_img_path, model_name, upscaled_dir, output_detail_dir, evaluation_mode, patch_size = args
+    orig_img_path, model_name, upscaled_dir, output_detail_dir, evaluation_mode, patch_size, language = args
 
     image_id = orig_img_path.stem
+
+    # 言語設定でI18nオブジェクトを初期化
+    i18n = I18n(language)
 
     try:
         # 超解像画像のパスを探す（PNG/JPG両対応、サフィックス対応）
@@ -56,7 +59,8 @@ def process_single_pair(args):
             str(orig_img_path),
             evaluation_mode,
             comparison_mode='evaluation',
-            patch_size=patch_size
+            patch_size=patch_size,
+            i18n=i18n
         )
 
         # 17項目のスコアを抽出
@@ -348,7 +352,7 @@ def batch_analyze(config_file, progress_callback=None, mapping_confirmation_call
     tasks = []
     for orig_img_path in original_images:
         for model_name, upscaled_dir in upscaled_dirs.items():
-            tasks.append((orig_img_path, model_name, upscaled_dir, output_detail_dir, evaluation_mode, patch_size))
+            tasks.append((orig_img_path, model_name, upscaled_dir, output_detail_dir, evaluation_mode, patch_size, language))
 
     print(i18n.t('batch_analyzer.task_count').format(count=len(tasks)))
     estimated_minutes = len(tasks) * 15 / num_workers / 60
