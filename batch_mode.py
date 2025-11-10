@@ -662,10 +662,17 @@ class BatchModeMixin:
             title=self.i18n.t('batch.select_csv_output'),
             defaultextension=".csv",
             filetypes=[("CSV", "*.csv"), ("すべてのファイル", "*.*")],
-            initialfile=get_timestamp_filename("batch_analysis", ".csv")
+            initialfile="batch_analysis.csv"
         )
         if filename:
-            self.batch_output_csv.set(filename)
+            # タイムスタンプパターン (_YYYYMMDD_HHMMSS) を除去
+            import re
+            from pathlib import Path
+            filepath = Path(filename)
+            # ファイル名からタイムスタンプパターンを除去
+            clean_stem = re.sub(r'_\d{8}_\d{6}', '', filepath.stem)
+            clean_filename = str(filepath.parent / f"{clean_stem}{filepath.suffix}")
+            self.batch_output_csv.set(clean_filename)
 
 
 
@@ -981,7 +988,7 @@ class BatchModeMixin:
             sys.stderr = text_redirector
 
             # バッチ処理実行（進捗コールバック + 対応表確認コールバック付き）
-            batch_analyze(
+            actual_csv_path = batch_analyze(
                 temp_config_path,
                 progress_callback=self.update_batch_progress,
                 mapping_confirmation_callback=self.confirm_mapping_csv
@@ -994,7 +1001,8 @@ class BatchModeMixin:
             if os.path.exists(temp_config_path):
                 os.remove(temp_config_path)
 
-            self.root.after(0, self.display_batch_results, output, True, config['output_csv'])
+            # 実際に生成されたCSVパスを渡す
+            self.root.after(0, self.display_batch_results, output, True, actual_csv_path)
 
         except Exception as e:
             import traceback

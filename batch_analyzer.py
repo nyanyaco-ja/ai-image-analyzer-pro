@@ -434,8 +434,12 @@ def batch_analyze(config_file, progress_callback=None, mapping_confirmation_call
         if checkpoint_file.exists():
             checkpoint_file.unlink()
             print(f"\n[INFO] チェックポイントファイル削除済み（正常終了）")
+
+        # 実際に生成されたCSVパスを返す
+        return output_csv
     else:
         print(f"\n[ERROR] 処理可能な画像がありませんでした")
+        return None
 
 
 def extract_metrics_for_csv(image_id, model_name, results, original_path, upscaled_path):
