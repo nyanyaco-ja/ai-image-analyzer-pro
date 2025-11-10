@@ -232,8 +232,7 @@ class BatchModeMixin:
             font_size=18
         )
 
-        self.batch_output_csv = tk.StringVar(value=f"results/{get_timestamp_filename('batch_analysis', '.csv')}")
-        self.batch_output_detail = tk.StringVar(value=f"results/detailed_{datetime.now().strftime('%Y%m%d_%H%M%S')}/")
+        self.batch_output_csv = tk.StringVar(value="results/batch_analysis.csv")
         self.batch_limit = tk.IntVar(value=0)  # 0 = 全て
         self.batch_append_mode = tk.BooleanVar(value=True)  # True = 追加（デフォルト）, False = 上書き
 
@@ -264,32 +263,18 @@ class BatchModeMixin:
         )
         csv_browse_btn.pack(side=tk.RIGHT)
 
-        detail_frame = ctk.CTkFrame(self.output_csv_accordion.content_frame, fg_color="transparent")
-        detail_frame.pack(fill=tk.X, padx=15, pady=(5, 15))
+        # 詳細ディレクトリ自動生成の説明
+        detail_info_frame = ctk.CTkFrame(self.output_csv_accordion.content_frame, fg_color="transparent")
+        detail_info_frame.pack(fill=tk.X, padx=15, pady=(5, 15))
 
-        detail_label = ctk.CTkLabel(detail_frame, text=self.i18n.t('batch.detail_label'), width=80, anchor="w", font=("Arial", 12))
-        detail_label.pack(side=tk.LEFT)
-
-        detail_entry = ctk.CTkEntry(
-            detail_frame,
-            textvariable=self.batch_output_detail,
-            height=40,
-            font=("Arial", 12)
+        detail_info_label = ctk.CTkLabel(
+            detail_info_frame,
+            text="📁 detailed_YYYYMMDD_HHMMSS/ is auto-generated in the same directory as CSV",
+            anchor="w",
+            font=("Arial", 11),
+            text_color="#888888"
         )
-        detail_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
-
-        detail_browse_btn = ctk.CTkButton(
-            detail_frame,
-            text="[FOLDER]",
-            command=self.browse_batch_detail_output,
-            width=50,
-            height=40,
-            font=("Arial", 13),
-            fg_color="#4A90E2",
-            text_color="#FFFFFF",
-            hover_color="#357ABD"
-        )
-        detail_browse_btn.pack(side=tk.RIGHT)
+        detail_info_label.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
         # 追加モード選択チェックボックス
         append_mode_frame = ctk.CTkFrame(self.output_csv_accordion.content_frame, fg_color="transparent")
@@ -682,11 +667,6 @@ class BatchModeMixin:
         if filename:
             self.batch_output_csv.set(filename)
 
-    def browse_batch_detail_output(self):
-        """詳細レポート出力先フォルダ選択"""
-        dirname = filedialog.askdirectory(title=self.i18n.t('batch.select_detail_folder'))
-        if dirname:
-            self.batch_output_detail.set(dirname)
 
 
     def run_batch_bicubic_downscale(self):
@@ -886,7 +866,6 @@ class BatchModeMixin:
             "original_dir": self.batch_original_dir.get(),
             "upscaled_dirs": valid_models,
             "output_csv": self.batch_output_csv.get(),
-            "output_detail_dir": self.batch_output_detail.get(),
             "limit": self.batch_limit.get(),  # 処理枚数制限
             "append_mode": self.batch_append_mode.get(),  # 追加モード
             "evaluation_mode": self.batch_evaluation_mode.get(),  # 評価モード（バッチ処理タブの設定）
