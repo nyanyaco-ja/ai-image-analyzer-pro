@@ -281,7 +281,7 @@ class BatchModeMixin:
         append_mode_frame = ctk.CTkFrame(self.output_csv_accordion.content_frame, fg_color="transparent")
         append_mode_frame.pack(fill=tk.X, padx=15, pady=(5, 15))
 
-        append_checkbox = ctk.CTkCheckBox(
+        self.append_checkbox = ctk.CTkCheckBox(
             append_mode_frame,
             text=self.i18n.t('batch.append_mode_label'),
             variable=self.batch_append_mode,
@@ -290,7 +290,7 @@ class BatchModeMixin:
             fg_color="#4A90E2",
             hover_color="#357ABD"
         )
-        append_checkbox.pack(anchor="w")
+        self.append_checkbox.pack(anchor="w")
 
         # === アコーディオン: 詳細設定 ===
         self.detail_accordion = AccordionSection(
@@ -356,14 +356,14 @@ class BatchModeMixin:
         entry_frame = ctk.CTkFrame(limit_container, fg_color="transparent")
         entry_frame.pack(fill=tk.X)
 
-        entry_label = ctk.CTkLabel(
+        self.entry_label = ctk.CTkLabel(
             entry_frame,
             text=self.i18n.t('batch.limit_direct_input'),
             font=("Arial", 12),
             text_color="#888888",
             anchor="w"
         )
-        entry_label.pack(side=tk.LEFT, padx=(0, 10))
+        self.entry_label.pack(side=tk.LEFT, padx=(0, 10))
 
         self.limit_entry = ctk.CTkEntry(
             entry_frame,
@@ -400,7 +400,7 @@ class BatchModeMixin:
 
         # 並列処理ON/OFFチェックボックス
         self.use_parallel = tk.BooleanVar(value=False)  # デフォルトOFF
-        parallel_checkbox = ctk.CTkCheckBox(
+        self.parallel_checkbox = ctk.CTkCheckBox(
             parallel_frame,
             text=self.i18n.t('batch.use_parallel'),
             variable=self.use_parallel,
@@ -410,20 +410,20 @@ class BatchModeMixin:
             fg_color="#4A90E2",
             hover_color="#357ABD"
         )
-        parallel_checkbox.pack(anchor="w", pady=(0, 10))
+        self.parallel_checkbox.pack(anchor="w", pady=(0, 10))
 
         # プロセス数設定フレーム
         workers_frame = ctk.CTkFrame(parallel_frame, fg_color="transparent")
         workers_frame.pack(fill=tk.X)
 
-        workers_label = ctk.CTkLabel(
+        self.workers_label = ctk.CTkLabel(
             workers_frame,
             text=self.i18n.t('batch.num_workers'),
             font=("Arial", 12),
             text_color="#888888",
             anchor="w"
         )
-        workers_label.pack(side=tk.LEFT, padx=(20, 10))
+        self.workers_label.pack(side=tk.LEFT, padx=(20, 10))
 
         from multiprocessing import cpu_count
         max_workers = max(1, cpu_count())

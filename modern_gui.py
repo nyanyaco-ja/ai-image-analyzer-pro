@@ -1657,6 +1657,20 @@ class ModernImageAnalyzerGUI(
         if hasattr(self, 'academic_patch_32'):
             self.academic_patch_32.configure(text=self.i18n.t('academic.patch_32x32'))
 
+        # バッチ処理の追加ラベル
+        if hasattr(self, 'append_checkbox'):
+            self.append_checkbox.configure(text=self.i18n.t('batch.append_mode_label'))
+        if hasattr(self, 'entry_label'):
+            self.entry_label.configure(text=self.i18n.t('batch.limit_direct_input'))
+        if hasattr(self, 'parallel_checkbox'):
+            self.parallel_checkbox.configure(text=self.i18n.t('batch.use_parallel'))
+        if hasattr(self, 'workers_label'):
+            self.workers_label.configure(text=self.i18n.t('batch.num_workers'))
+
+        # アカデミックモードの追加ラベル
+        if hasattr(self, 'limit_label'):
+            self.limit_label.configure(text=self.i18n.t('academic.processing_limit'))
+
 def main():
     root = ctk.CTk()
     app = ModernImageAnalyzerGUI(root)

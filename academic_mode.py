@@ -374,14 +374,14 @@ class AcademicModeMixin:
         limit_frame = ctk.CTkFrame(self.config_accordion.content_frame, fg_color="transparent")
         limit_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
 
-        limit_label = ctk.CTkLabel(
+        self.limit_label = ctk.CTkLabel(
             limit_frame,
             text=self.i18n.t('academic.processing_limit'),
             width=100,
             anchor="w",
             font=("Arial", 13)
         )
-        limit_label.pack(side=tk.LEFT, padx=(0, 10))
+        self.limit_label.pack(side=tk.LEFT, padx=(0, 10))
 
         self.academic_limit = tk.IntVar(value=0)
         limit_entry = ctk.CTkEntry(
