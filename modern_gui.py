@@ -1628,6 +1628,23 @@ class ModernImageAnalyzerGUI(
         if hasattr(self, 'batch_patch_32'):
             self.batch_patch_32.configure(text=self.i18n.t('batch.patch_32x32'))
 
+        # バッチ処理詳細設定の情報ラベル
+        if hasattr(self, 'limit_info'):
+            self.limit_info.configure(text=self.i18n.t('batch.limit_note'))
+        if hasattr(self, 'parallel_info'):
+            self.parallel_info.configure(text=self.i18n.t('batch.parallel_info'))
+        if hasattr(self, 'workers_info'):
+            from multiprocessing import cpu_count
+            max_workers = max(1, cpu_count())
+            self.workers_info.configure(
+                text=self.i18n.t('batch.workers_hint').format(
+                    recommended=max(1, cpu_count() - 1),
+                    max=max_workers
+                )
+            )
+        if hasattr(self, 'stats_info'):
+            self.stats_info.configure(text=self.i18n.t('batch.stats_desc'))
+
         # パッチサイズセクション（アカデミック評価タブ）
         if hasattr(self, 'academic_patch_info'):
             self.academic_patch_info.configure(text=self.i18n.t('academic.patch_size_title'))

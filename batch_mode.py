@@ -301,14 +301,14 @@ class BatchModeMixin:
             font_size=18
         )
 
-        limit_info = ctk.CTkLabel(
+        self.limit_info = ctk.CTkLabel(
             self.detail_accordion.content_frame,
             text=self.i18n.t('batch.limit_note'),
             font=("Arial", 11),
             text_color="#888888",
             justify="left"
         )
-        limit_info.pack(anchor="w", padx=15, pady=(10, 5))
+        self.limit_info.pack(anchor="w", padx=15, pady=(10, 5))
 
         # 処理枚数制限フレーム（縦に2段構成）
         limit_container = ctk.CTkFrame(self.detail_accordion.content_frame, fg_color="transparent")
@@ -385,14 +385,14 @@ class BatchModeMixin:
         self.batch_limit.trace_add("write", self.update_limit_label)
 
         # === 並列処理設定 ===
-        parallel_info = ctk.CTkLabel(
+        self.parallel_info = ctk.CTkLabel(
             self.detail_accordion.content_frame,
             text=self.i18n.t('batch.parallel_info'),
             font=("Arial", 11),
             text_color="#888888",
             justify="left"
         )
-        parallel_info.pack(anchor="w", padx=15, pady=(20, 5))
+        self.parallel_info.pack(anchor="w", padx=15, pady=(20, 5))
 
         # 並列処理フレーム
         parallel_frame = ctk.CTkFrame(self.detail_accordion.content_frame, fg_color="transparent")
@@ -442,13 +442,13 @@ class BatchModeMixin:
         )
         self.workers_spinbox.pack(side=tk.LEFT, padx=(0, 10))
 
-        workers_info = ctk.CTkLabel(
+        self.workers_info = ctk.CTkLabel(
             workers_frame,
             text=self.i18n.t('batch.workers_hint').format(recommended=max(1, cpu_count() - 1), max=max_workers),
             font=("Arial", 11),
             text_color="#666666"
         )
-        workers_info.pack(side=tk.LEFT)
+        self.workers_info.pack(side=tk.LEFT)
 
         # P6パッチサイズ選択
         self.batch_patch_info = ctk.CTkLabel(
@@ -538,14 +538,14 @@ class BatchModeMixin:
             font_size=18
         )
 
-        stats_info = ctk.CTkLabel(
+        self.stats_info = ctk.CTkLabel(
             self.stats_accordion.content_frame,
             text=self.i18n.t('batch.stats_desc'),
             font=("Arial", 13),
             text_color="#cccccc",
             justify="left"
         )
-        stats_info.pack(anchor="w", padx=15, pady=(10, 10))
+        self.stats_info.pack(anchor="w", padx=15, pady=(10, 10))
 
         # CSV選択
         self.stats_csv_path = tk.StringVar()
