@@ -45,14 +45,14 @@ class AcademicModeMixin:
             font_size=18
         )
 
-        workflow_text = ctk.CTkLabel(
+        self.workflow_text = ctk.CTkLabel(
             self.workflow_accordion.content_frame,
             text=self.i18n.t('academic.workflow_steps'),
             font=("Arial", 13),
             text_color="#cccccc",
             justify="left"
         )
-        workflow_text.pack(anchor="w", padx=15, pady=(10, 15))
+        self.workflow_text.pack(anchor="w", padx=15, pady=(10, 15))
 
         # === アコーディオン: Step 0（デフォルト閉） ===
         self.bicubic_accordion = AccordionSection(
@@ -197,13 +197,13 @@ class AcademicModeMixin:
         )
 
         # 評価モード固定表示
-        mode_info = ctk.CTkLabel(
+        self.mode_info = ctk.CTkLabel(
             self.config_accordion.content_frame,
             text=self.i18n.t('academic.mode_info'),
             font=("Arial", 14, "bold"),
             text_color="#9b59b6"
         )
-        mode_info.pack(anchor="w", padx=15, pady=(10, 15))
+        self.mode_info.pack(anchor="w", padx=15, pady=(10, 15))
 
         # PNG推奨の注意書き
         self.academic_png_warning = ctk.CTkLabel(
@@ -304,13 +304,13 @@ class AcademicModeMixin:
             browse_btn.pack(side=tk.RIGHT)
 
         # 出力設定
-        output_label = ctk.CTkLabel(
+        self.output_label = ctk.CTkLabel(
             self.config_accordion.content_frame,
             text=self.i18n.t('academic.save_settings'),
             font=("Arial", 14, "bold"),
             text_color="#ffffff"
         )
-        output_label.pack(anchor="w", padx=15, pady=(15, 5))
+        self.output_label.pack(anchor="w", padx=15, pady=(15, 5))
 
         # CSV出力パス
         csv_frame = ctk.CTkFrame(self.config_accordion.content_frame, fg_color="transparent")
@@ -572,14 +572,14 @@ class AcademicModeMixin:
             font_size=18
         )
 
-        stats_info = ctk.CTkLabel(
+        self.stats_info_academic = ctk.CTkLabel(
             self.academic_stats_accordion.content_frame,
             text=self.i18n.t('academic.stats_warning'),
             font=("Arial", 13),
             text_color="#ffcc00",
             justify="left"
         )
-        stats_info.pack(anchor="w", padx=15, pady=(10, 10))
+        self.stats_info_academic.pack(anchor="w", padx=15, pady=(10, 10))
 
         stats_csv_frame = ctk.CTkFrame(self.academic_stats_accordion.content_frame, fg_color="transparent")
         stats_csv_frame.pack(fill=tk.X, padx=15, pady=(0, 10))

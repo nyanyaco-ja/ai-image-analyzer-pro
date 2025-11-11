@@ -1681,6 +1681,16 @@ class ModernImageAnalyzerGUI(
         if hasattr(self, 'clean_dataset_btn'):
             self.clean_dataset_btn.configure(text=self.i18n.t('batch.normal_data_extract'))
 
+        # アカデミックモードの追加ラベル
+        if hasattr(self, 'workflow_text'):
+            self.workflow_text.configure(text=self.i18n.t('academic.workflow_steps'))
+        if hasattr(self, 'mode_info'):
+            self.mode_info.configure(text=self.i18n.t('academic.mode_info'))
+        if hasattr(self, 'output_label'):
+            self.output_label.configure(text=self.i18n.t('academic.save_settings'))
+        if hasattr(self, 'stats_info_academic'):
+            self.stats_info_academic.configure(text=self.i18n.t('academic.stats_warning'))
+
 def main():
     root = ctk.CTk()
     app = ModernImageAnalyzerGUI(root)
