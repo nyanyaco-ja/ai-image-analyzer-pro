@@ -2151,30 +2151,30 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         }
 
     # 6. エントロピー（情報量）
-    print("\n【6. エントロピー（情報量）】")
-    print("数値が高いほど情報量が多い（複雑）")
+    print(i18n.t('analyzer.section_6'))
+    print(i18n.t('analyzer.entropy_description'))
 
     if comparison_mode == 'evaluation' and img_original_gray is not None:
         # 評価モード：超解像画像のエントロピー保持率を評価
         entropy_orig = calculate_entropy(img_original_gray)
         entropy_img2 = calculate_entropy(img2_gray)
 
-        print(f"元画像エントロピー: {entropy_orig:.3f}")
-        print(f"超解像画像エントロピー: {entropy_img2:.3f}")
-        print(f"差: {abs(entropy_orig - entropy_img2):.3f}")
+        print(i18n.t('analyzer.entropy_original').format(value=entropy_orig))
+        print(i18n.t('analyzer.entropy_sr').format(value=entropy_img2))
+        print(i18n.t('analyzer.entropy_diff').format(diff=abs(entropy_orig - entropy_img2)))
 
         preservation_ratio = (entropy_img2 / entropy_orig) if entropy_orig > 0 else 0
-        print(f"保持率: {preservation_ratio:.2%}")
+        print(i18n.t('analyzer.entropy_preservation').format(ratio=preservation_ratio))
 
         # 絶対評価（エントロピーは情報量の指標、保持が重要）
         if abs(preservation_ratio - 1.0) <= 0.05:
-            print(f"  評価: [OK] 優秀（情報量保持: {preservation_ratio:.2%}）")
+            print(i18n.t('analyzer.eval_entropy_excellent').format(ratio=preservation_ratio))
         elif abs(preservation_ratio - 1.0) <= 0.10:
-            print(f"  評価: [OK] 高品質（情報量ほぼ保持: {preservation_ratio:.2%}）")
+            print(i18n.t('analyzer.eval_entropy_good').format(ratio=preservation_ratio))
         elif abs(preservation_ratio - 1.0) <= 0.20:
-            print(f"  評価: [WARNING] 許容範囲（やや変化: {preservation_ratio:.2%}）")
+            print(i18n.t('analyzer.eval_entropy_acceptable').format(ratio=preservation_ratio))
         else:
-            print(f"  評価: [ERROR] 低品質（大幅変化: {preservation_ratio:.2%}）")
+            print(i18n.t('analyzer.eval_entropy_poor').format(ratio=preservation_ratio))
 
         results['entropy'] = {
             'img1': round(entropy_orig, 3),  # 互換性のため
@@ -2185,9 +2185,9 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         # 比較モード（将来実装）または元画像なし：2つの画像を比較
         entropy1 = calculate_entropy(img1_gray)
         entropy2 = calculate_entropy(img2_gray)
-        print(f"画像1エントロピー: {entropy1:.3f}")
-        print(f"画像2エントロピー: {entropy2:.3f}")
-        print(f"差: {abs(entropy1 - entropy2):.3f}")
+        print(i18n.t('analyzer.entropy_img1').format(value=entropy1))
+        print(i18n.t('analyzer.entropy_img2').format(value=entropy2))
+        print(i18n.t('analyzer.entropy_diff').format(diff=abs(entropy1 - entropy2)))
 
         results['entropy'] = {
             'img1': round(entropy1, 3),
@@ -2195,27 +2195,27 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         }
 
     # 7. ノイズレベル
-    print("\n【7. ノイズレベル分析】")
-    print_usage_status("ノイズ推定開始（GPU使用）" if GPU_AVAILABLE else "ノイズ推定開始（CPU使用）")
+    print(i18n.t('analyzer.section_7'))
+    print_usage_status(i18n.t('analyzer.noise_calc_start_gpu') if GPU_AVAILABLE else i18n.t('analyzer.noise_calc_start_cpu'), i18n)
 
     if comparison_mode == 'evaluation' and img_original_gray is not None:
         # 評価モード：超解像画像のノイズ除去率を評価
         noise_orig = estimate_noise_gpu(img_original_gray)
         noise_img2 = estimate_noise_gpu(img2_gray)
 
-        print(f"元画像ノイズレベル: {noise_orig:.2f}")
-        print(f"超解像画像ノイズレベル: {noise_img2:.2f}")
-        print(f"差: {abs(noise_orig - noise_img2):.2f} ({((noise_img2/noise_orig - 1) * 100 if noise_orig != 0 else 0):+.1f}%)")
+        print(i18n.t('analyzer.noise_original').format(value=noise_orig))
+        print(i18n.t('analyzer.noise_sr').format(value=noise_img2))
+        print(i18n.t('analyzer.noise_diff').format(diff=abs(noise_orig - noise_img2), pct=((noise_img2/noise_orig - 1) * 100 if noise_orig != 0 else 0)))
 
         # 絶対評価（ノイズは低い方が良い）
         if noise_img2 <= noise_orig * 0.8:
-            print(f"  評価: [OK] 優秀（ノイズ除去: -{(1 - noise_img2/noise_orig) * 100:.1f}%）")
+            print(i18n.t('analyzer.eval_noise_excellent').format(reduction=(1 - noise_img2/noise_orig) * 100))
         elif noise_img2 <= noise_orig * 1.05:
-            print(f"  評価: [OK] 高品質（ノイズ保持: {(noise_img2/noise_orig):.2%}）")
+            print(i18n.t('analyzer.eval_noise_good').format(ratio=(noise_img2/noise_orig)))
         elif noise_img2 <= noise_orig * 1.2:
-            print(f"  評価: [WARNING] 許容範囲（やや増加: {(noise_img2/noise_orig):.2%}）")
+            print(i18n.t('analyzer.eval_noise_acceptable').format(ratio=(noise_img2/noise_orig)))
         else:
-            print(f"  評価: [ERROR] 低品質（ノイズ増加: +{(noise_img2/noise_orig - 1) * 100:.1f}%）")
+            print(i18n.t('analyzer.eval_noise_poor').format(increase=(noise_img2/noise_orig - 1) * 100))
 
         results['noise'] = {
             'img1': round(noise_orig, 2),  # 互換性のため
@@ -2226,9 +2226,9 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         # 比較モード（将来実装）または元画像なし：2つの画像を比較
         noise1 = estimate_noise_gpu(img1_gray)
         noise2 = estimate_noise_gpu(img2_gray)
-        print(f"画像1ノイズレベル: {noise1:.2f}")
-        print(f"画像2ノイズレベル: {noise2:.2f}")
-        print(f"差: {abs(noise1 - noise2):.2f} ({((noise2/noise1 - 1) * 100 if noise1 != 0 else 0):+.1f}%)")
+        print(i18n.t('analyzer.noise_img1').format(value=noise1))
+        print(i18n.t('analyzer.noise_img2').format(value=noise2))
+        print(i18n.t('analyzer.noise_diff').format(diff=abs(noise1 - noise2), pct=((noise2/noise1 - 1) * 100 if noise1 != 0 else 0)))
 
         results['noise'] = {
             'img1': round(noise1, 2),
@@ -2236,30 +2236,30 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         }
 
     # 8. アーティファクト検出
-    print("\n【8. アーティファクト検出】")
+    print(i18n.t('analyzer.section_8'))
 
     if comparison_mode == 'evaluation' and img_original_gray is not None:
         # 評価モード：超解像画像のアーティファクト除去率を評価
         block_noise_orig, ringing_orig = detect_artifacts(img_original_gray)
         block_noise_img2, ringing_img2 = detect_artifacts(img2_gray)
 
-        print(f"元画像ブロックノイズ: {block_noise_orig:.2f}")
-        print(f"超解像画像ブロックノイズ: {block_noise_img2:.2f}")
-        print(f"元画像リンギング: {ringing_orig:.2f}")
-        print(f"超解像画像リンギング: {ringing_img2:.2f}")
+        print(i18n.t('analyzer.artifact_block_orig').format(value=block_noise_orig))
+        print(i18n.t('analyzer.artifact_block_sr').format(value=block_noise_img2))
+        print(i18n.t('analyzer.artifact_ringing_orig').format(value=ringing_orig))
+        print(i18n.t('analyzer.artifact_ringing_sr').format(value=ringing_img2))
 
         total_artifact_orig = block_noise_orig + ringing_orig
         total_artifact_img2 = block_noise_img2 + ringing_img2
 
         # 絶対評価（アーティファクトは低い方が良い）
         if total_artifact_img2 <= total_artifact_orig * 0.8:
-            print(f"  評価: [OK] 優秀（アーティファクト除去: -{(1 - total_artifact_img2/total_artifact_orig) * 100:.1f}%）")
+            print(i18n.t('analyzer.eval_artifact_excellent').format(reduction=(1 - total_artifact_img2/total_artifact_orig) * 100))
         elif total_artifact_img2 <= total_artifact_orig * 1.1:
-            print(f"  評価: [OK] 高品質（アーティファクト保持: {(total_artifact_img2/total_artifact_orig):.2%}）")
+            print(i18n.t('analyzer.eval_artifact_good').format(ratio=(total_artifact_img2/total_artifact_orig)))
         elif total_artifact_img2 <= total_artifact_orig * 1.3:
-            print(f"  評価: [WARNING] 許容範囲（やや増加: {(total_artifact_img2/total_artifact_orig):.2%}）")
+            print(i18n.t('analyzer.eval_artifact_acceptable').format(ratio=(total_artifact_img2/total_artifact_orig)))
         else:
-            print(f"  評価: [ERROR] 低品質（アーティファクト増加: +{(total_artifact_img2/total_artifact_orig - 1) * 100:.1f}%）")
+            print(i18n.t('analyzer.eval_artifact_poor').format(increase=(total_artifact_img2/total_artifact_orig - 1) * 100))
 
         results['artifacts'] = {
             'img1_block_noise': round(block_noise_orig, 2),  # 互換性のため
@@ -2273,10 +2273,10 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         block_noise1, ringing1 = detect_artifacts(img1_gray)
         block_noise2, ringing2 = detect_artifacts(img2_gray)
 
-        print(f"画像1ブロックノイズ: {block_noise1:.2f}")
-        print(f"画像2ブロックノイズ: {block_noise2:.2f}")
-        print(f"画像1リンギング: {ringing1:.2f}")
-        print(f"画像2リンギング: {ringing2:.2f}")
+        print(i18n.t('analyzer.artifact_block_img1').format(value=block_noise1))
+        print(i18n.t('analyzer.artifact_block_img2').format(value=block_noise2))
+        print(i18n.t('analyzer.artifact_ringing_img1').format(value=ringing1))
+        print(i18n.t('analyzer.artifact_ringing_img2').format(value=ringing2))
 
         results['artifacts'] = {
             'img1_block_noise': round(block_noise1, 2),
@@ -2286,29 +2286,29 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         }
 
     # 9. エッジ保持率
-    print("\n【9. エッジ保持率】")
-    print_usage_status("エッジ検出開始（GPU使用）" if GPU_AVAILABLE else "エッジ検出開始（CPU使用）")
+    print(i18n.t('analyzer.section_9'))
+    print_usage_status(i18n.t('analyzer.edge_calc_start_gpu') if GPU_AVAILABLE else i18n.t('analyzer.edge_calc_start_cpu'), i18n)
 
     if comparison_mode == 'evaluation' and img_original_gray is not None:
         # 評価モード：超解像画像のエッジ保持率を評価
         edge_density_orig = detect_edges_gpu(img_original_gray)
         edge_density_img2 = detect_edges_gpu(img2_gray)
 
-        print(f"元画像エッジ密度: {edge_density_orig:.2f}%")
-        print(f"超解像画像エッジ密度: {edge_density_img2:.2f}%")
+        print(i18n.t('analyzer.edge_density_original').format(value=edge_density_orig))
+        print(i18n.t('analyzer.edge_density_sr').format(value=edge_density_img2))
 
         preservation_ratio = (edge_density_img2 / edge_density_orig) if edge_density_orig > 0 else 0
-        print(f"保持率: {preservation_ratio:.2%} ({(preservation_ratio - 1) * 100:+.1f}%)")
+        print(i18n.t('analyzer.edge_preservation').format(ratio=preservation_ratio, diff=(preservation_ratio - 1) * 100))
 
         # 絶対評価（エッジ密度は高い方が細部保持）
         if preservation_ratio >= 1.05:
-            print(f"  評価: [OK] 優秀（エッジ改善: +{(preservation_ratio - 1) * 100:.1f}%）")
+            print(i18n.t('analyzer.eval_edge_excellent').format(improvement=(preservation_ratio - 1) * 100))
         elif preservation_ratio >= 0.95:
-            print(f"  評価: [OK] 高品質（エッジ保持: {preservation_ratio:.2%}）")
+            print(i18n.t('analyzer.eval_edge_good').format(ratio=preservation_ratio))
         elif preservation_ratio >= 0.85:
-            print(f"  評価: [WARNING] 許容範囲（やや劣化: {preservation_ratio:.2%}）")
+            print(i18n.t('analyzer.eval_edge_acceptable').format(ratio=preservation_ratio))
         else:
-            print(f"  評価: [ERROR] 低品質（大幅劣化: {preservation_ratio:.2%}）")
+            print(i18n.t('analyzer.eval_edge_poor').format(ratio=preservation_ratio))
 
         results['edges'] = {
             'img1_density': round(edge_density_orig, 2),  # 互換性のため
@@ -2321,9 +2321,9 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         edge_density1 = detect_edges_gpu(img1_gray)
         edge_density2 = detect_edges_gpu(img2_gray)
 
-        print(f"画像1エッジ密度: {edge_density1:.2f}%")
-        print(f"画像2エッジ密度: {edge_density2:.2f}%")
-        print(f"差: {abs(edge_density1 - edge_density2):.2f}% ({((edge_density2/edge_density1 - 1) * 100 if edge_density1 != 0 else 0):+.1f}%)")
+        print(i18n.t('analyzer.edge_density_img1').format(value=edge_density1))
+        print(i18n.t('analyzer.edge_density_img2').format(value=edge_density2))
+        print(i18n.t('analyzer.edge_diff').format(diff=abs(edge_density1 - edge_density2), pct=((edge_density2/edge_density1 - 1) * 100 if edge_density1 != 0 else 0)))
 
         results['edges'] = {
             'img1_density': round(edge_density1, 2),
