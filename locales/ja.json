@@ -148,6 +148,7 @@
     "csv_select_button": "[FOLDER] CSV選択",
     "hallucination_warning": "[WARNING] ハルシネーション疑いデータ抽出",
     "normal_data_extract": "[EXTRACT] 正常データ抽出（AI学習用）",
+    "export_log": "[EXPORT] ログをファイル保存",
     "select_original_folder": "元画像フォルダを選択",
     "select_model_folder": "モデル{num}のフォルダを選択",
     "select_csv_output": "CSV出力先を選択",

@@ -315,14 +315,14 @@ class BatchModeMixin:
         limit_container.pack(fill=tk.X, padx=15, pady=(0, 15))
 
         # タイトル
-        limit_title = ctk.CTkLabel(
+        self.limit_title = ctk.CTkLabel(
             limit_container,
             text=self.i18n.t('batch.limit_label'),
             font=("Arial", 13, "bold"),
             text_color="#4A90E2",
             anchor="w"
         )
-        limit_title.pack(fill=tk.X, pady=(0, 8))
+        self.limit_title.pack(fill=tk.X, pady=(0, 8))
 
         # 第1段：スライダー + 現在値表示
         slider_frame = ctk.CTkFrame(limit_container, fg_color="transparent")
@@ -596,7 +596,7 @@ class BatchModeMixin:
         # ログエクスポートボタン
         self.export_log_btn = ctk.CTkButton(
             button_frame,
-            text="[EXPORT] ログをファイル保存",
+            text=self.i18n.t('batch.export_log'),
             command=self.export_current_log,
             height=40,
             corner_radius=10,

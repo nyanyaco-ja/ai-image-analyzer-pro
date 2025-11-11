@@ -148,6 +148,7 @@
     "csv_select_button": "[FOLDER] Select CSV",
     "hallucination_warning": "[WARNING] Extract Suspected Hallucination Data",
     "normal_data_extract": "[EXTRACT] Extract Normal Data (for AI Training)",
+    "export_log": "[EXPORT] Save Log to File",
     "select_original_folder": "Select Original Image Folder",
     "select_model_folder": "Select Model {num} Folder",
     "select_csv_output": "Select CSV Output Destination",

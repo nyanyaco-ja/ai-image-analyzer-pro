@@ -1671,6 +1671,16 @@ class ModernImageAnalyzerGUI(
         if hasattr(self, 'limit_label'):
             self.limit_label.configure(text=self.i18n.t('academic.processing_limit'))
 
+        # バッチ処理の追加ラベルとボタン
+        if hasattr(self, 'limit_title'):
+            self.limit_title.configure(text=self.i18n.t('batch.limit_label'))
+        if hasattr(self, 'export_log_btn'):
+            self.export_log_btn.configure(text=self.i18n.t('batch.export_log'))
+        if hasattr(self, 'hallucination_extract_btn'):
+            self.hallucination_extract_btn.configure(text=self.i18n.t('batch.hallucination_warning'))
+        if hasattr(self, 'clean_dataset_btn'):
+            self.clean_dataset_btn.configure(text=self.i18n.t('batch.normal_data_extract'))
+
 def main():
     root = ctk.CTk()
     app = ModernImageAnalyzerGUI(root)
