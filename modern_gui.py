@@ -1691,6 +1691,43 @@ class ModernImageAnalyzerGUI(
         if hasattr(self, 'stats_info_academic'):
             self.stats_info_academic.configure(text=self.i18n.t('academic.stats_warning'))
 
+        # アカデミックモードのBicubicセクション
+        if hasattr(self, 'bicubic_desc'):
+            self.bicubic_desc.configure(text=self.i18n.t('academic.bicubic_desc'))
+        if hasattr(self, 'input_folder_label'):
+            self.input_folder_label.configure(text=self.i18n.t('academic.input_folder_label'))
+        if hasattr(self, 'output_folder_label'):
+            self.output_folder_label.configure(text=self.i18n.t('academic.output_folder_label'))
+        if hasattr(self, 'scale_label'):
+            self.scale_label.configure(text=self.i18n.t('academic.scale_label'))
+        if hasattr(self, 'scale_note'):
+            self.scale_note.configure(text=self.i18n.t('academic.scale_note'))
+        if hasattr(self, 'bicubic_btn'):
+            self.bicubic_btn.configure(text=self.i18n.t('academic.run_bicubic'))
+
+        # アカデミックモードの評価設定セクション
+        if hasattr(self, 'original_label'):
+            self.original_label.configure(text=self.i18n.t('academic.original_folder_required'))
+        if hasattr(self, 'models_label'):
+            self.models_label.configure(text=self.i18n.t('academic.model_folder_label'))
+        if hasattr(self, 'append_check'):
+            self.append_check.configure(text=self.i18n.t('academic.append_mode_label'))
+        if hasattr(self, 'parallel_info_academic'):
+            self.parallel_info_academic.configure(text=self.i18n.t('academic.parallel_info'))
+        if hasattr(self, 'academic_parallel_checkbox'):
+            self.academic_parallel_checkbox.configure(text=self.i18n.t('academic.use_parallel'))
+        if hasattr(self, 'academic_workers_label'):
+            self.academic_workers_label.configure(text=self.i18n.t('academic.num_workers'))
+        if hasattr(self, 'academic_workers_info'):
+            from multiprocessing import cpu_count
+            max_workers = max(1, cpu_count())
+            self.academic_workers_info.configure(
+                text=self.i18n.t('academic.workers_hint').format(
+                    recommended=max(1, cpu_count() - 1),
+                    max=max_workers
+                )
+            )
+
 def main():
     root = ctk.CTk()
     app = ModernImageAnalyzerGUI(root)

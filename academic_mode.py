@@ -66,23 +66,23 @@ class AcademicModeMixin:
         self.bicubic_accordion.content_frame.pack_forget()
         self.bicubic_accordion.header_btn.configure(text=f"▶ {self.bicubic_accordion.title}")
 
-        bicubic_desc = ctk.CTkLabel(
+        self.bicubic_desc = ctk.CTkLabel(
             self.bicubic_accordion.content_frame,
             text=self.i18n.t('academic.bicubic_desc'),
             font=("Arial", 12),
             text_color="#888888",
             justify="left"
         )
-        bicubic_desc.pack(anchor="w", padx=15, pady=(10, 10))
+        self.bicubic_desc.pack(anchor="w", padx=15, pady=(10, 10))
 
         # 入力フォルダ
-        input_folder_label = ctk.CTkLabel(
+        self.input_folder_label = ctk.CTkLabel(
             self.bicubic_accordion.content_frame,
             text=self.i18n.t('academic.input_folder_label'),
             font=("Arial", 13),
             text_color="#cccccc"
         )
-        input_folder_label.pack(anchor="w", padx=15, pady=(5, 5))
+        self.input_folder_label.pack(anchor="w", padx=15, pady=(5, 5))
 
         input_folder_frame = ctk.CTkFrame(self.bicubic_accordion.content_frame, fg_color="transparent")
         input_folder_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
@@ -110,13 +110,13 @@ class AcademicModeMixin:
         input_btn.pack(side=tk.RIGHT)
 
         # 出力フォルダ
-        output_folder_label = ctk.CTkLabel(
+        self.output_folder_label = ctk.CTkLabel(
             self.bicubic_accordion.content_frame,
             text=self.i18n.t('academic.output_folder_label'),
             font=("Arial", 13),
             text_color="#cccccc"
         )
-        output_folder_label.pack(anchor="w", padx=15, pady=(5, 5))
+        self.output_folder_label.pack(anchor="w", padx=15, pady=(5, 5))
 
         output_folder_frame = ctk.CTkFrame(self.bicubic_accordion.content_frame, fg_color="transparent")
         output_folder_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
@@ -144,13 +144,13 @@ class AcademicModeMixin:
         output_btn.pack(side=tk.RIGHT)
 
         # 縮小倍率
-        scale_label = ctk.CTkLabel(
+        self.scale_label = ctk.CTkLabel(
             self.bicubic_accordion.content_frame,
             text=self.i18n.t('academic.scale_label'),
             font=("Arial", 13),
             text_color="#cccccc"
         )
-        scale_label.pack(anchor="w", padx=15, pady=(5, 5))
+        self.scale_label.pack(anchor="w", padx=15, pady=(5, 5))
 
         scale_frame = ctk.CTkFrame(self.bicubic_accordion.content_frame, fg_color="transparent")
         scale_frame.pack(fill=tk.X, padx=15, pady=(0, 10))
@@ -165,16 +165,16 @@ class AcademicModeMixin:
         )
         scale_entry.pack(side=tk.LEFT, padx=(0, 10))
 
-        scale_note = ctk.CTkLabel(
+        self.scale_note = ctk.CTkLabel(
             scale_frame,
             text=self.i18n.t('academic.scale_note'),
             font=("Arial", 11),
             text_color="#888888"
         )
-        scale_note.pack(side=tk.LEFT)
+        self.scale_note.pack(side=tk.LEFT)
 
         # 実行ボタン
-        bicubic_btn = ctk.CTkButton(
+        self.bicubic_btn = ctk.CTkButton(
             self.bicubic_accordion.content_frame,
             text=self.i18n.t('academic.run_bicubic'),
             command=self.run_batch_bicubic_downscale,
@@ -185,7 +185,7 @@ class AcademicModeMixin:
             text_color="#ffffff",
             hover_color="#7d3c98"
         )
-        bicubic_btn.pack(fill=tk.X, padx=15, pady=(5, 15))
+        self.bicubic_btn.pack(fill=tk.X, padx=15, pady=(5, 15))
 
         # === アコーディオン: 評価設定 ===
         self.config_accordion = AccordionSection(
@@ -216,13 +216,13 @@ class AcademicModeMixin:
 
         # 元画像フォルダ
         self.academic_original_dir = tk.StringVar()
-        original_label = ctk.CTkLabel(
+        self.original_label = ctk.CTkLabel(
             self.config_accordion.content_frame,
             text=self.i18n.t('academic.original_folder_required'),
             font=("Arial", 14, "bold"),
             text_color="#00ff88"
         )
-        original_label.pack(anchor="w", padx=15, pady=(5, 5))
+        self.original_label.pack(anchor="w", padx=15, pady=(5, 5))
 
         original_frame = ctk.CTkFrame(self.config_accordion.content_frame, fg_color="transparent")
         original_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
@@ -250,13 +250,13 @@ class AcademicModeMixin:
         original_btn.pack(side=tk.RIGHT)
 
         # 超解像モデルフォルダ（最大5つ）
-        models_label = ctk.CTkLabel(
+        self.models_label = ctk.CTkLabel(
             self.config_accordion.content_frame,
             text=self.i18n.t('academic.model_folder_label'),
             font=("Arial", 14, "bold"),
             text_color="#ffffff"
         )
-        models_label.pack(anchor="w", padx=15, pady=(10, 5))
+        self.models_label.pack(anchor="w", padx=15, pady=(10, 5))
 
         self.academic_model_vars = []
         self.academic_model_name_vars = []
@@ -406,7 +406,7 @@ class AcademicModeMixin:
         append_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
 
         self.academic_append_mode = tk.BooleanVar(value=False)
-        append_check = ctk.CTkCheckBox(
+        self.append_check = ctk.CTkCheckBox(
             append_frame,
             text=self.i18n.t('academic.append_mode_label'),
             variable=self.academic_append_mode,
@@ -415,24 +415,24 @@ class AcademicModeMixin:
             fg_color="#9b59b6",
             hover_color="#7d3c98"
         )
-        append_check.pack(anchor="w")
+        self.append_check.pack(anchor="w")
 
         # === 並列処理設定（論文用） ===
-        parallel_info = ctk.CTkLabel(
+        self.parallel_info_academic = ctk.CTkLabel(
             self.config_accordion.content_frame,
             text=self.i18n.t('academic.parallel_info'),
             font=("Arial", 11),
             text_color="#888888",
             justify="left"
         )
-        parallel_info.pack(anchor="w", padx=15, pady=(20, 5))
+        self.parallel_info_academic.pack(anchor="w", padx=15, pady=(20, 5))
 
         parallel_frame = ctk.CTkFrame(self.config_accordion.content_frame, fg_color="transparent")
         parallel_frame.pack(fill=tk.X, padx=15, pady=(0, 15))
 
         # 並列処理ON/OFF
         self.academic_use_parallel = tk.BooleanVar(value=False)  # デフォルトOFF
-        academic_parallel_checkbox = ctk.CTkCheckBox(
+        self.academic_parallel_checkbox = ctk.CTkCheckBox(
             parallel_frame,
             text=self.i18n.t('academic.use_parallel'),
             variable=self.academic_use_parallel,
@@ -442,20 +442,20 @@ class AcademicModeMixin:
             fg_color="#9b59b6",
             hover_color="#7d3c98"
         )
-        academic_parallel_checkbox.pack(anchor="w", pady=(0, 10))
+        self.academic_parallel_checkbox.pack(anchor="w", pady=(0, 10))
 
         # プロセス数設定
         academic_workers_frame = ctk.CTkFrame(parallel_frame, fg_color="transparent")
         academic_workers_frame.pack(fill=tk.X)
 
-        academic_workers_label = ctk.CTkLabel(
+        self.academic_workers_label = ctk.CTkLabel(
             academic_workers_frame,
             text=self.i18n.t('academic.num_workers'),
             font=("Arial", 12),
             text_color="#888888",
             anchor="w"
         )
-        academic_workers_label.pack(side=tk.LEFT, padx=(20, 10))
+        self.academic_workers_label.pack(side=tk.LEFT, padx=(20, 10))
 
         from multiprocessing import cpu_count
         max_workers = max(1, cpu_count())
@@ -474,7 +474,7 @@ class AcademicModeMixin:
         )
         self.academic_workers_spinbox.pack(side=tk.LEFT, padx=(0, 10))
 
-        academic_workers_info = ctk.CTkLabel(
+        self.academic_workers_info = ctk.CTkLabel(
             academic_workers_frame,
             text=self.i18n.t('academic.workers_hint').format(
                 recommended=max(1, cpu_count() - 1),
@@ -483,7 +483,7 @@ class AcademicModeMixin:
             font=("Arial", 11),
             text_color="#666666"
         )
-        academic_workers_info.pack(side=tk.LEFT)
+        self.academic_workers_info.pack(side=tk.LEFT)
 
         # P6パッチサイズ選択
         self.academic_patch_info = ctk.CTkLabel(
