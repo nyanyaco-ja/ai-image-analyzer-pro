@@ -1886,9 +1886,9 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         results['lpips'] = None
 
     # 3.6. CLIP Embeddings（意味的類似度）
-    print("\n【3.6. CLIP Embeddings（意味的類似度）】")
-    print("OpenAI CLIP モデルによる意味的類似度（1.0に近いほど意味的に類似）")
-    print_usage_status("CLIP計算開始")
+    print(i18n.t('analyzer.section_3_6'))
+    print(i18n.t('analyzer.clip_description'))
+    print_usage_status(i18n.t('analyzer.clip_calc_start'), i18n)
 
     # 文書画像検出（CLIPが苦手とする画像タイプ）
     is_doc_img1 = is_document_image(img1_rgb)
@@ -1900,52 +1900,52 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
     if evaluation_mode == 'document':
         # 文書モード：強制的に文書として扱う
         is_any_document = True
-        print(" 評価モード: 文書モード（厳格な基準で評価）")
+        print(i18n.t('analyzer.eval_mode_document'))
     elif evaluation_mode == 'developer':
         # 開発者モード：自動検出結果を使用
         is_any_document = is_any_document_detected
-        print(" 評価モード: 開発者モード（参考情報として表示）")
+        print(i18n.t('analyzer.eval_mode_developer'))
     else:
         # 画像モード：自動検出結果を使用
         is_any_document = is_any_document_detected
         if is_any_document:
-            print(" 文書画像を自動検出（文書モードの使用を推奨）")
+            print(i18n.t('analyzer.doc_image_detected'))
 
     if img_original_rgb is not None:
         # 元画像がある場合：それぞれ元画像との類似度を計算
         if comparison_mode == 'evaluation':
             # 評価モード：超解像画像の品質のみ評価
             clip_img2_vs_orig = calculate_clip_similarity(img2_rgb, img_original_rgb)
-            print_usage_status("CLIP計算完了")
+            print_usage_status(i18n.t('analyzer.clip_calc_complete'), i18n)
 
             if clip_img2_vs_orig is not None:
-                print(f"超解像画像 vs 元画像 CLIP: {clip_img2_vs_orig:.4f}")
+                print(i18n.t('analyzer.clip_vs_original').format(value=clip_img2_vs_orig))
                 if GPU_AVAILABLE:
-                    print(f"  GPU使用: はい")
+                    print(i18n.t('analyzer.clip_gpu_yes'))
                 else:
-                    print(f"  GPU使用: いいえ（CPU処理）")
+                    print(i18n.t('analyzer.clip_gpu_no'))
 
                 # 絶対評価（文書画像の場合は厳格な基準を適用）
                 if is_any_document:
-                    print("  [WARNING]  文書/カルテ画像を検出: CLIPは厳格な基準で評価します")
+                    print(i18n.t('analyzer.clip_doc_warning'))
                     if clip_img2_vs_orig > 0.98:
-                        print(f"  評価: [OK] 優秀（CLIP > 0.98: 意味的にほぼ同一）")
+                        print(i18n.t('analyzer.eval_clip_doc_excellent'))
                     elif clip_img2_vs_orig > 0.95:
-                        print(f"  評価: [OK] 高品質（CLIP > 0.95: 基準クリア、ただし文書は構造類似で高スコアになりやすい）")
+                        print(i18n.t('analyzer.eval_clip_doc_good'))
                     elif clip_img2_vs_orig > 0.90:
-                        print(f"  評価: [WARNING] 許容範囲（CLIP > 0.90: 構造は類似だが内容は異なる可能性）")
+                        print(i18n.t('analyzer.eval_clip_doc_acceptable'))
                     else:
-                        print(f"  評価: [ERROR] 低品質（CLIP ≤ 0.90: 全く異なる画像）")
+                        print(i18n.t('analyzer.eval_clip_doc_poor'))
                 else:
                     # 自然画像用の通常閾値
                     if clip_img2_vs_orig > 0.95:
-                        print(f"  評価: [OK] 優秀（CLIP > 0.95: 意味的にほぼ同一）")
+                        print(i18n.t('analyzer.eval_clip_excellent'))
                     elif clip_img2_vs_orig > 0.85:
-                        print(f"  評価: [OK] 高品質（CLIP > 0.85: 意味的に非常に類似）")
+                        print(i18n.t('analyzer.eval_clip_good'))
                     elif clip_img2_vs_orig > 0.70:
-                        print(f"  評価: [WARNING] 許容範囲（CLIP > 0.70: 意味的に類似）")
+                        print(i18n.t('analyzer.eval_clip_acceptable'))
                     else:
-                        print(f"  評価: [ERROR] 低品質（CLIP ≤ 0.70: 意味的に異なる）")
+                        print(i18n.t('analyzer.eval_clip_poor'))
 
                 # resultsには互換性のためimg1も保存（常に1.0）
                 clip_img1_vs_orig = 1.0
@@ -1963,50 +1963,50 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
             # 比較モード（将来実装）：2つのAI結果を比較
             clip_img1_vs_orig = calculate_clip_similarity(img1_rgb, img_original_rgb)
             clip_img2_vs_orig = calculate_clip_similarity(img2_rgb, img_original_rgb)
-            print_usage_status("CLIP計算完了")
+            print_usage_status(i18n.t('analyzer.clip_calc_complete'), i18n)
 
             if clip_img1_vs_orig is not None and clip_img2_vs_orig is not None:
-                print(f"モデルA vs 元画像 CLIP: {clip_img1_vs_orig:.4f}")
-                print(f"モデルB vs 元画像 CLIP: {clip_img2_vs_orig:.4f}")
+                print(i18n.t('analyzer.clip_model_a_vs_orig').format(value=clip_img1_vs_orig))
+                print(i18n.t('analyzer.clip_model_b_vs_orig').format(value=clip_img2_vs_orig))
                 if GPU_AVAILABLE:
-                    print(f"  GPU使用: はい")
+                    print(i18n.t('analyzer.clip_gpu_yes'))
                 else:
-                    print(f"  GPU使用: いいえ（CPU処理）")
+                    print(i18n.t('analyzer.clip_gpu_no'))
 
                 if clip_img1_vs_orig > clip_img2_vs_orig:
-                    print(f"→ モデルAの方が元画像に意味的に近い (+{(clip_img1_vs_orig - clip_img2_vs_orig):.4f})")
+                    print(i18n.t('analyzer.clip_model_a_closer').format(diff=(clip_img1_vs_orig - clip_img2_vs_orig)))
                 else:
-                    print(f"→ モデルBの方が元画像に意味的に近い (+{(clip_img2_vs_orig - clip_img1_vs_orig):.4f})")
+                    print(i18n.t('analyzer.clip_model_b_closer').format(diff=(clip_img2_vs_orig - clip_img1_vs_orig)))
 
                 # 各モデルの評価（文書画像の場合は厳格な基準を適用）
                 if is_any_document:
-                    print("  [WARNING]  文書/カルテ画像を検出: CLIPは厳格な基準で評価します")
+                    print(i18n.t('analyzer.clip_doc_warning'))
                     # 文書画像用の厳格な閾値
                     for idx, clip_val in enumerate([clip_img1_vs_orig, clip_img2_vs_orig], 1):
                         label = "モデルA" if idx == 1 else "モデルB"
                         if clip_val > 0.98:
-                            eval_str = "意味的にほぼ同一"
+                            eval_str = i18n.t('analyzer.clip_eval_doc_nearly_identical')
                         elif clip_val > 0.95:
-                            eval_str = "意味的に類似（要注意：文書は構造類似で高スコアになりやすい）"
+                            eval_str = i18n.t('analyzer.clip_eval_doc_similar_warning')
                         elif clip_val > 0.90:
-                            eval_str = "[WARNING] 構造は類似だが内容は異なる可能性"
+                            eval_str = i18n.t('analyzer.clip_eval_doc_struct_similar')
                         else:
-                            eval_str = "全く異なる画像（内容が違う）"
+                            eval_str = i18n.t('analyzer.clip_eval_doc_different')
                         print(f"  {label}: {eval_str}")
                 else:
                     # 自然画像用の通常閾値
                     for idx, clip_val in enumerate([clip_img1_vs_orig, clip_img2_vs_orig], 1):
                         label = "モデルA" if idx == 1 else "モデルB"
                         if clip_val > 0.95:
-                            eval_str = "意味的にほぼ同一"
+                            eval_str = i18n.t('analyzer.clip_eval_nearly_identical')
                         elif clip_val > 0.85:
-                            eval_str = "意味的に非常に類似"
+                            eval_str = i18n.t('analyzer.clip_eval_very_similar')
                         elif clip_val > 0.70:
-                            eval_str = "意味的に類似"
+                            eval_str = i18n.t('analyzer.clip_eval_similar')
                         elif clip_val > 0.50:
-                            eval_str = "やや類似"
+                            eval_str = i18n.t('analyzer.clip_eval_somewhat_similar')
                         else:
-                            eval_str = "全く異なる画像（内容が違う）"
+                            eval_str = i18n.t('analyzer.clip_eval_different')
                         print(f"  {label}: {eval_str}")
 
                 results['clip_similarity'] = {
@@ -2015,76 +2015,76 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
                     'is_document': is_any_document  # 文書画像フラグを追加
                 }
             else:
-                print("  ※CLIP計算をスキップしました（ライブラリ未インストール）")
+                print(i18n.t('analyzer.clip_skipped'))
                 results['clip_similarity'] = None
     else:
         # 元画像がない場合：元画像 vs AI処理結果
         clip_similarity = calculate_clip_similarity(img1_rgb, img2_rgb)
-        print_usage_status("CLIP計算完了")
+        print_usage_status(i18n.t('analyzer.clip_calc_complete'), i18n)
 
         if clip_similarity is not None:
-            print(f"CLIP コサイン類似度: {clip_similarity:.4f}")
+            print(i18n.t('analyzer.clip_cosine_similarity').format(value=clip_similarity))
             if GPU_AVAILABLE:
-                print(f"  GPU使用: はい")
+                print(i18n.t('analyzer.clip_gpu_yes'))
             else:
-                print(f"  GPU使用: いいえ（CPU処理）")
+                print(i18n.t('analyzer.clip_gpu_no'))
 
             # 文書画像の場合は厳格な基準を適用
             if is_any_document:
-                print("  [WARNING]  文書/カルテ画像を検出: CLIPは厳格な基準で評価します")
+                print(i18n.t('analyzer.clip_doc_warning'))
                 if clip_similarity > 0.98:
-                    print("  評価: 意味的にほぼ同一の画像")
+                    print(i18n.t('analyzer.clip_eval_nearly_identical_img'))
                 elif clip_similarity > 0.95:
-                    print("  評価: 意味的に類似（要注意：文書は構造類似で高スコアになりやすい）")
+                    print(i18n.t('analyzer.clip_eval_similar_warning_img'))
                 elif clip_similarity > 0.90:
-                    print("  評価: [WARNING] 構造は類似だが内容は異なる可能性 ")
+                    print(i18n.t('analyzer.clip_eval_struct_similar_img'))
                 else:
-                    print("  評価: 全く異なる画像（内容が違う）")
+                    print(i18n.t('analyzer.clip_eval_different_img'))
             else:
                 # 自然画像用の通常閾値
                 if clip_similarity > 0.95:
-                    print("  評価: 意味的にほぼ同一の画像")
+                    print(i18n.t('analyzer.clip_eval_nearly_identical_img'))
                 elif clip_similarity > 0.85:
-                    print("  評価: 意味的に非常に類似")
+                    print(i18n.t('analyzer.clip_eval_very_similar_img'))
                 elif clip_similarity > 0.70:
-                    print("  評価: 意味的に類似")
+                    print(i18n.t('analyzer.clip_eval_similar_img'))
                 elif clip_similarity > 0.50:
-                    print("  評価: やや類似")
+                    print(i18n.t('analyzer.clip_eval_somewhat_similar_img'))
                 else:
-                    print("  評価: 全く異なる画像（内容が違う）")
+                    print(i18n.t('analyzer.clip_eval_different_img'))
 
             results['clip_similarity'] = {
                 'value': round(clip_similarity, 4),
                 'is_document': is_any_document
             }
         else:
-            print("  ※CLIP計算をスキップしました（ライブラリ未インストール）")
+            print(i18n.t('analyzer.clip_skipped'))
             results['clip_similarity'] = None
 
     # 4. シャープネス（鮮鋭度）
-    print("\n【4. シャープネス（鮮鋭度）】")
-    print_usage_status("シャープネス計算開始（GPU使用）" if GPU_AVAILABLE else "シャープネス計算開始（CPU使用）")
+    print(i18n.t('analyzer.section_4'))
+    print_usage_status(i18n.t('analyzer.sharpness_calc_start_gpu') if GPU_AVAILABLE else i18n.t('analyzer.sharpness_calc_start_cpu'), i18n)
 
     if comparison_mode == 'evaluation' and img_original_gray is not None:
         # 評価モード：超解像画像のシャープネス保持率を評価
         sharpness_orig = calculate_sharpness_gpu(img_original_gray)
         sharpness_img2 = calculate_sharpness_gpu(img2_gray)
 
-        print(f"元画像シャープネス: {sharpness_orig:.2f}")
-        print(f"超解像画像シャープネス: {sharpness_img2:.2f}")
+        print(i18n.t('analyzer.sharpness_original').format(value=sharpness_orig))
+        print(i18n.t('analyzer.sharpness_sr').format(value=sharpness_img2))
 
         preservation_ratio = (sharpness_img2 / sharpness_orig) if sharpness_orig > 0 else 0
-        print(f"保持率: {preservation_ratio:.2%} ({(preservation_ratio - 1) * 100:+.1f}%)")
+        print(i18n.t('analyzer.sharpness_preservation').format(ratio=preservation_ratio, diff=(preservation_ratio - 1) * 100))
 
         # 絶対評価
         if preservation_ratio >= 1.1:
-            print(f"  評価: [OK] 優秀（シャープネス改善: +{(preservation_ratio - 1) * 100:.1f}%）")
+            print(i18n.t('analyzer.eval_sharpness_excellent').format(improvement=(preservation_ratio - 1) * 100))
         elif preservation_ratio >= 0.95:
-            print(f"  評価: [OK] 高品質（シャープネス保持: {preservation_ratio:.2%}）")
+            print(i18n.t('analyzer.eval_sharpness_good').format(ratio=preservation_ratio))
         elif preservation_ratio >= 0.85:
-            print(f"  評価: [WARNING] 許容範囲（やや劣化: {preservation_ratio:.2%}）")
+            print(i18n.t('analyzer.eval_sharpness_acceptable').format(ratio=preservation_ratio))
         else:
-            print(f"  評価: [ERROR] 低品質（大幅劣化: {preservation_ratio:.2%}）")
+            print(i18n.t('analyzer.eval_sharpness_poor').format(ratio=preservation_ratio))
 
         results['sharpness'] = {
             'img1': round(sharpness_orig, 2),  # 互換性のため
@@ -2096,9 +2096,9 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         # 比較モード（将来実装）または元画像なし：2つの画像を比較
         sharpness1 = calculate_sharpness_gpu(img1_gray)
         sharpness2 = calculate_sharpness_gpu(img2_gray)
-        print(f"画像1シャープネス: {sharpness1:.2f}")
-        print(f"画像2シャープネス: {sharpness2:.2f}")
-        print(f"差: {abs(sharpness1 - sharpness2):.2f} ({((sharpness2/sharpness1 - 1) * 100):+.1f}%)")
+        print(i18n.t('analyzer.sharpness_img1').format(value=sharpness1))
+        print(i18n.t('analyzer.sharpness_img2').format(value=sharpness2))
+        print(i18n.t('analyzer.sharpness_diff').format(diff=abs(sharpness1 - sharpness2), pct=((sharpness2/sharpness1 - 1) * 100)))
 
         results['sharpness'] = {
             'img1': round(sharpness1, 2),
@@ -2107,28 +2107,28 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         }
 
     # 5. コントラスト
-    print("\n【5. コントラスト】")
+    print(i18n.t('analyzer.section_5'))
 
     if comparison_mode == 'evaluation' and img_original_gray is not None:
         # 評価モード：超解像画像のコントラスト保持率を評価
         contrast_orig = calculate_contrast(img_original_gray)
         contrast_img2 = calculate_contrast(img2_gray)
 
-        print(f"元画像コントラスト: {contrast_orig:.2f}")
-        print(f"超解像画像コントラスト: {contrast_img2:.2f}")
+        print(i18n.t('analyzer.contrast_original').format(value=contrast_orig))
+        print(i18n.t('analyzer.contrast_sr').format(value=contrast_img2))
 
         preservation_ratio = (contrast_img2 / contrast_orig) if contrast_orig > 0 else 0
-        print(f"保持率: {preservation_ratio:.2%} ({(preservation_ratio - 1) * 100:+.1f}%)")
+        print(i18n.t('analyzer.contrast_preservation').format(ratio=preservation_ratio, diff=(preservation_ratio - 1) * 100))
 
         # 絶対評価
         if preservation_ratio >= 1.05:
-            print(f"  評価: [OK] 優秀（コントラスト改善: +{(preservation_ratio - 1) * 100:.1f}%）")
+            print(i18n.t('analyzer.eval_contrast_excellent').format(improvement=(preservation_ratio - 1) * 100))
         elif preservation_ratio >= 0.95:
-            print(f"  評価: [OK] 高品質（コントラスト保持: {preservation_ratio:.2%}）")
+            print(i18n.t('analyzer.eval_contrast_good').format(ratio=preservation_ratio))
         elif preservation_ratio >= 0.85:
-            print(f"  評価: [WARNING] 許容範囲（やや劣化: {preservation_ratio:.2%}）")
+            print(i18n.t('analyzer.eval_contrast_acceptable').format(ratio=preservation_ratio))
         else:
-            print(f"  評価: [ERROR] 低品質（大幅劣化: {preservation_ratio:.2%}）")
+            print(i18n.t('analyzer.eval_contrast_poor').format(ratio=preservation_ratio))
 
         results['contrast'] = {
             'img1': round(contrast_orig, 2),  # 互換性のため
@@ -2140,9 +2140,9 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         # 比較モード（将来実装）または元画像なし：2つの画像を比較
         contrast1 = calculate_contrast(img1_gray)
         contrast2 = calculate_contrast(img2_gray)
-        print(f"画像1コントラスト: {contrast1:.2f}")
-        print(f"画像2コントラスト: {contrast2:.2f}")
-        print(f"差: {abs(contrast1 - contrast2):.2f} ({((contrast2/contrast1 - 1) * 100):+.1f}%)")
+        print(i18n.t('analyzer.contrast_img1').format(value=contrast1))
+        print(i18n.t('analyzer.contrast_img2').format(value=contrast2))
+        print(i18n.t('analyzer.contrast_diff').format(diff=abs(contrast1 - contrast2), pct=((contrast2/contrast1 - 1) * 100)))
 
         results['contrast'] = {
             'img1': round(contrast1, 2),
