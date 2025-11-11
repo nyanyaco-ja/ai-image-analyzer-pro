@@ -1589,17 +1589,17 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         print(i18n.t('analyzer.original_filesize').format(size=size_original))
 
     # GPU/CPU情報
-    print(f"\n計算デバイス情報:")
+    print(i18n.t('analyzer.device_info'))
     if LPIPS_AVAILABLE:
         if GPU_AVAILABLE:
-            print(f"  GPU: {GPU_NAME}")
-            print(f"  CUDA利用可能: はい")
-            print(f"  VRAMサイズ: {torch.cuda.get_device_properties(0).total_memory / (1024**3):.1f} GB")
+            print(i18n.t('analyzer.gpu_name').format(name=GPU_NAME))
+            print(i18n.t('analyzer.cuda_available_yes'))
+            print(i18n.t('analyzer.vram_size').format(size=torch.cuda.get_device_properties(0).total_memory / (1024**3)))
         else:
-            print(f"  GPU: なし（CPU使用）")
-            print(f"  CUDA利用可能: いいえ")
+            print(i18n.t('analyzer.gpu_none'))
+            print(i18n.t('analyzer.cuda_available_no'))
     else:
-        print(f"  PyTorch未インストール（GPU機能無効）")
+        print(i18n.t('analyzer.pytorch_not_installed'))
 
     results['basic_info'] = {
         'img1_size': [int(img1.shape[1]), int(img1.shape[0])],
@@ -1613,26 +1613,26 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
 
     # 2. 構造類似性（SSIM）
     print(i18n.t('analyzer.section_2'))
-    print("1.0 = 完全一致、0.0 = 全く違う")
+    print(i18n.t('analyzer.ssim_description'))
     if GPU_AVAILABLE:
-        print(f"[GPU処理] デバイス: {DEVICE}")
+        print(i18n.t('analyzer.gpu_processing').format(device=DEVICE))
     print_usage_status("SSIM計算開始（GPU使用）" if GPU_AVAILABLE else "SSIM計算開始（CPU使用）", i18n)
 
     if img_original_rgb is not None:
         if comparison_mode == 'evaluation':
             # 評価モード：超解像画像の品質のみ評価
             ssim_img2_vs_orig = calculate_ssim_gpu(img2_rgb, img_original_rgb)
-            print(f"超解像画像 vs 元画像 SSIM: {ssim_img2_vs_orig:.4f}")
+            print(i18n.t('analyzer.ssim_vs_original').format(value=ssim_img2_vs_orig))
 
             # 絶対評価
             if ssim_img2_vs_orig >= 0.95:
-                print(f"  評価: [OK] 優秀（SSIM ≥ 0.95: 元画像とほぼ同一）")
+                print(i18n.t('analyzer.eval_ssim_excellent'))
             elif ssim_img2_vs_orig >= 0.85:
-                print(f"  評価: [OK] 高品質（SSIM ≥ 0.85: 基準クリア）")
+                print(i18n.t('analyzer.eval_ssim_good'))
             elif ssim_img2_vs_orig >= 0.70:
-                print(f"  評価: [WARNING] 許容範囲（SSIM 0.70-0.85: やや低め）")
+                print(i18n.t('analyzer.eval_ssim_acceptable'))
             else:
-                print(f"  評価: [ERROR] 低品質（SSIM < 0.70: 基準未達）")
+                print(i18n.t('analyzer.eval_ssim_poor'))
 
             # resultsには互換性のためimg1も保存（常に1.0）
             ssim_img1_vs_orig = 1.0
@@ -1657,48 +1657,48 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         results['ssim'] = round(ssim_score, 4)
 
     # 2.5. MS-SSIM（Multi-Scale SSIM）
-    print("\n【2.5. MS-SSIM（マルチスケールSSIM）】")
-    print("複数スケールでの構造類似性（1.0に近いほど類似）")
-    print_usage_status("MS-SSIM計算開始")
+    print(i18n.t('analyzer.section_2_5'))
+    print(i18n.t('analyzer.ms_ssim_description'))
+    print_usage_status("MS-SSIM計算開始", i18n)
     ms_ssim_score = calculate_ms_ssim(img1_rgb, img2_rgb)
 
     if ms_ssim_score is not None:
-        print(f"MS-SSIM: {ms_ssim_score:.4f}")
+        print(i18n.t('analyzer.ms_ssim_value').format(value=ms_ssim_score))
         if ms_ssim_score >= 0.99:
-            print("  評価: ほぼ完全に一致")
+            print(i18n.t('analyzer.eval_ms_ssim_perfect'))
         elif ms_ssim_score >= 0.95:
-            print("  評価: 非常に類似")
+            print(i18n.t('analyzer.eval_ms_ssim_very_similar'))
         elif ms_ssim_score >= 0.90:
-            print("  評価: 類似")
+            print(i18n.t('analyzer.eval_ms_ssim_similar'))
         elif ms_ssim_score >= 0.80:
-            print("  評価: やや類似")
+            print(i18n.t('analyzer.eval_ms_ssim_somewhat'))
         else:
-            print("  評価: 異なる")
+            print(i18n.t('analyzer.eval_ms_ssim_different'))
         results['ms_ssim'] = round(ms_ssim_score, 4)
     else:
         print("  ※MS-SSIM計算をスキップしました（ライブラリ未インストール）")
         results['ms_ssim'] = None
 
     # 3. PSNR
-    print("\n【3. PSNR（ピーク信号対雑音比）】")
-    print("数値が高いほど類似（30dB以上で視覚的にほぼ同一）")
-    print_usage_status("PSNR計算開始（GPU使用）" if GPU_AVAILABLE else "PSNR計算開始（CPU使用）")
+    print(i18n.t('analyzer.section_3'))
+    print(i18n.t('analyzer.psnr_description'))
+    print_usage_status(i18n.t('analyzer.psnr_calc_start_gpu') if GPU_AVAILABLE else i18n.t('analyzer.psnr_calc_start_cpu'), i18n)
 
     if img_original_rgb is not None:
         if comparison_mode == 'evaluation':
             # 評価モード：超解像画像の品質のみ評価
             psnr_img2_vs_orig = calculate_psnr_gpu(img2_rgb, img_original_rgb)
-            print(f"超解像画像 vs 元画像 PSNR: {psnr_img2_vs_orig:.2f} dB")
+            print(i18n.t('analyzer.psnr_vs_original').format(value=psnr_img2_vs_orig))
 
             # 絶対評価
             if psnr_img2_vs_orig >= 40:
-                print(f"  評価: [OK] 優秀（PSNR ≥ 40 dB: 非常に高品質）")
+                print(i18n.t('analyzer.eval_psnr_excellent'))
             elif psnr_img2_vs_orig >= 35:
-                print(f"  評価: [OK] 高品質（PSNR ≥ 35 dB: 基準クリア）")
+                print(i18n.t('analyzer.eval_psnr_good'))
             elif psnr_img2_vs_orig >= 30:
-                print(f"  評価: [WARNING] 許容範囲（PSNR ≥ 30 dB: 視覚的にほぼ同一）")
+                print(i18n.t('analyzer.eval_psnr_acceptable'))
             else:
-                print(f"  評価: [ERROR] 低品質（PSNR < 30 dB: 基準未達）")
+                print(i18n.t('analyzer.eval_psnr_poor'))
 
             # resultsには互換性のためimg1も保存（常にinf）
             psnr_img1_vs_orig = float('inf')
@@ -1724,8 +1724,8 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         results['psnr'] = round(psnr_score, 2)
 
     # 3.4. ピクセル差分（MAE - 平均絶対誤差）
-    print("\n【3.4. ピクセル差分（MAE）】")
-    print("元画像とのピクセル単位での絶対差分（低いほど近い、0=完全一致）")
+    print(i18n.t('analyzer.section_3_4'))
+    print(i18n.t('analyzer.mae_description'))
 
     if img_original_rgb is not None:
         if comparison_mode == 'evaluation':
@@ -1733,18 +1733,18 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
             diff_img2 = np.abs(img2_rgb.astype(float) - img_original_rgb.astype(float))
             mae_img2 = np.mean(diff_img2)
 
-            print(f" 全体MAE:")
-            print(f"  超解像画像 vs 元画像: {mae_img2:.2f} (差分率: {(mae_img2/255)*100:.1f}%)")
+            print(i18n.t('analyzer.mae_overall_header'))
+            print(i18n.t('analyzer.mae_vs_original').format(value=mae_img2, ratio=(mae_img2/255)*100))
 
             # 絶対評価
             if mae_img2 < 2:
-                print(f"  評価: [OK] 優秀（MAE < 2: ほぼ完全一致）")
+                print(i18n.t('analyzer.eval_mae_excellent'))
             elif mae_img2 < 5:
-                print(f"  評価: [OK] 高品質（MAE < 5: 基準クリア）")
+                print(i18n.t('analyzer.eval_mae_good'))
             elif mae_img2 < 10:
-                print(f"  評価: [WARNING] 許容範囲（MAE < 10: やや差分あり）")
+                print(i18n.t('analyzer.eval_mae_acceptable'))
             else:
-                print(f"  評価: [ERROR] 低品質（MAE ≥ 10: 基準未達）")
+                print(i18n.t('analyzer.eval_mae_poor'))
 
             # テキスト領域のMAE
             text_mask_img2 = np.mean(img2_rgb, axis=2) < 200
@@ -1757,21 +1757,21 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
 
             if text_pixel_count > 0:
                 mae_text_img2 = np.mean(diff_img2[text_mask_combined])
-                print(f"\n テキスト領域MAE（白背景除外、{text_ratio*100:.1f}%の領域）:")
-                print(f"  超解像画像 vs 元画像: {mae_text_img2:.2f} (差分率: {(mae_text_img2/255)*100:.1f}%)")
+                print(i18n.t('analyzer.mae_text_header').format(ratio=text_ratio*100))
+                print(i18n.t('analyzer.mae_text_vs_original').format(value=mae_text_img2, ratio=(mae_text_img2/255)*100))
 
                 # テキスト領域の絶対評価
                 if mae_text_img2 < 2:
-                    print(f"  評価: [OK] 優秀（テキストMAE < 2: ほぼ完全一致）")
+                    print(i18n.t('analyzer.eval_mae_text_excellent'))
                 elif mae_text_img2 < 5:
-                    print(f"  評価: [OK] 高品質（テキストMAE < 5: 基準クリア）")
+                    print(i18n.t('analyzer.eval_mae_text_good'))
                 elif mae_text_img2 < 10:
-                    print(f"  評価: [WARNING] 許容範囲（テキストMAE < 10: やや差分あり）")
+                    print(i18n.t('analyzer.eval_mae_text_acceptable'))
                 else:
-                    print(f"  評価: [ERROR] 低品質（テキストMAE ≥ 10: 基準未達）")
+                    print(i18n.t('analyzer.eval_mae_text_poor'))
             else:
                 mae_text_img2 = None
-                print(f"\n  [WARNING]  テキスト領域が検出されませんでした（白背景のみの画像）")
+                print(i18n.t('analyzer.mae_text_not_detected'))
 
             # resultsには互換性のためimg1も保存（常に0）
             mae_img1 = 0.0
@@ -1857,32 +1857,32 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         }
 
     # 3.5. LPIPS（知覚的類似度）
-    print("\n【3.5. LPIPS（知覚的類似度）】")
-    print("深層学習ベースの知覚的類似度（0に近いほど類似）")
-    print_usage_status("LPIPS計算開始")
+    print(i18n.t('analyzer.section_3_5'))
+    print(i18n.t('analyzer.lpips_description'))
+    print_usage_status(i18n.t('analyzer.lpips_calc_start'), i18n)
     lpips_score, gpu_usage = calculate_lpips(img1_rgb, img2_rgb)
-    print_usage_status("LPIPS計算完了")
+    print_usage_status(i18n.t('analyzer.lpips_calc_complete'), i18n)
 
     if lpips_score is not None:
-        print(f"LPIPS: {lpips_score:.4f}")
+        print(i18n.t('analyzer.lpips_value').format(value=lpips_score))
         if GPU_AVAILABLE and gpu_usage is not None:
-            print(f"  GPU使用: はい（メモリ使用率: {gpu_usage:.1f}%）")
+            print(i18n.t('analyzer.lpips_gpu_yes_mem').format(usage=gpu_usage))
         elif GPU_AVAILABLE:
-            print(f"  GPU使用: はい")
+            print(i18n.t('analyzer.lpips_gpu_yes'))
         else:
-            print(f"  GPU使用: いいえ（CPU処理）")
+            print(i18n.t('analyzer.lpips_gpu_no'))
 
         if lpips_score < 0.1:
-            print("  評価: 知覚的にほぼ同一")
+            print(i18n.t('analyzer.eval_lpips_nearly_identical'))
         elif lpips_score < 0.3:
-            print("  評価: 知覚的に類似")
+            print(i18n.t('analyzer.eval_lpips_similar'))
         elif lpips_score < 0.5:
-            print("  評価: やや異なる")
+            print(i18n.t('analyzer.eval_lpips_somewhat_different'))
         else:
-            print("  評価: 大きく異なる")
+            print(i18n.t('analyzer.eval_lpips_very_different'))
         results['lpips'] = round(lpips_score, 4)
     else:
-        print("  ※LPIPS計算をスキップしました（ライブラリ未インストール）")
+        print(i18n.t('analyzer.lpips_skipped'))
         results['lpips'] = None
 
     # 3.6. CLIP Embeddings（意味的類似度）
