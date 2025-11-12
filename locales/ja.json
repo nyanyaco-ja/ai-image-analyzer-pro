@@ -867,5 +867,33 @@
     "hallucination_plot3": "[OK] ハルシネーション検出③（エッジ×局所品質）",
     "hallucination_plot4": "[OK] ハルシネーション検出④（高周波×Entropy）",
     "skip_histogram": "[SKIP] 分布①（Total Scoreヒストグラム: 分析対象外のためスキップ）"
+  },
+  "stats_gui": {
+    "error_no_csv": "CSVファイルを選択してください",
+    "error_csv_not_found": "CSVファイルが見つかりません:\n{path}",
+    "status_running": "統計分析を実行中...",
+    "status_complete": "[OK] 統計分析完了！26種類のプロットが {dir}/ に保存されました",
+    "status_error": "[ERROR] 統計分析エラー",
+    "error_during_analysis": "統計分析中にエラーが発生しました:\n\n{error}\n\n詳細:\n{detail}",
+    "info_complete_no_detail": "[INFO] 統計分析が完了しました。\n出力ディレクトリ: {dir}\n\n(詳細ログが表示されない場合は、analyze_results.pyのprint文を確認してください)",
+    "dialog_complete_title": "完了",
+    "dialog_complete_message": "統計分析が完了しました。\n\n26種類の研究用プロット（300dpi）が\n{dir}/ フォルダに保存されました。\n\n・ハルシネーション検出（4種類）\n・品質トレードオフ（5種類）\n・医療画像特化（4種類）\n・分布・PCA分析（4種類）\n・LFV法則証明（3種類：相関・分布・座標）\n・その他（6種類）",
+    "dialog_open_folder_title": "フォルダを開く",
+    "dialog_open_folder_message": "{dir} フォルダを開きますか？",
+    "error_dialog_title": "エラー",
+    "error_dialog_message": "統計分析中にエラーが発生しました:\n{error}",
+    "log_saved": "\n[LOG] ログファイル保存: {path}",
+    "log_save_warning": "\n[WARNING] ログ保存に失敗しました: {error}",
+    "export_log_header": "統計分析ログ（手動エクスポート）\nエクスポート日時: {datetime}\n{separator}\n\n",
+    "export_log_empty": "ログが空です。",
+    "export_log_complete": "ログを保存しました:\n{path}",
+    "export_log_error": "ログ保存に失敗しました:\n{error}",
+    "export_log_title": "ログを保存",
+    "export_info_title": "情報",
+    "export_complete_title": "保存完了",
+    "browse_csv_title": "CSVファイルを選択",
+    "filetype_csv": "CSV",
+    "filetype_text": "テキストファイル",
+    "filetype_all": "すべてのファイル"
   }
 }

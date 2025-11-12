@@ -867,5 +867,33 @@
     "hallucination_plot3": "[OK] Hallucination Detection ③ (Edge×Local Quality)",
     "hallucination_plot4": "[OK] Hallucination Detection ④ (High Freq×Entropy)",
     "skip_histogram": "[SKIP] Distribution ① (Total Score Histogram: Not applicable, skipped)"
+  },
+  "stats_gui": {
+    "error_no_csv": "Please select a CSV file",
+    "error_csv_not_found": "CSV file not found:\n{path}",
+    "status_running": "Running statistical analysis...",
+    "status_complete": "[OK] Statistical analysis complete! 26 plots saved to {dir}/",
+    "status_error": "[ERROR] Statistical analysis error",
+    "error_during_analysis": "Error occurred during statistical analysis:\n\n{error}\n\nDetails:\n{detail}",
+    "info_complete_no_detail": "[INFO] Statistical analysis completed.\nOutput directory: {dir}\n\n(If detailed logs are not displayed, check print statements in analyze_results.py)",
+    "dialog_complete_title": "Complete",
+    "dialog_complete_message": "Statistical analysis completed.\n\n26 research plots (300dpi) saved to\n{dir}/ folder.\n\n・Hallucination Detection (4 types)\n・Quality Tradeoffs (5 types)\n・Medical Image Specific (4 types)\n・Distribution & PCA Analysis (4 types)\n・LFV Theory Proofs (3 types: correlation, distribution, coordinates)\n・Others (6 types)",
+    "dialog_open_folder_title": "Open Folder",
+    "dialog_open_folder_message": "Open {dir} folder?",
+    "error_dialog_title": "Error",
+    "error_dialog_message": "Error occurred during statistical analysis:\n{error}",
+    "log_saved": "\n[LOG] Log file saved: {path}",
+    "log_save_warning": "\n[WARNING] Failed to save log: {error}",
+    "export_log_header": "Statistical Analysis Log (Manual Export)\nExported at: {datetime}\n{separator}\n\n",
+    "export_log_empty": "Log is empty.",
+    "export_log_complete": "Log saved:\n{path}",
+    "export_log_error": "Failed to save log:\n{error}",
+    "export_log_title": "Save Log",
+    "export_info_title": "Information",
+    "export_complete_title": "Save Complete",
+    "browse_csv_title": "Select CSV File",
+    "filetype_csv": "CSV",
+    "filetype_text": "Text Files",
+    "filetype_all": "All Files"
   }
 }

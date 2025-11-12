@@ -4,6 +4,7 @@ import threading
 import os
 import sys
 from datetime import datetime
+from translations import I18n
 
 class TextRedirector:
     """標準出力をGUIテキストウィジェットにリダイレクトするクラス"""
@@ -37,8 +38,8 @@ class StatsAnalysisMixin:
 
     def browse_stats_csv(self):
         filename = filedialog.askopenfilename(
-            title="CSVファイルを選択",
-            filetypes=[("CSV", "*.csv"), ("すべてのファイル", "*.*")]
+            title=self.i18n.t('stats_gui.browse_csv_title'),
+            filetypes=[(self.i18n.t('stats_gui.filetype_csv'), "*.csv"), (self.i18n.t('stats_gui.filetype_all'), "*.*")]
         )
         if filename:
             self.stats_csv_path.set(filename)
@@ -49,16 +50,16 @@ class StatsAnalysisMixin:
         csv_path = self.stats_csv_path.get()
 
         if not csv_path:
-            messagebox.showerror("エラー", "CSVファイルを選択してください")
+            messagebox.showerror(self.i18n.t('stats_gui.error_dialog_title'), self.i18n.t('stats_gui.error_no_csv'))
             return
 
         if not os.path.exists(csv_path):
-            messagebox.showerror("エラー", f"CSVファイルが見つかりません:\n{csv_path}")
+            messagebox.showerror(self.i18n.t('stats_gui.error_dialog_title'), self.i18n.t('stats_gui.error_csv_not_found').format(path=csv_path))
             return
 
         # UIを無効化
         self.stats_analyze_btn.configure(state='disabled')
-        self.batch_status_label.configure(text="統計分析を実行中...", text_color="#ffa500")
+        self.batch_status_label.configure(text=self.i18n.t('stats_gui.status_running'), text_color="#ffa500")
 
         # 別スレッドで実行
         thread = threading.Thread(target=self.run_stats_analysis, args=(csv_path,))
@@ -92,7 +93,7 @@ class StatsAnalysisMixin:
 
             # デバッグ：出力が空の場合
             if not output.strip():
-                output = f"[INFO] 統計分析が完了しました。\n出力ディレクトリ: {output_dir}\n\n(詳細ログが表示されない場合は、analyze_results.pyのprint文を確認してください)"
+                output = self.i18n.t('stats_gui.info_complete_no_detail').format(dir=output_dir)
                 self.root.after(0, lambda: self.batch_result_text.insert(tk.END, output))
 
             # ログを自動保存
@@ -103,7 +104,7 @@ class StatsAnalysisMixin:
         except Exception as e:
             import traceback
             error_detail = traceback.format_exc()
-            error_msg = f"[ERROR] 統計分析中にエラーが発生しました:\n\n{str(e)}\n\n詳細:\n{error_detail}"
+            error_msg = self.i18n.t('stats_gui.error_during_analysis').format(error=str(e), detail=error_detail)
             self.root.after(0, self.display_stats_results, error_msg, False, None)
         finally:
             # 必ず標準出力/エラーを復元
@@ -122,37 +123,29 @@ class StatsAnalysisMixin:
 
         if success:
             self.batch_status_label.configure(
-                text=f"[OK] 統計分析完了！26種類のプロットが {output_dir}/ に保存されました",
+                text=self.i18n.t('stats_gui.status_complete').format(dir=output_dir),
                 text_color="#00ff88"
             )
 
             messagebox.showinfo(
-                "完了",
-                f"統計分析が完了しました。\n\n"
-                f"26種類の研究用プロット（300dpi）が\n"
-                f"{output_dir}/ フォルダに保存されました。\n\n"
-                f"・ハルシネーション検出（4種類）\n"
-                f"・品質トレードオフ（5種類）\n"
-                f"・医療画像特化（4種類）\n"
-                f"・分布・PCA分析（4種類）\n"
-                f"・LFV法則証明（3種類：相関・分布・座標）\n"
-                f"・その他（6種類）"
+                self.i18n.t('stats_gui.dialog_complete_title'),
+                self.i18n.t('stats_gui.dialog_complete_message').format(dir=output_dir)
             )
 
             # フォルダを開くか確認
             result = messagebox.askyesno(
-                "フォルダを開く",
-                f"{output_dir} フォルダを開きますか？"
+                self.i18n.t('stats_gui.dialog_open_folder_title'),
+                self.i18n.t('stats_gui.dialog_open_folder_message').format(dir=output_dir)
             )
             if result:
                 if output_dir and os.path.exists(output_dir):
                     os.startfile(output_dir)
         else:
             self.batch_status_label.configure(
-                text="[ERROR] 統計分析エラー",
+                text=self.i18n.t('stats_gui.status_error'),
                 text_color="#ff4444"
             )
-            messagebox.showerror("エラー", f"統計分析中にエラーが発生しました:\n{output}")
+            messagebox.showerror(self.i18n.t('stats_gui.error_dialog_title'), self.i18n.t('stats_gui.error_dialog_message').format(error=output))
 
     def save_stats_log(self, log_content, output_dir=None):
         """統計分析ログをファイルに保存"""
@@ -175,10 +168,10 @@ class StatsAnalysisMixin:
                 f.write(f"{'='*80}\n\n")
                 f.write(log_content)
 
-            print(f"\n[LOG] ログファイル保存: {log_file}")
+            print(self.i18n.t('stats_gui.log_saved').format(path=log_file))
 
         except Exception as e:
-            print(f"\n[WARNING] ログ保存に失敗しました: {str(e)}")
+            print(self.i18n.t('stats_gui.log_save_warning').format(error=str(e)))
 
     def export_current_log(self):
         """現在表示中のログを手動でエクスポート"""
@@ -187,26 +180,28 @@ class StatsAnalysisMixin:
             log_content = self.batch_result_text.get("1.0", tk.END)
 
             if not log_content.strip():
-                messagebox.showinfo("情報", "ログが空です。")
+                messagebox.showinfo(self.i18n.t('stats_gui.export_info_title'), self.i18n.t('stats_gui.export_log_empty'))
                 return
 
             # 保存先をダイアログで選択
             file_path = filedialog.asksaveasfilename(
-                title="ログを保存",
+                title=self.i18n.t('stats_gui.export_log_title'),
                 defaultextension=".txt",
-                filetypes=[("テキストファイル", "*.txt"), ("すべてのファイル", "*.*")],
+                filetypes=[(self.i18n.t('stats_gui.filetype_text'), "*.txt"), (self.i18n.t('stats_gui.filetype_all'), "*.*")],
                 initialfile=f"stats_analysis_log_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
             )
 
             if file_path:
                 with open(file_path, 'w', encoding='utf-8') as f:
-                    f.write(f"統計分析ログ（手動エクスポート）\n")
-                    f.write(f"エクスポート日時: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-                    f.write(f"{'='*80}\n\n")
+                    header = self.i18n.t('stats_gui.export_log_header').format(
+                        datetime=datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                        separator='='*80
+                    )
+                    f.write(header)
                     f.write(log_content)
 
-                messagebox.showinfo("保存完了", f"ログを保存しました:\n{file_path}")
+                messagebox.showinfo(self.i18n.t('stats_gui.export_complete_title'), self.i18n.t('stats_gui.export_log_complete').format(path=file_path))
 
         except Exception as e:
-            messagebox.showerror("エラー", f"ログ保存に失敗しました:\n{str(e)}")
+            messagebox.showerror(self.i18n.t('stats_gui.error_dialog_title'), self.i18n.t('stats_gui.export_log_error').format(error=str(e)))
 
