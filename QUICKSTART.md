@@ -1,19 +1,21 @@
-# クイックスタートガイド / Quick Start Guide
+# クイックスタートガイド
 
-## 🚀 起動方法 / How to Run
+[English version](QUICKSTART_EN.md)
 
-### GUI起動（推奨 / Recommended）
+## 🚀 起動方法
 
-#### Windows（バッチファイル / Batch file）
+### GUI起動（推奨）
+
+#### Windows（バッチファイル）
 ```bash
 launch.bat
 ```
-または / or
+または
 ```bash
 launch.ps1
 ```
 
-#### Windows（直接実行 / Direct execution）
+#### Windows（直接実行）
 ```bash
 venv\Scripts\python.exe modern_gui.py
 ```
@@ -23,16 +25,16 @@ venv\Scripts\python.exe modern_gui.py
 ./venv/bin/python modern_gui.py
 ```
 
-#### 仮想環境を有効化している場合 / If virtual environment is activated
+#### 仮想環境を有効化している場合
 ```bash
 python modern_gui.py
 ```
 
 ---
 
-## 📝 基本的な使い方 / Basic Usage
+## 📝 基本的な使い方
 
-### 単一画像比較 / Single Image Comparison
+### 単一画像比較
 
 1. 「📁 画像1を選択」で比較したい画像1を選択
 2. 「📁 画像2を選択」で比較したい画像2を選択
@@ -40,7 +42,7 @@ python modern_gui.py
 4. 「🚀 分析開始」をクリック
 5. 「📂 結果フォルダを開く」で結果確認
 
-### バッチ処理 / Batch Processing
+### バッチ処理
 
 1. GUIの「バッチ処理」タブを開く
 2. 入力フォルダと出力フォルダを選択
@@ -49,7 +51,7 @@ python modern_gui.py
 
 ---
 
-## ⚙️ コマンドライン実行 / Command Line Execution
+## ⚙️ コマンドライン実行
 
 ### 単一画像分析
 ```bash
@@ -68,7 +70,7 @@ venv\Scripts\python.exe batch_analyzer.py batch_config.json
 
 ---
 
-## 🔧 トラブルシューティング / Troubleshooting
+## 🔧 トラブルシューティング
 
 ### エラー: `ModuleNotFoundError`
 仮想環境が有効化されていません。上記の起動方法を使用してください。
