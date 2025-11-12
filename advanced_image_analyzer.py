@@ -69,6 +69,10 @@ except ImportError:
 plt.rcParams['font.family'] = ['MS Gothic', 'Yu Gothic', 'Meiryo', 'sans-serif']
 plt.rcParams['axes.unicode_minus'] = False  # マイナス記号の文字化け対策
 
+# グローバルi18nインスタンス（エラーメッセージ用）
+from translations import I18n
+_global_i18n = I18n()
+
 def get_system_usage():
     """CPU/GPU使用率を取得"""
     usage_info = {}
@@ -186,7 +190,7 @@ def calculate_lpips(img1_rgb, img2_rgb):
         return float(distance.item()), gpu_usage
 
     except Exception as e:
-        print(f"LPIPS計算エラー: {e}")
+        print(_global_i18n.t('analyzer.error_lpips_calc').format(error=e))
         return None, None
 
 def is_document_image(img_rgb):
@@ -233,12 +237,20 @@ def is_document_image(img_rgb):
                      (lab_l_mean > 200 and color_std < 70)
 
         # デバッグ用：判定情報を常に表示
-        print(f"    文書判定 - 明背景: {bright_ratio*100:.1f}%, 白背景: {white_ratio*100:.1f}%, 色分散: {color_std:.1f}, グレー率: {gray_ratio*100:.1f}%, 平均輝度: {lab_l_mean:.1f} → {'文書' if is_document else '️自然画像'}")
+        doc_type = _global_i18n.t('analyzer.document_type_document') if is_document else _global_i18n.t('analyzer.document_type_natural')
+        print(_global_i18n.t('analyzer.debug_document_detection').format(
+            bright=bright_ratio*100,
+            white=white_ratio*100,
+            color_std=color_std,
+            gray=gray_ratio*100,
+            luminance=lab_l_mean,
+            result=doc_type
+        ))
 
         return is_document
 
     except Exception as e:
-        print(f"文書判定エラー: {e}")
+        print(_global_i18n.t('analyzer.error_document_detection').format(error=e))
         return False
 
 def calculate_clip_similarity(img1_rgb, img2_rgb):
@@ -256,7 +268,7 @@ def calculate_clip_similarity(img1_rgb, img2_rgb):
     try:
         # 初回のみモデルとプロセッサを読み込み
         if CLIP_MODEL is None or CLIP_PROCESSOR is None:
-            print("CLIP モデルを読み込み中...")
+            print(_global_i18n.t('analyzer.info_clip_loading'))
             # safetensors形式でロード（PyTorch 2.6未満でも動作）
             CLIP_MODEL = CLIPModel.from_pretrained("openai/clip-vit-base-patch32", use_safetensors=True)
             CLIP_PROCESSOR = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
@@ -267,7 +279,7 @@ def calculate_clip_similarity(img1_rgb, img2_rgb):
 
             # 評価モードに設定
             CLIP_MODEL.eval()
-            print(f"CLIP モデル読み込み完了 (デバイス: {DEVICE if DEVICE else 'CPU'})")
+            print(_global_i18n.t('analyzer.info_clip_loaded').format(device=DEVICE if DEVICE else 'CPU'))
 
         # RGB画像をPIL Imageに変換（CLIPProcessorが期待する形式）
         from PIL import Image as PILImage
@@ -298,7 +310,7 @@ def calculate_clip_similarity(img1_rgb, img2_rgb):
         return cosine_similarity
 
     except Exception as e:
-        print(f"CLIP類似度計算エラー: {e}")
+        print(_global_i18n.t('analyzer.error_clip_similarity').format(error=e))
         import traceback
         traceback.print_exc()
         return None
@@ -365,7 +377,7 @@ def calculate_ssim_gpu(img1_rgb, img2_rgb):
             return float(ssim_val.item())
 
     except Exception as e:
-        print(f"GPU SSIM計算エラー（CPU版にフォールバック）: {e}")
+        print(_global_i18n.t('analyzer.error_gpu_ssim_fallback').format(error=e))
         return ssim(img1_rgb, img2_rgb, channel_axis=2)
 
 def calculate_psnr_gpu(img1_rgb, img2_rgb):
@@ -402,7 +414,7 @@ def calculate_psnr_gpu(img1_rgb, img2_rgb):
         return float(psnr_val.item())
 
     except Exception as e:
-        print(f"GPU PSNR計算エラー（CPU版にフォールバック）: {e}")
+        print(_global_i18n.t('analyzer.error_gpu_psnr_fallback').format(error=e))
         return psnr(img1_rgb, img2_rgb)
 
 def calculate_sharpness_gpu(img_gray):
@@ -429,7 +441,7 @@ def calculate_sharpness_gpu(img_gray):
         return float(variance.item()) * 255 * 255  # スケール調整
 
     except Exception as e:
-        print(f"GPU シャープネス計算エラー（CPU版にフォールバック）: {e}")
+        print(_global_i18n.t('analyzer.error_gpu_sharpness_fallback').format(error=e))
         laplacian = cv2.Laplacian(img_gray, cv2.CV_64F)
         return laplacian.var()
 
@@ -462,7 +474,7 @@ def estimate_noise_gpu(img_gray):
         return float(noise_level.item()) * 100  # スケール調整
 
     except Exception as e:
-        print(f"GPU ノイズ推定エラー（CPU版にフォールバック）: {e}")
+        print(_global_i18n.t('analyzer.error_gpu_noise_fallback').format(error=e))
         H = cv2.dct(np.float32(img_gray) / 255.0)
         noise_level = np.sum(np.abs(H[int(H.shape[0]*0.9):, int(H.shape[1]*0.9):]))
         return noise_level
@@ -491,7 +503,7 @@ def detect_edges_gpu(img_gray):
         return float(edge_density.item())
 
     except Exception as e:
-        print(f"GPU エッジ検出エラー（CPU版にフォールバック）: {e}")
+        print(_global_i18n.t('analyzer.error_gpu_edge_fallback').format(error=e))
         edges = cv2.Canny(img_gray, 100, 200)
         return np.sum(edges) / (edges.shape[0] * edges.shape[1] * 255) * 100
 
@@ -528,7 +540,7 @@ def calculate_color_difference_gpu(img1_rgb, img2_rgb):
         return float(mean_delta_e.item())
 
     except Exception as e:
-        print(f"GPU 色差計算エラー（CPU版にフォールバック）: {e}")
+        print(_global_i18n.t('analyzer.error_gpu_color_fallback').format(error=e))
         img1_lab = cv2.cvtColor(img1_rgb, cv2.COLOR_RGB2LAB)
         img2_lab = cv2.cvtColor(img2_rgb, cv2.COLOR_RGB2LAB)
         delta_e = np.sqrt(np.sum((img1_lab.astype(float) - img2_lab.astype(float)) ** 2, axis=2))
@@ -564,7 +576,7 @@ def calculate_ms_ssim(img1_rgb, img2_rgb):
         return float(ms_ssim_val.item())
 
     except Exception as e:
-        print(f"MS-SSIM計算エラー: {e}")
+        print(_global_i18n.t('analyzer.error_ms_ssim_calc').format(error=e))
         return None
 
 def analyze_local_quality(img1, img2, patch_size=16):
@@ -799,8 +811,8 @@ def generate_p6_heatmap_interactive(ssim_2d, output_html_path, patch_size=16):
     try:
         import plotly.graph_objects as go
     except ImportError:
-        print("[WARNING] Plotly not installed. Skipping interactive heatmap generation.")
-        print("           Install with: pip install plotly")
+        print(_global_i18n.t('analyzer.warning_plotly_not_installed'))
+        print(_global_i18n.t('analyzer.warning_plotly_install'))
         return None
 
     # カスタムカラースケール（PNG版と同じ学術的閾値）
@@ -946,7 +958,7 @@ def generate_p6_heatmap_interactive(ssim_2d, output_html_path, patch_size=16):
     with open(output_html_path, 'w', encoding='utf-8') as f:
         f.write(html_content)
 
-    print(f"  [OK] Interactive HTML heatmap saved: {output_html_path}")
+    print(_global_i18n.t('analyzer.info_html_heatmap_saved').format(path=output_html_path))
 
     return output_html_path
 
@@ -987,7 +999,7 @@ def export_p6_data_csv(ssim_2d, output_csv_path, patch_size=16):
                         (j + 1) * patch_size
                     ])
 
-        print(f"  [OK] CSV data saved (without pandas): {output_csv_path}")
+        print(_global_i18n.t('analyzer.info_csv_saved_no_pandas').format(path=output_csv_path))
         return output_csv_path
 
     # With pandas available
@@ -1024,8 +1036,8 @@ def export_p6_data_csv(ssim_2d, output_csv_path, patch_size=16):
     }])
     stats_df.to_csv(stats_csv_path, index=False, encoding='utf-8')
 
-    print(f"  [OK] CSV data saved: {output_csv_path}")
-    print(f"  [OK] Statistics saved: {stats_csv_path}")
+    print(_global_i18n.t('analyzer.info_csv_saved').format(path=output_csv_path))
+    print(_global_i18n.t('analyzer.info_stats_saved').format(path=stats_csv_path))
 
     return output_csv_path
 
@@ -1112,7 +1124,7 @@ def analyze_texture(img_gray):
 
         return {'texture_complexity': float(texture_complexity.item() * 255)}
     except Exception as e:
-        print(f"GPU テクスチャ分析エラー（CPU版にフォールバック）: {e}")
+        print(_global_i18n.t('analyzer.error_gpu_texture_fallback').format(error=e))
         small = cv2.resize(img_gray, (img_gray.shape[1]//4, img_gray.shape[0]//4))
         sobel_x = cv2.Sobel(small, cv2.CV_64F, 1, 0, ksize=3)
         sobel_y = cv2.Sobel(small, cv2.CV_64F, 0, 1, ksize=3)
@@ -1444,8 +1456,8 @@ def imread_unicode(filename):
 
         # 透明背景（RGBA）の場合、白背景で合成
         if pil_image.mode == 'RGBA':
-            print(f"  透明背景を検出: {filename}")
-            print(f"  白背景で合成します")
+            print(_global_i18n.t('analyzer.info_transparent_detected').format(filename=filename))
+            print(_global_i18n.t('analyzer.info_white_composite'))
             # 白背景を作成
             background = Image.new('RGB', pil_image.size, (255, 255, 255))
             # アルファチャンネルを使って合成
@@ -1460,7 +1472,7 @@ def imread_unicode(filename):
         img_bgr = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
         return img_bgr
     except Exception as e:
-        print(f"画像読み込みエラー: {e}")
+        print(_global_i18n.t('analyzer.error_image_load').format(error=e))
         return None
 
 def analyze_images(img1_path, img2_path, output_dir='analysis_results', original_path=None, evaluation_mode='image', comparison_mode='evaluation', patch_size=16, i18n=None):
@@ -1506,17 +1518,17 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
     img_ai_result = img2  # AI処理結果
 
     if img1 is None or img2 is None:
-        print("エラー: 画像ファイルが読み込めません")
-        print(f"元画像パス: {img1_path}")
-        print(f"AI処理結果パス: {img2_path}")
+        print(i18n.t('analyzer.error_image_file_unreadable'))
+        print(i18n.t('analyzer.info_original_path').format(path=img1_path))
+        print(i18n.t('analyzer.info_ai_result_path').format(path=img2_path))
         return
 
     # 画像サイズチェックと調整
     if img1.shape != img2.shape:
-        print(f"\n画像サイズが異なります:")
-        print(f"  元画像: {img1.shape[1]} x {img1.shape[0]} px")
-        print(f"  AI処理結果: {img2.shape[1]} x {img2.shape[0]} px")
-        print(f"AI処理結果を元画像のサイズにリサイズします...\n")
+        print(i18n.t('analyzer.info_size_mismatch'))
+        print(i18n.t('analyzer.info_original_size').format(width=img1.shape[1], height=img1.shape[0]))
+        print(i18n.t('analyzer.info_ai_result_size').format(width=img2.shape[1], height=img2.shape[0]))
+        print(i18n.t('analyzer.info_resizing'))
 
         # AI処理結果を元画像のサイズに合わせる
         img2 = cv2.resize(img2, (img1.shape[1], img1.shape[0]), interpolation=cv2.INTER_LANCZOS4)
