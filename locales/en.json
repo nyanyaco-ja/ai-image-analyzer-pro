@@ -814,7 +814,10 @@
     "info_resizing": "Resizing AI result to match original size...\n",
     "debug_document_detection": "    Document detection - bright bg: {bright:.1f}%, white bg: {white:.1f}%, color std: {color_std:.1f}, gray ratio: {gray:.1f}%, avg luminance: {luminance:.1f} → {result}",
     "document_type_document": "Document",
-    "document_type_natural": "Natural image"
+    "document_type_natural": "Natural image",
+    "ssim_calc_start_gpu": "Starting SSIM calculation (GPU)",
+    "ssim_calc_start_cpu": "Starting SSIM calculation (CPU)",
+    "ms_ssim_calc_start": "Starting MS-SSIM calculation"
   },
   "stats": {
     "report_header": "[STATS] Statistical Analysis Report",

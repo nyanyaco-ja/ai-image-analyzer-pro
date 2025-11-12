@@ -1628,7 +1628,7 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
     print(i18n.t('analyzer.ssim_description'))
     if GPU_AVAILABLE:
         print(i18n.t('analyzer.gpu_processing').format(device=DEVICE))
-    print_usage_status("SSIM計算開始（GPU使用）" if GPU_AVAILABLE else "SSIM計算開始（CPU使用）", i18n)
+    print_usage_status(i18n.t('analyzer.ssim_calc_start_gpu') if GPU_AVAILABLE else i18n.t('analyzer.ssim_calc_start_cpu'), i18n)
 
     if img_original_rgb is not None:
         if comparison_mode == 'evaluation':
@@ -1671,7 +1671,7 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
     # 2.5. MS-SSIM（Multi-Scale SSIM）
     print(i18n.t('analyzer.section_2_5'))
     print(i18n.t('analyzer.ms_ssim_description'))
-    print_usage_status("MS-SSIM計算開始", i18n)
+    print_usage_status(i18n.t('analyzer.ms_ssim_calc_start'), i18n)
     ms_ssim_score = calculate_ms_ssim(img1_rgb, img2_rgb)
 
     if ms_ssim_score is not None:

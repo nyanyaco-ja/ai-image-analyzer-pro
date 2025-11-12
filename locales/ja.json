@@ -814,7 +814,10 @@
     "info_resizing": "AI処理結果を元画像のサイズにリサイズします...\n",
     "debug_document_detection": "    文書判定 - 明背景: {bright:.1f}%, 白背景: {white:.1f}%, 色分散: {color_std:.1f}, グレー率: {gray:.1f}%, 平均輝度: {luminance:.1f} → {result}",
     "document_type_document": "文書",
-    "document_type_natural": "️自然画像"
+    "document_type_natural": "️自然画像",
+    "ssim_calc_start_gpu": "SSIM計算開始（GPU使用）",
+    "ssim_calc_start_cpu": "SSIM計算開始（CPU使用）",
+    "ms_ssim_calc_start": "MS-SSIM計算開始"
   },
   "stats": {
     "report_header": "[STATS] 統計分析レポート",
