@@ -938,7 +938,8 @@
     "lfv_complete_detail": "   Ready for papers and presentations (300dpi high resolution)",
     "lfv_complete_plot24": "   - Plot 24: Texture dependency proof (correlation analysis)",
     "lfv_complete_plot25": "   - Plot 25: Spatial dependency proof (distribution comparison)",
-    "lfv_complete_plot26": "   - Plot 26: Coordinate distribution (BBI visualization)"
+    "lfv_complete_plot26": "   - Plot 26: Coordinate distribution (BBI visualization)",
+    "research_plots_generating": "\n[STATS] Generating research plots:"
   },
   "stats_gui": {
     "error_no_csv": "Please select a CSV file",

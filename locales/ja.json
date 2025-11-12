@@ -938,7 +938,8 @@
     "lfv_complete_detail": "   論文・発表資料にそのまま使用できます（300dpi高解像度）",
     "lfv_complete_plot24": "   - Plot 24: テクスチャ依存性証明（相関分析）",
     "lfv_complete_plot25": "   - Plot 25: 空間依存性証明（分布比較）",
-    "lfv_complete_plot26": "   - Plot 26: 座標分布（BBI可視化）"
+    "lfv_complete_plot26": "   - Plot 26: 座標分布（BBI可視化）",
+    "research_plots_generating": "\n[STATS] 研究用プロット生成中:"
   },
   "stats_gui": {
     "error_no_csv": "CSVファイルを選択してください",

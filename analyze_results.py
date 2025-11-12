@@ -548,7 +548,7 @@ def generate_research_plots(df, output_dir, csv_file):
     """
     global i18n, LANG
 
-    print(f"\n[STATS] 研究用プロット生成中:")
+    print(i18n.t('stats_analysis.research_plots_generating'))
     print(f"{'='*80}")
 
     # 1. Sharpness vs PSNR 散布図（AI Modelの戦略を示す）
