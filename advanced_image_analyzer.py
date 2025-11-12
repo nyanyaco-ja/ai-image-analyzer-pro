@@ -1502,6 +1502,10 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         from i18n import I18n
         i18n = I18n('ja')
 
+    # グローバルi18nも更新（エラーメッセージと文書判定で使用）
+    global _global_i18n
+    _global_i18n = i18n
+
     # 出力ディレクトリのチェックとデフォルト値設定
     if output_dir is None or output_dir == '':
         output_dir = 'analysis_results'

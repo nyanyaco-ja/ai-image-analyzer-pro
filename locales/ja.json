@@ -817,7 +817,13 @@
     "document_type_natural": "️自然画像",
     "ssim_calc_start_gpu": "SSIM計算開始（GPU使用）",
     "ssim_calc_start_cpu": "SSIM計算開始（CPU使用）",
-    "ms_ssim_calc_start": "MS-SSIM計算開始"
+    "ms_ssim_calc_start": "MS-SSIM計算開始",
+    "header_ssim": "SSIM",
+    "header_psnr": "PSNR",
+    "header_lpips": "LPIPS",
+    "header_total_score": "総合スコア",
+    "header_noise": "ノイズ",
+    "header_artifacts": "アーティファクト"
   },
   "stats": {
     "report_header": "[STATS] 統計分析レポート",

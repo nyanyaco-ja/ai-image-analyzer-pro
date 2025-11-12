@@ -631,17 +631,25 @@ def display_summary_statistics(all_results, i18n):
     }).round(4)
 
     # 列名を整形
-    grouped.columns = ['SSIM', 'PSNR', 'LPIPS', '総合スコア', 'ノイズ', 'アーティファクト']
+    col_total_score = i18n.t('analyzer.header_total_score')
+    grouped.columns = [
+        i18n.t('analyzer.header_ssim'),
+        i18n.t('analyzer.header_psnr'),
+        i18n.t('analyzer.header_lpips'),
+        col_total_score,
+        i18n.t('analyzer.header_noise'),
+        i18n.t('analyzer.header_artifacts')
+    ]
 
     # ソート（総合スコア降順）
-    grouped = grouped.sort_values('総合スコア', ascending=False)
+    grouped = grouped.sort_values(col_total_score, ascending=False)
 
     print(grouped.to_string())
     print(f"{'='*80}\n")
 
     # ランキング
     print(i18n.t('batch_analyzer.overall_ranking'))
-    for i, (model, score) in enumerate(grouped['総合スコア'].items(), 1):
+    for i, (model, score) in enumerate(grouped[col_total_score].items(), 1):
         print(i18n.t('batch_analyzer.rank_item').format(rank=i, model=model, score=score))
 
 
