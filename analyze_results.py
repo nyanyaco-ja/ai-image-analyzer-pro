@@ -94,7 +94,16 @@ def print_basic_statistics(df):
                'histogram_corr', 'lab_L_mean']
 
     stats = df[metrics].describe().T
-    stats.columns = ['件数', '平均', '標準偏差', '最小', '25%', '50%', '75%', '最大']
+    stats.columns = [
+        i18n.t('stats_analysis.stats_col_count'),
+        i18n.t('stats_analysis.stats_col_mean'),
+        i18n.t('stats_analysis.stats_col_std'),
+        i18n.t('stats_analysis.stats_col_min'),
+        i18n.t('stats_analysis.stats_col_25'),
+        i18n.t('stats_analysis.stats_col_50'),
+        i18n.t('stats_analysis.stats_col_75'),
+        i18n.t('stats_analysis.stats_col_max')
+    ]
 
     print(stats.round(4).to_string())
     print(f"{'='*80}\n")
@@ -600,7 +609,7 @@ def generate_research_plots(df, output_dir, csv_file):
     fig.text(0.5, -0.05, get_label('strategy_map', LANG), fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(plot1_path, dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"[OK] Sharpness vs PSNR 散布図: {plot1_path}")
+    print(i18n.t('stats_analysis.plot_strategy_map').format(path=plot1_path))
 
 
     # 2. LPIPS 箱ひげ図（安定性を示す）
@@ -627,7 +636,7 @@ def generate_research_plots(df, output_dir, csv_file):
     plot2_path = output_dir / 'stability_lpips_boxplot.png'
     plt.savefig(plot2_path, dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"[OK] LPIPS 箱ひげ図: {plot2_path}")
+    print(i18n.t('stats_analysis.plot_lpips_boxplot').format(path=plot2_path))
 
 
     # 3. SSIM vs PSNR 散布図（相関確認・異常検出）
@@ -659,7 +668,7 @@ def generate_research_plots(df, output_dir, csv_file):
     fig.text(0.5, -0.05, 'SSIM vs PSNR Correlation\nOutliers = Hallucination Candidates', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(plot3_path, dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"[OK] SSIM vs PSNR 散布図: {plot3_path}")
+    print(i18n.t('stats_analysis.plot_ssim_psnr_correlation').format(path=plot3_path))
 
 
     # 4. Noise vs Artifacts 散布図
