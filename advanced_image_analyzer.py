@@ -2518,8 +2518,8 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         texture1 = analyze_texture(img1_gray)
         texture2 = analyze_texture(img2_gray)
 
-        print(f"画像1テクスチャ複雑度: {texture1['texture_complexity']:.2f}")
-        print(f"画像2テクスチャ複雑度: {texture2['texture_complexity']:.2f}")
+        print(i18n.t('analyzer.texture_complexity_img1').format(value=texture1['texture_complexity']))
+        print(i18n.t('analyzer.texture_complexity_img2').format(value=texture2['texture_complexity']))
 
         results['texture'] = {
             'img1': texture1,
@@ -2527,22 +2527,26 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         }
 
     # 13. 局所的品質分析
-    print("\n【13. 局所的品質分析（パッチベースSSIM）】")
-    print(f"パッチサイズ: {patch_size}×{patch_size}ピクセル")
+    print(i18n.t('analyzer.section_13'))
+    print(i18n.t('analyzer.patch_size').format(size=patch_size))
 
     if comparison_mode == 'evaluation' and img_original_rgb is not None:
         # 評価モード：超解像画像と元画像を比較
         local_ssim_1d, local_ssim_2d, patch_grid = analyze_local_quality(img2_rgb, img_original_rgb, patch_size=patch_size)
-        print("超解像画像 vs 元画像の局所品質:")
+        print(i18n.t('analyzer.local_quality_sr_vs_orig'))
     else:
         # 比較モード（将来実装）または元画像なし
         local_ssim_1d, local_ssim_2d, patch_grid = analyze_local_quality(img1_rgb, img2_rgb, patch_size=patch_size)
 
-    print(f"パッチ数: {patch_grid[0]} × {patch_grid[1]} = {patch_grid[0] * patch_grid[1]}ブロック")
-    print(f"局所SSIM 平均: {np.mean(local_ssim_1d):.4f}")
-    print(f"局所SSIM 最小: {np.min(local_ssim_1d):.4f}")
-    print(f"局所SSIM 最大: {np.max(local_ssim_1d):.4f}")
-    print(f"局所SSIM 標準偏差: {np.std(local_ssim_1d):.4f}")
+    print(i18n.t('analyzer.patch_count').format(
+        rows=patch_grid[0],
+        cols=patch_grid[1],
+        total=patch_grid[0] * patch_grid[1]
+    ))
+    print(i18n.t('analyzer.local_ssim_mean').format(value=np.mean(local_ssim_1d)))
+    print(i18n.t('analyzer.local_ssim_min').format(value=np.min(local_ssim_1d)))
+    print(i18n.t('analyzer.local_ssim_max').format(value=np.max(local_ssim_1d)))
+    print(i18n.t('analyzer.local_ssim_std').format(value=np.std(local_ssim_1d)))
 
     # 絶対評価
     mean_local_ssim = np.mean(local_ssim_1d)
@@ -2550,16 +2554,16 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
 
     if comparison_mode == 'evaluation':
         if mean_local_ssim >= 0.90:
-            print(f"  評価: [OK] 優秀（局所品質均一: 平均SSIM {mean_local_ssim:.4f}）")
+            print(i18n.t('analyzer.eval_local_excellent').format(mean=mean_local_ssim))
         elif mean_local_ssim >= 0.75:
-            print(f"  評価: [OK] 高品質（局所品質良好: 平均SSIM {mean_local_ssim:.4f}）")
+            print(i18n.t('analyzer.eval_local_good').format(mean=mean_local_ssim))
         elif mean_local_ssim >= 0.60:
-            print(f"  評価: [WARNING] 許容範囲（局所品質やや低め: 平均SSIM {mean_local_ssim:.4f}）")
+            print(i18n.t('analyzer.eval_local_acceptable').format(mean=mean_local_ssim))
         else:
-            print(f"  評価: [ERROR] 低品質（局所品質不均一: 平均SSIM {mean_local_ssim:.4f}）")
+            print(i18n.t('analyzer.eval_local_poor').format(mean=mean_local_ssim))
 
         if std_local_ssim > 0.15:
-            print(f"  [WARNING] 標準偏差が高い（{std_local_ssim:.4f}）: ハルシネーション疑い")
+            print(i18n.t('analyzer.local_std_warning').format(std=std_local_ssim))
 
     results['local_quality'] = {
         'mean_ssim': round(np.mean(local_ssim_1d), 4),
@@ -2569,45 +2573,45 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
     }
 
     # 13.1 P6ヒートマップ生成（局所品質ばらつき可視化）
-    print("\n【13.1 P6ヒートマップ生成（局所品質ばらつき）】")
+    print(i18n.t('analyzer.section_13_1'))
 
     try:
         p6_heatmap_path = os.path.join(output_dir, 'p6_local_quality_heatmap.png')
         # 評価モードでは超解像画像、それ以外は従来通り画像1を使用
         reference_img = img2_rgb if (comparison_mode == 'evaluation' and img_original_rgb is not None) else img1_rgb
         generate_p6_heatmap(local_ssim_2d, reference_img, p6_heatmap_path, patch_size=patch_size)
-        print(f"[OK] P6ヒートマップを保存: {p6_heatmap_path}")
-        print(f"   - パッチサイズ: {patch_size}×{patch_size}ピクセル")
-        print(f"   - 標準偏差 {np.std(local_ssim_1d):.4f} が高いほどハルシネーション疑い")
-        print(f"   - 色分け（学術的基準）:")
-        print(f"     青 (0.95-1.00): 元画像に忠実")
-        print(f"     緑 (0.90-0.95): 良好")
-        print(f"     黄 (0.80-0.90): やや低下")
-        print(f"     橙 (0.70-0.80): 品質低下")
-        print(f"     赤 (0.00-0.70): ハルシネーション疑い")
+        print(i18n.t('analyzer.p6_heatmap_saved').format(path=p6_heatmap_path))
+        print(i18n.t('analyzer.p6_patch_size_info').format(size=patch_size))
+        print(i18n.t('analyzer.p6_std_hallucination').format(std=np.std(local_ssim_1d)))
+        print(i18n.t('analyzer.p6_color_scale'))
+        print(i18n.t('analyzer.p6_color_blue'))
+        print(i18n.t('analyzer.p6_color_green'))
+        print(i18n.t('analyzer.p6_color_yellow'))
+        print(i18n.t('analyzer.p6_color_orange'))
+        print(i18n.t('analyzer.p6_color_red'))
 
         # 13.2 インタラクティブHTML版ヒートマップ生成（論文補足資料用）
-        print("\n【13.2 インタラクティブHTML版ヒートマップ生成】")
+        print(i18n.t('analyzer.section_13_2'))
         p6_html_path = os.path.join(output_dir, 'p6_local_quality_heatmap_interactive.html')
         html_result = generate_p6_heatmap_interactive(local_ssim_2d, p6_html_path, patch_size=patch_size)
         if html_result:
-            print(f"[OK] ブラウザで開いて各ブロックの詳細値を確認できます")
+            print(i18n.t('analyzer.p6_html_success'))
         else:
-            print(f"[INFO] Plotlyがインストールされていません（pip install plotly）")
+            print(i18n.t('analyzer.p6_html_plotly_missing'))
 
         # 13.3 CSV形式での生データ出力（再現性・追試用）
-        print("\n【13.3 CSV形式での生データ出力】")
+        print(i18n.t('analyzer.section_13_3'))
         p6_csv_path = os.path.join(output_dir, 'p6_local_quality_data.csv')
         export_p6_data_csv(local_ssim_2d, p6_csv_path, patch_size=patch_size)
 
     except Exception as e:
         import traceback
-        print(f"[WARNING] P6ヒートマップ生成エラー: {e}")
-        print("[WARNING] 詳細なエラー情報:")
+        print(i18n.t('analyzer.p6_heatmap_error').format(error=e))
+        print(i18n.t('analyzer.p6_heatmap_error_detail'))
         traceback.print_exc()
 
     # 14. ヒストグラム類似度
-    print("\n【14. ヒストグラム類似度】")
+    print(i18n.t('analyzer.section_14'))
 
     if comparison_mode == 'evaluation' and img_original_gray is not None:
         # 評価モード：超解像画像と元画像のヒストグラム相関を計算
@@ -2615,23 +2619,23 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         hist_img2 = cv2.calcHist([img2_gray], [0], None, [256], [0, 256])
         hist_corr = cv2.compareHist(hist_orig, hist_img2, cv2.HISTCMP_CORREL)
 
-        print(f"超解像画像 vs 元画像 ヒストグラム相関: {hist_corr:.4f}")
+        print(i18n.t('analyzer.hist_corr_sr_vs_orig').format(value=hist_corr))
 
         # 絶対評価
         if hist_corr >= 0.95:
-            print(f"  評価: [OK] 優秀（相関 ≥ 0.95: ヒストグラムほぼ一致）")
+            print(i18n.t('analyzer.eval_hist_excellent'))
         elif hist_corr >= 0.85:
-            print(f"  評価: [OK] 高品質（相関 ≥ 0.85: 類似）")
+            print(i18n.t('analyzer.eval_hist_good'))
         elif hist_corr >= 0.70:
-            print(f"  評価: [WARNING] 許容範囲（相関 ≥ 0.70: やや差あり）")
+            print(i18n.t('analyzer.eval_hist_acceptable'))
         else:
-            print(f"  評価: [ERROR] 低品質（相関 < 0.70: 大きく異なる）")
+            print(i18n.t('analyzer.eval_hist_poor'))
     else:
         # 比較モード（将来実装）または元画像なし
         hist1 = cv2.calcHist([img1_gray], [0], None, [256], [0, 256])
         hist2 = cv2.calcHist([img2_gray], [0], None, [256], [0, 256])
         hist_corr = cv2.compareHist(hist1, hist2, cv2.HISTCMP_CORREL)
-        print(f"ヒストグラム相関: {hist_corr:.4f} (1.0 = 完全一致)")
+        print(i18n.t('analyzer.hist_corr_value').format(value=hist_corr))
 
     results['histogram_correlation'] = round(hist_corr, 4)
 
