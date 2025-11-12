@@ -82,6 +82,7 @@ def print_basic_statistics(df):
     """
     基本統計量の表示
     """
+    global i18n
 
     print(i18n.t('stats.basic_stats_header'))
     print(f"{'='*80}")
@@ -103,6 +104,7 @@ def compare_models(df, output_dir):
     """
     モデル別比較
     """
+    global i18n
 
     print(i18n.t('stats.model_ranking_header'))
     print(f"{'='*80}")
@@ -150,6 +152,7 @@ def analyze_correlations(df, output_dir):
     """
     17項目間の相関分析
     """
+    global i18n
 
     print(i18n.t('stats.correlation_header'))
     print(f"{'='*80}")
@@ -199,6 +202,7 @@ def suggest_thresholds(df, output_dir):
     """
     Suggest evidence-based thresholds
     """
+    global LANG
 
     print(f"\n[TIP] Recommended Threshold Suggestions:")
     print(f"{'='*80}")
@@ -275,6 +279,7 @@ def suggest_hallucination_logic(df, output_dir):
     - 9つの組み合わせパターン
     - 17の単独閾値判定
     """
+    global i18n
 
     print(i18n.t('stats.hallucination_detection_header'))
     print(f"{'='*80}")
@@ -538,6 +543,7 @@ def generate_research_plots(df, output_dir, csv_file):
         output_dir: 出力ディレクトリ
         csv_file: CSVファイルのパス（BBI計算でdetailedディレクトリ検索に使用）
     """
+    global i18n, LANG
 
     print(f"\n[STATS] 研究用プロット生成中:")
     print(f"{'='*80}")
