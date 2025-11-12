@@ -2660,8 +2660,8 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         texture2 = results['texture']['img2']
 
     # 15. 総合スコア計算（絶対評価）
-    print("\n【15. 総合評価スコア】")
-    print("=" * 80)
+    print(i18n.t('analyzer.section_15'))
+    print(i18n.t('analyzer.separator_line'))
 
     # 各指標を絶対値で評価（両画像を独立して採点）
 
@@ -2746,54 +2746,54 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
               artifact2_score + edge2_score + texture2_score) / 7
 
     if comparison_mode == 'evaluation':
-        print(f"元画像総合スコア: {total1:.1f} / 100")
-        print(f"超解像画像総合スコア: {total2:.1f} / 100")
+        print(i18n.t('analyzer.score_original_total').format(total=total1))
+        print(i18n.t('analyzer.score_sr_total').format(total=total2))
 
         if total2 > total1:
-            print(f"→ 超解像画像が {total2 - total1:.1f}点 優位")
+            print(i18n.t('analyzer.score_sr_superior').format(diff=total2 - total1))
         elif total1 > total2:
-            print(f"→ 元画像が {total1 - total2:.1f}点 優位（超解像で品質劣化）")
+            print(i18n.t('analyzer.score_original_superior').format(diff=total1 - total2))
         else:
-            print(f"→ 同等の品質")
+            print(i18n.t('analyzer.score_equal'))
 
-        print("\n【スコア内訳（7項目で評価）】")
-        print(f"             元画像  超解像")
-        print(f"シャープネス:   {sharp1_score:5.1f}   {sharp2_score:5.1f}")
-        print(f"コントラスト:   {contrast1_score:5.1f}   {contrast2_score:5.1f}")
-        print(f"エントロピー:   {entropy1_score:5.1f}   {entropy2_score:5.1f}")
-        print(f"ノイズ対策:     {noise1_score:5.1f}   {noise2_score:5.1f}")
-        print(f"エッジ保持:     {edge1_score:5.1f}   {edge2_score:5.1f}")
-        print(f"歪み抑制:       {artifact1_score:5.1f}   {artifact2_score:5.1f}")
-        print(f"テクスチャ:     {texture1_score:5.1f}   {texture2_score:5.1f}")
+        print(i18n.t('analyzer.score_breakdown_header'))
+        print(i18n.t('analyzer.score_breakdown_columns_eval'))
+        print(i18n.t('analyzer.score_sharpness').format(score1=sharp1_score, score2=sharp2_score))
+        print(i18n.t('analyzer.score_contrast').format(score1=contrast1_score, score2=contrast2_score))
+        print(i18n.t('analyzer.score_entropy').format(score1=entropy1_score, score2=entropy2_score))
+        print(i18n.t('analyzer.score_noise').format(score1=noise1_score, score2=noise2_score))
+        print(i18n.t('analyzer.score_edge').format(score1=edge1_score, score2=edge2_score))
+        print(i18n.t('analyzer.score_artifact').format(score1=artifact1_score, score2=artifact2_score))
+        print(i18n.t('analyzer.score_texture').format(score1=texture1_score, score2=texture2_score))
     else:
-        print(f"画像1総合スコア: {total1:.1f} / 100")
-        print(f"画像2総合スコア: {total2:.1f} / 100")
+        print(i18n.t('analyzer.score_img1_total').format(total=total1))
+        print(i18n.t('analyzer.score_img2_total').format(total=total2))
 
         if total2 > total1:
-            print(f"→ 画像2が {total2 - total1:.1f}点 優位")
+            print(i18n.t('analyzer.score_img2_superior').format(diff=total2 - total1))
         elif total1 > total2:
-            print(f"→ 画像1が {total1 - total2:.1f}点 優位")
+            print(i18n.t('analyzer.score_img1_superior').format(diff=total1 - total2))
         else:
-            print(f"→ 同等の品質")
+            print(i18n.t('analyzer.score_equal'))
 
-        print("\n【スコア内訳（7項目で評価）】")
-        print(f"             画像1   画像2")
-        print(f"シャープネス:   {sharp1_score:5.1f}   {sharp2_score:5.1f}")
-        print(f"コントラスト:   {contrast1_score:5.1f}   {contrast2_score:5.1f}")
-        print(f"エントロピー:   {entropy1_score:5.1f}   {entropy2_score:5.1f}")
-        print(f"ノイズ対策:     {noise1_score:5.1f}   {noise2_score:5.1f}")
-        print(f"エッジ保持:     {edge1_score:5.1f}   {edge2_score:5.1f}")
-        print(f"歪み抑制:       {artifact1_score:5.1f}   {artifact2_score:5.1f}")
-        print(f"テクスチャ:     {texture1_score:5.1f}   {texture2_score:5.1f}")
+        print(i18n.t('analyzer.score_breakdown_header'))
+        print(i18n.t('analyzer.score_breakdown_columns_comp'))
+        print(i18n.t('analyzer.score_sharpness').format(score1=sharp1_score, score2=sharp2_score))
+        print(i18n.t('analyzer.score_contrast').format(score1=contrast1_score, score2=contrast2_score))
+        print(i18n.t('analyzer.score_entropy').format(score1=entropy1_score, score2=entropy2_score))
+        print(i18n.t('analyzer.score_noise').format(score1=noise1_score, score2=noise2_score))
+        print(i18n.t('analyzer.score_edge').format(score1=edge1_score, score2=edge2_score))
+        print(i18n.t('analyzer.score_artifact').format(score1=artifact1_score, score2=artifact2_score))
+        print(i18n.t('analyzer.score_texture').format(score1=texture1_score, score2=texture2_score))
 
-    print(f"\n【類似度指標（参考値）】")
-    print(f"  SSIM:        {ssim_score_val:.1f}/100")
-    print(f"  MS-SSIM:     {ms_ssim_score_val:.1f}/100")
-    print(f"  PSNR:        {psnr_score_val:.1f}/100")
-    print(f"  LPIPS:       {lpips_score_val:.1f}/100")
-    print(f"  色差:        {color_diff_score:.1f}/100")
-    print(f"  局所品質:    {local_quality_score:.1f}/100")
-    print(f"  ヒストグラム: {histogram_score:.1f}/100")
+    print(i18n.t('analyzer.similarity_metrics_header'))
+    print(i18n.t('analyzer.similarity_ssim').format(value=ssim_score_val))
+    print(i18n.t('analyzer.similarity_msssim').format(value=ms_ssim_score_val))
+    print(i18n.t('analyzer.similarity_psnr').format(value=psnr_score_val))
+    print(i18n.t('analyzer.similarity_lpips').format(value=lpips_score_val))
+    print(i18n.t('analyzer.similarity_color_diff').format(value=color_diff_score))
+    print(i18n.t('analyzer.similarity_local_quality').format(value=local_quality_score))
+    print(i18n.t('analyzer.similarity_histogram').format(value=histogram_score))
 
     results['total_score'] = {
         'img1': round(total1, 1),
@@ -2823,8 +2823,8 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
     }
 
     # 16. 結果可視化
-    print("\n【16. 結果可視化を生成中...】")
-    print_usage_status("画像生成開始")
+    print(i18n.t('analyzer.section_16'))
+    print_usage_status(i18n.t('analyzer.viz_generation_start'), i18n)
 
     # 詳細可視化
     create_detailed_visualizations(img1_rgb, img2_rgb, img1_gray, img2_gray, output_dir)
@@ -2833,7 +2833,7 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
     img1_name = os.path.basename(img1_path)
     img2_name = os.path.basename(img2_path)
     report_path = create_comparison_report(results, img1_name, img2_name, output_dir)
-    print(f"比較レポートを生成: {report_path}")
+    print(i18n.t('analyzer.report_generated').format(path=report_path))
 
     # 差分画像
     diff = cv2.absdiff(img1, img2)
@@ -2871,19 +2871,19 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
     with open(json_path, 'w', encoding='utf-8') as f:
         json.dump(results, f, indent=2, ensure_ascii=False, cls=NumpyEncoder)
 
-    print(f"結果を '{output_dir}/' に保存しました")
-    print("  - comparison_report.png: *比較レポート（グラフとスコア表示）*")
-    print("  - detailed_analysis.png: 詳細分析可視化（12枚の分析画像）")
-    print("  - difference.png: 差分画像")
-    print("  - heatmap.png: 差分ヒートマップ")
-    print("  - p6_local_quality_heatmap.png: *LQD Map (Local Quality Distribution Map) - LFV Pattern Detection*")
-    print("  - comparison.png: 3枚並べて比較")
-    print("  - edges_*.png: エッジ検出結果")
-    print("  - analysis_results.json: 分析結果データ（JSON形式）")
+    print(i18n.t('analyzer.results_saved').format(dir=output_dir))
+    print(i18n.t('analyzer.output_comparison_report'))
+    print(i18n.t('analyzer.output_detailed_analysis'))
+    print(i18n.t('analyzer.output_difference'))
+    print(i18n.t('analyzer.output_heatmap'))
+    print(i18n.t('analyzer.output_p6_heatmap'))
+    print(i18n.t('analyzer.output_comparison'))
+    print(i18n.t('analyzer.output_edges'))
+    print(i18n.t('analyzer.output_json'))
 
-    print("\n" + "=" * 80)
-    print("分析完了")
-    print("=" * 80)
+    print("\n" + i18n.t('analyzer.separator_line'))
+    print(i18n.t('analyzer.analysis_complete'))
+    print(i18n.t('analyzer.separator_line'))
 
     # 結果の解釈を追加
     # 評価モードと比較モードを結果に保存
@@ -2899,13 +2899,17 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         # 解釈結果も保存
         results['interpretation'] = interpretation
     except Exception as e:
-        print(f"解釈生成エラー: {e}")
+        print(i18n.t('analyzer.interpretation_error').format(error=e))
 
     return results
 
 # 使用例
 if __name__ == "__main__":
     import sys
+    from translations import I18n
+
+    # Initialize i18n for main entry point
+    i18n_main = I18n()
 
     if len(sys.argv) >= 3:
         # コマンドライン引数から画像パスを取得
@@ -2918,9 +2922,9 @@ if __name__ == "__main__":
         img2_path = 'upscayl_oiran.png'
         output_dir = 'analysis_results'
 
-    print(f"元画像: {img1_path}")
-    print(f"AI処理結果: {img2_path}")
-    print(f"出力先: {output_dir}")
+    print(i18n_main.t('analyzer.input_original').format(path=img1_path))
+    print(i18n_main.t('analyzer.input_ai_result').format(path=img2_path))
+    print(i18n_main.t('analyzer.output_dir').format(path=output_dir))
     print()
 
     analyze_images(img1_path, img2_path, output_dir)
