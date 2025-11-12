@@ -307,11 +307,11 @@ def suggest_hallucination_logic(df, output_dir):
         detected_patterns[idx].append('P1:SSIM高×PSNR低')
     pattern_stats['P1'] = {'count': len(pattern1), 'rate': len(pattern1)/len(df)*100}
 
-    print(f"P1: SSIM高 × PSNR低（構造類似だがピクセル値相違）")
+    print(i18n.t('stats_analysis.p1_title'))
     print(i18n.t('stats_analysis.fixed_threshold').format(count=len(pattern1a)))
     print(i18n.t('stats_analysis.dynamic_threshold').format(ssim=ssim_high, psnr=psnr_low, count=len(pattern1b)))
-    print(f"    統合後: {len(pattern1)}件 ({len(pattern1)/len(df)*100:.1f}%)")
-    print(f"    リスク: 中～高（AIが構造を模倣した可能性）")
+    print(i18n.t('stats_analysis.p1_unified').format(count=len(pattern1), percent=len(pattern1)/len(df)*100))
+    print(i18n.t('stats_analysis.p1_risk'))
 
     # === パターン2: Sharpness高 × Noise高 ===
     sharp_high = df['sharpness'].quantile(0.75)
@@ -322,10 +322,10 @@ def suggest_hallucination_logic(df, output_dir):
         detected_patterns[idx].append('P2:シャープ高×Noise高')
     pattern_stats['P2'] = {'count': len(pattern2), 'rate': len(pattern2)/len(df)*100}
 
-    print(f"\nP2: Sharpness高 × Noise高（過剰処理）")
-    print(f"    条件: シャープ>{sharp_high:.2f} & Noise>{noise_high:.2f}")
-    print(f"    該当: {len(pattern2)}件 ({len(pattern2)/len(df)*100:.1f}%)")
-    print(f"    リスク: 中（過度なシャープ化によるNoise増幅）")
+    print(i18n.t('stats_analysis.p2_title'))
+    print(i18n.t('stats_analysis.p2_condition').format(sharp=sharp_high, noise=noise_high))
+    print(i18n.t('stats_analysis.p2_match').format(count=len(pattern2), percent=len(pattern2)/len(df)*100))
+    print(i18n.t('stats_analysis.p2_risk'))
 
     # === パターン3: Edge Density高 × 局所品質低 ===
     edge_90 = df['edge_density'].quantile(0.90)
@@ -336,10 +336,10 @@ def suggest_hallucination_logic(df, output_dir):
         detected_patterns[idx].append('P3:エッジ高×品質低')
     pattern_stats['P3'] = {'count': len(pattern3), 'rate': len(pattern3)/len(df)*100}
 
-    print(f"\nP3: Edge Density高 × 局所品質低（不自然なエッジ）")
-    print(f"    条件: エッジ>{edge_90:.2f} & 局所品質<{quality_25:.4f}")
-    print(f"    該当: {len(pattern3)}件 ({len(pattern3)/len(df)*100:.1f}%)")
-    print(f"    リスク: 中～高（エッジ追加が不均一）")
+    print(i18n.t('stats_analysis.p3_title'))
+    print(i18n.t('stats_analysis.p3_condition').format(edge=edge_90, quality=quality_25))
+    print(i18n.t('stats_analysis.p3_match').format(count=len(pattern3), percent=len(pattern3)/len(df)*100))
+    print(i18n.t('stats_analysis.p3_risk'))
 
     # === パターン4: Artifacts異常高 ===
     artifact_90 = df['artifact_total'].quantile(0.90)
@@ -349,10 +349,10 @@ def suggest_hallucination_logic(df, output_dir):
         detected_patterns[idx].append('P4:Artifacts高')
     pattern_stats['P4'] = {'count': len(pattern4), 'rate': len(pattern4)/len(df)*100}
 
-    print(f"\nP4: Artifacts異常高（GAN特有の歪み）")
-    print(f"    条件: Artifacts>{artifact_90:.2f}")
-    print(f"    該当: {len(pattern4)}件 ({len(pattern4)/len(df)*100:.1f}%)")
-    print(f"    リスク: 高（リンギング・ブロックNoise）")
+    print(i18n.t('stats_analysis.p4_title'))
+    print(i18n.t('stats_analysis.p4_condition').format(artifact=artifact_90))
+    print(i18n.t('stats_analysis.p4_match').format(count=len(pattern4), percent=len(pattern4)/len(df)*100))
+    print(i18n.t('stats_analysis.p4_risk'))
 
     # === パターン5: LPIPS高 × SSIM高 ===
     lpips_75 = df['lpips'].quantile(0.75)
@@ -363,10 +363,10 @@ def suggest_hallucination_logic(df, output_dir):
         detected_patterns[idx].append('P5:LPIPS高×SSIM高')
     pattern_stats['P5'] = {'count': len(pattern5), 'rate': len(pattern5)/len(df)*100}
 
-    print(f"\nP5: LPIPS高 × SSIM高（知覚と構造の矛盾）")
-    print(f"    条件: LPIPS>{lpips_75:.4f} & SSIM>{ssim_75:.4f}")
-    print(f"    該当: {len(pattern5)}件 ({len(pattern5)/len(df)*100:.1f}%)")
-    print(f"    リスク: 中（構造は似ているが知覚的に異なる）")
+    print(i18n.t('stats_analysis.p5_title'))
+    print(i18n.t('stats_analysis.p5_condition').format(lpips=lpips_75, ssim=ssim_75))
+    print(i18n.t('stats_analysis.p5_match').format(count=len(pattern5), percent=len(pattern5)/len(df)*100))
+    print(i18n.t('stats_analysis.p5_risk'))
 
     # === パターン6: 局所品質ばらつき大 ===
     if 'local_quality_std' in df.columns:
@@ -377,13 +377,13 @@ def suggest_hallucination_logic(df, output_dir):
             detected_patterns[idx].append('P6:品質ばらつき大')
         pattern_stats['P6'] = {'count': len(pattern6), 'rate': len(pattern6)/len(df)*100}
 
-        print(f"\nP6: 局所品質ばらつき大（不均一な処理）")
-        print(f"    条件: 局所SSIM標準偏差>{quality_std_75:.4f}")
-        print(f"    該当: {len(pattern6)}件 ({len(pattern6)/len(df)*100:.1f}%)")
-        print(f"    リスク: 中～高（領域によって品質が異なる）")
+        print(i18n.t('stats_analysis.p6_title'))
+        print(i18n.t('stats_analysis.p6_condition').format(std=quality_std_75))
+        print(i18n.t('stats_analysis.p6_match').format(count=len(pattern6), percent=len(pattern6)/len(df)*100))
+        print(i18n.t('stats_analysis.p6_risk'))
     else:
         pattern_stats['P6'] = {'count': 0, 'rate': 0}
-        print(f"\nP6: 局所品質ばらつき大 → データなし（スキップ）")
+        print(i18n.t('stats_analysis.local_quality_no_data'))
 
     # === パターン7: Entropy低 × High-Freq高 ===
     entropy_25 = df['entropy'].quantile(0.25)
@@ -394,10 +394,10 @@ def suggest_hallucination_logic(df, output_dir):
         detected_patterns[idx].append('P7:Entropy低×高周波高')
     pattern_stats['P7'] = {'count': len(pattern7), 'rate': len(pattern7)/len(df)*100}
 
-    print(f"\nP7: Entropy低 × 高周波高（反復パターン）")
-    print(f"    条件: Entropy<{entropy_25:.3f} & 高周波>{highfreq_75:.4f}")
-    print(f"    該当: {len(pattern7)}件 ({len(pattern7)/len(df)*100:.1f}%)")
-    print(f"    リスク: 中（人工的な反復パターン）")
+    print(i18n.t('stats_analysis.p7_title'))
+    print(i18n.t('stats_analysis.p7_condition').format(entropy=entropy_25, freq=highfreq_75))
+    print(i18n.t('stats_analysis.p7_match').format(count=len(pattern7), percent=len(pattern7)/len(df)*100))
+    print(i18n.t('stats_analysis.p7_risk'))
 
     # === パターン8: Contrast異常 × Histogram相関低 ===
     contrast_90 = df['contrast'].quantile(0.90)
@@ -408,10 +408,10 @@ def suggest_hallucination_logic(df, output_dir):
         detected_patterns[idx].append('P8:Contrast異常×Hist相関低')
     pattern_stats['P8'] = {'count': len(pattern8), 'rate': len(pattern8)/len(df)*100}
 
-    print(f"\nP8: Contrast異常 × Histogram相関低（濃度分布崩壊）")
-    print(f"    条件: Contrast>{contrast_90:.2f} & Hist相関<{histcorr_25:.4f}")
-    print(f"    該当: {len(pattern8)}件 ({len(pattern8)/len(df)*100:.1f}%)")
-    print(f"    リスク: 中（Contrast強調で濃度分布が崩れている）")
+    print(i18n.t('stats_analysis.p8_title'))
+    print(i18n.t('stats_analysis.p8_condition').format(contrast=contrast_90, hist=histcorr_25))
+    print(i18n.t('stats_analysis.p8_match').format(count=len(pattern8), percent=len(pattern8)/len(df)*100))
+    print(i18n.t('stats_analysis.p8_risk'))
 
     # === パターン9: MS-SSIM低 × SSIM低 ===
     msssim_25 = df['ms_ssim'].quantile(0.25)
@@ -422,14 +422,14 @@ def suggest_hallucination_logic(df, output_dir):
         detected_patterns[idx].append('P9:MS-SSIM低×SSIM低')
     pattern_stats['P9'] = {'count': len(pattern9), 'rate': len(pattern9)/len(df)*100}
 
-    print(f"\nP9: MS-SSIM低 × SSIM低（総合的低品質）")
-    print(f"    条件: MS-SSIM<{msssim_25:.4f} & SSIM<{ssim_25:.4f}")
-    print(f"    該当: {len(pattern9)}件 ({len(pattern9)/len(df)*100:.1f}%)")
-    print(f"    リスク: 高（複数スケールで品質劣化）")
+    print(i18n.t('stats_analysis.p9_title'))
+    print(i18n.t('stats_analysis.p9_condition').format(msssim=msssim_25, ssim=ssim_25))
+    print(i18n.t('stats_analysis.p9_match').format(count=len(pattern9), percent=len(pattern9)/len(df)*100))
+    print(i18n.t('stats_analysis.p9_risk'))
 
     # ========== 単独パターン（17項目） ==========
     print(f"\n{'='*80}")
-    print(f"【単独閾値判定パターン（17項目）】")
+    print(i18n.t('stats_analysis.single_threshold_patterns'))
     print(f"{'='*80}")
 
     single_pattern_count = 0
@@ -443,7 +443,7 @@ def suggest_hallucination_logic(df, output_dir):
         ('histogram_corr', 'HistCorr低')
     ]
 
-    print(f"\n高い方が良い指標（下位10%を異常検出）:")
+    print(i18n.t('stats_analysis.high_is_better'))
     for col, name in high_is_good:
         if col in df.columns:
             threshold = df[col].quantile(0.10)
@@ -452,7 +452,8 @@ def suggest_hallucination_logic(df, output_dir):
             for idx in detected.index:
                 detected_patterns[idx].append(f'単独:{name}')
             single_pattern_count += len(detected)
-            print(f"  {name:20s}: <{threshold:8.4f} → {len(detected):4d}件 ({len(detected)/len(df)*100:5.1f}%)")
+            print(i18n.t('stats_analysis.single_pattern_format').format(
+                name=name, threshold=threshold, count=len(detected), percent=len(detected)/len(df)*100))
 
     # 低い方が良い指標（異常に高い = 上位10%）
     low_is_good = [
@@ -460,7 +461,7 @@ def suggest_hallucination_logic(df, output_dir):
         ('artifact_total', 'Artifacts高'), ('delta_e', 'DeltaE高')
     ]
 
-    print(f"\n低い方が良い指標（上位10%を異常検出）:")
+    print(i18n.t('stats_analysis.low_is_better'))
     for col, name in low_is_good:
         if col in df.columns:
             threshold = df[col].quantile(0.90)
@@ -469,7 +470,8 @@ def suggest_hallucination_logic(df, output_dir):
             for idx in detected.index:
                 detected_patterns[idx].append(f'単独:{name}')
             single_pattern_count += len(detected)
-            print(f"  {name:20s}: >{threshold:8.4f} → {len(detected):4d}件 ({len(detected)/len(df)*100:5.1f}%)")
+            print(i18n.t('stats_analysis.single_pattern_format_high').format(
+                name=name, threshold=threshold, count=len(detected), percent=len(detected)/len(df)*100))
 
     if 'local_quality_std' in df.columns:
         threshold = df['local_quality_std'].quantile(0.90)
@@ -478,9 +480,10 @@ def suggest_hallucination_logic(df, output_dir):
         for idx in detected.index:
             detected_patterns[idx].append(f'単独:LocalQualityStd高')
         single_pattern_count += len(detected)
-        print(f"  {'LocalQualityStd高':20s}: >{threshold:8.4f} → {len(detected):4d}件 ({len(detected)/len(df)*100:5.1f}%)")
+        print(i18n.t('stats_analysis.single_pattern_format_high').format(
+            name='LocalQualityStd高', threshold=threshold, count=len(detected), percent=len(detected)/len(df)*100))
 
-    print(f"\n単独パターン合計検出: {single_pattern_count}件（延べ数）")
+    print(i18n.t('stats_analysis.single_pattern_total').format(count=single_pattern_count))
 
     # ========== 総合リスクスコア計算 ==========
     print(f"\n{'='*80}")
@@ -493,7 +496,7 @@ def suggest_hallucination_logic(df, output_dir):
     low_confidence = df[(detection_count >= 1) & (detection_count < 3)]  # 1-2パターン
     no_detection = df[detection_count == 0]  # 検出なし（正常）
 
-    print(f"\n信頼度別分類:")
+    print(i18n.t('stats_analysis.confidence_classification'))
     print(i18n.t('stats_analysis.high_confidence').format(count=len(high_confidence), percent=len(high_confidence)/len(df)*100))
     print(i18n.t('stats_analysis.medium_confidence').format(count=len(medium_confidence), percent=len(medium_confidence)/len(df)*100))
     print(i18n.t('stats_analysis.low_confidence').format(count=len(low_confidence), percent=len(low_confidence)/len(df)*100))
@@ -529,7 +532,7 @@ def suggest_hallucination_logic(df, output_dir):
     summary_df = pd.DataFrame(summary_data)
     summary_path = output_dir / 'pattern_detection_summary.csv'
     summary_df.to_csv(summary_path, index=False, encoding='utf-8-sig')
-    print(f"[SAVE] パターン別サマリー保存: {summary_path}")
+    print(i18n.t('stats_analysis.pattern_summary_saved').format(path=summary_path))
 
     print(f"{'='*80}\n")
 
@@ -672,7 +675,7 @@ def generate_research_plots(df, output_dir, csv_file):
     fig.text(0.5, -0.05, get_label('noise_artifact', LANG), fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(plot4_path, dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"[OK] Noise vs Artifacts: {plot4_path}")
+    print(i18n.t('stats_analysis.plot_noise_artifact').format(path=plot4_path))
 
 
     # 5. モデル別レーダーチャート（主要6指標）
@@ -759,7 +762,7 @@ def generate_research_plots(df, output_dir, csv_file):
     plot6_path = output_dir / 'violin_plots_all_metrics.png'
     plt.savefig(plot6_path, dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"[OK] 17項目バイオリンプロット: {plot6_path}")
+    print(i18n.t('stats_analysis.plot_violin').format(path=plot6_path))
 
     # ===== ハルシネーション検出系プロット =====
 
@@ -823,7 +826,7 @@ def generate_research_plots(df, output_dir, csv_file):
     plt.tight_layout()
     plt.savefig(output_dir / 'hallucination_sharpness_vs_noise.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"[OK] ハルシネーション検出②（Sharpness×Noise）")
+    print(i18n.t('stats_analysis.hallucination_plot2'))
 
 
     # 9. Edge Density × Local Quality Std Dev
@@ -851,7 +854,7 @@ def generate_research_plots(df, output_dir, csv_file):
     plt.tight_layout()
     plt.savefig(output_dir / 'hallucination_edge_vs_local_std.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"[OK] ハルシネーション検出③（エッジ×局所品質）")
+    print(i18n.t('stats_analysis.hallucination_plot3'))
 
 
     # 10. 高周波成分 × Entropy
@@ -877,7 +880,7 @@ def generate_research_plots(df, output_dir, csv_file):
     plt.tight_layout()
     plt.savefig(output_dir / 'hallucination_highfreq_vs_entropy.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"[OK] ハルシネーション検出④（高周波×Entropy）")
+    print(i18n.t('stats_analysis.hallucination_plot4'))
 
 
     # ===== 品質トレードオフ系プロット =====
@@ -896,7 +899,7 @@ def generate_research_plots(df, output_dir, csv_file):
     plt.tight_layout()
     plt.savefig(output_dir / 'tradeoff_ssim_vs_noise.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"[OK] トレードオフ①（SSIM×Noise）")
+    print(i18n.t('stats_analysis.plot_tradeoff_1'))
 
 
     # 12. PSNR × Contrast
@@ -916,7 +919,7 @@ def generate_research_plots(df, output_dir, csv_file):
     fig.text(0.5, -0.05, get_label('tradeoff_psnr_contrast', LANG), fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'tradeoff_psnr_vs_contrast.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"[OK] トレードオフ②（PSNR×Contrast）")
+    print(i18n.t('stats_analysis.plot_tradeoff_2'))
 
 
     # 13. Sharpness × Artifacts
@@ -936,7 +939,7 @@ def generate_research_plots(df, output_dir, csv_file):
     fig.text(0.5, -0.05, get_label('tradeoff_sharpness_artifact', LANG), fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'tradeoff_sharpness_vs_artifact.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"[OK] トレードオフ③（Sharpness×Artifacts）")
+    print(i18n.t('stats_analysis.plot_tradeoff_3'))
 
 
     # 14. LPIPS × MS-SSIM
@@ -956,7 +959,7 @@ def generate_research_plots(df, output_dir, csv_file):
     fig.text(0.5, -0.05, get_label('tradeoff_lpips_msssim', LANG), fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'tradeoff_lpips_vs_msssim.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"[OK] トレードオフ④（LPIPS×MS-SSIM）")
+    print(i18n.t('stats_analysis.plot_tradeoff_4'))
 
 
     # 15. テクスチャ × 高周波成分
@@ -976,7 +979,7 @@ def generate_research_plots(df, output_dir, csv_file):
     fig.text(0.5, -0.05, get_label('tradeoff_texture_freq', LANG), fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'tradeoff_texture_vs_highfreq.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"[OK] トレードオフ⑤（テクスチャ×高周波）")
+    print(i18n.t('stats_analysis.plot_tradeoff_5'))
 
 
     # ===== 医療画像特化系プロット =====
@@ -998,7 +1001,7 @@ def generate_research_plots(df, output_dir, csv_file):
     fig.text(0.5, -0.05, get_label('medical_contrast_histogram', LANG), fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'medical_contrast_vs_histogram.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"[OK] 医療特化①（Contrast×ヒストグラム）")
+    print(i18n.t('stats_analysis.plot_medical_1'))
 
 
     # 17. Edge Density × Local Quality Mean
@@ -1018,7 +1021,7 @@ def generate_research_plots(df, output_dir, csv_file):
     fig.text(0.5, -0.05, get_label('medical_edge_quality', LANG), fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'medical_edge_vs_local_quality.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"[OK] 医療特化②（エッジ×局所品質）")
+    print(i18n.t('stats_analysis.plot_medical_2'))
 
 
     # 18. Noise × Local Quality Std Dev
@@ -1038,7 +1041,7 @@ def generate_research_plots(df, output_dir, csv_file):
     fig.text(0.5, -0.05, get_label('medical_noise_std', LANG), fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'medical_noise_vs_local_std.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"[OK] 医療特化③（Noise×局所品質SD）")
+    print(i18n.t('stats_analysis.plot_medical_3'))
 
 
     # 19. 色差ΔE × LAB Lightness
@@ -1058,13 +1061,13 @@ def generate_research_plots(df, output_dir, csv_file):
     fig.text(0.5, -0.05, get_label('medical_deltae_lab', LANG), fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'medical_deltae_vs_lab.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"[OK] 医療特化④（色差×LAB Lightness）")
+    print(i18n.t('stats_analysis.plot_medical_4'))
 
 
     # ===== 分布・PCA系プロット =====
 
     # 20. Total Scoreヒストグラム（削除: total_scoreは分析対象外）
-    print(f"[SKIP] 分布①（Total Scoreヒストグラム: 分析対象外のためスキップ）")
+    print(i18n.t('stats_analysis.skip_histogram'))
 
 
     # 21. 主成分分析（PCA）プロット
@@ -1102,7 +1105,7 @@ def generate_research_plots(df, output_dir, csv_file):
     fig.text(0.5, -0.05, f"{get_label('pca_2d', LANG)}\n{get_label('cumulative_variance_prefix', LANG)} {sum(pca.explained_variance_ratio_)*100:.1f}%", fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'pca_2d_projection.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"[OK] 分布②（PCA 2次元プロット）")
+    print(i18n.t('stats_analysis.plot_pca_2d'))
 
 
     # 22. パーセンタイルバンドプロット（主要指標）
@@ -1139,7 +1142,7 @@ def generate_research_plots(df, output_dir, csv_file):
     fig.text(0.5, -0.05, f'Principal Component Analysis (PCA): 16 Metrics to 2D\nCumulative variance: {sum(pca.explained_variance_ratio_)*100:.1f}%', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'percentile_bands.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"[OK] 分布③（パーセンタイルバンド）")
+    print(i18n.t('stats_analysis.plot_percentile'))
 
 
     # 23. 寄与率グラフ（PCA）
@@ -1161,7 +1164,7 @@ def generate_research_plots(df, output_dir, csv_file):
     fig.text(0.5, -0.05, get_label('pca_variance', LANG), fontsize=18, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'pca_cumulative_variance.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"[OK] 分布④（PCA寄与率）")
+    print(i18n.t('stats_analysis.plot_pca_variance'))
 
 
     # ========================================
@@ -1170,7 +1173,7 @@ def generate_research_plots(df, output_dir, csv_file):
 
     # 24. テクスチャ依存の証明: Texture Complexity vs Local Quality Min
     print(f"\n{'='*80}")
-    print(f"[LFV PROOF] LFV法則の理論的証明プロット生成中...")
+    print(i18n.t('stats_analysis.lfv_proof_header'))
     print(f"{'='*80}")
 
     plt.figure(figsize=(12, 8))
@@ -1222,7 +1225,7 @@ def generate_research_plots(df, output_dir, csv_file):
     fig.text(0.5, -0.05, title_text, fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'lfv_proof_texture_dependency.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"[OK] LFV証明①（テクスチャ依存性）r={correlation:.3f}")
+    print(i18n.t('stats_analysis.lfv_proof_1').format(correlation=correlation))
 
 
     # 25. 空間依存の証明: Local Quality Min の分布（境界への偏り）
@@ -1284,11 +1287,11 @@ def generate_research_plots(df, output_dir, csv_file):
     fig.text(0.5, -0.05, title_text, fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'lfv_proof_spatial_dependency.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"[OK] LFV証明②（空間依存性・境界偏り）")
+    print(i18n.t('stats_analysis.lfv_proof_2'))
 
 
     # ===== 新規: BBI（Boundary Bias Index）計算と統計的検定 =====
-    print(f"\n[INFO] BBI (Boundary Bias Index) 計算を開始...")
+    print(i18n.t('stats_analysis.bbi_calc_start'))
 
     # CSVファイルからdetailedディレクトリのパスを推定
     csv_path = Path(csv_file)
@@ -1297,14 +1300,14 @@ def generate_research_plots(df, output_dir, csv_file):
     detailed_dirs = list(results_dir.glob('detailed_*'))
 
     if not detailed_dirs:
-        print(f"[WARNING] 詳細データディレクトリ (detailed_*) が見つかりません。BBI計算をスキップします。")
+        print(i18n.t('stats_analysis.bbi_warning_no_dir'))
         bbi_mean = None
         boundary_p_value = None
         spatial_strength = 'N/A'
     else:
         # 最新のdetailedディレクトリを使用
         detailed_dir = sorted(detailed_dirs)[-1]
-        print(f"[INFO] 詳細データディレクトリ: {detailed_dir}")
+        print(i18n.t('stats_analysis.bbi_detailed_dir').format(path=detailed_dir))
 
         # LFVケースのみを抽出（25th percentile以下）
         lfv_df = df[df['local_quality_min'] < threshold].copy()
@@ -1367,11 +1370,11 @@ def generate_research_plots(df, output_dir, csv_file):
                 })
 
             except Exception as e:
-                print(f"[WARNING] {image_id} の処理中にエラー: {str(e)}")
+                print(i18n.t('stats_analysis.bbi_warning_error').format(id=image_id, error=str(e)))
                 continue
 
         if len(spatial_data) == 0:
-            print(f"[WARNING] 空間データが取得できませんでした。BBI計算をスキップします。")
+            print(i18n.t('stats_analysis.bbi_warning_no_data'))
             bbi_mean = None
             boundary_p_value = None
             spatial_strength = 'N/A'
@@ -1410,12 +1413,12 @@ def generate_research_plots(df, output_dir, csv_file):
 
             # 空間データCSV出力
             spatial_df.to_csv(output_dir / 'lfv_spatial_analysis.csv', index=False)
-            print(f"[OK] LFV空間分析データ（CSV出力: {len(spatial_df)}件）")
+            print(i18n.t('stats_analysis.bbi_spatial_data').format(count=len(spatial_df)))
 
-            print(f"\n[STATS] BBI (Boundary Bias Index): {bbi_mean:.3f}")
-            print(f"[STATS] Boundary Bias p-value: {boundary_p_value:.6f}")
-            print(f"[STATS] Boundary LFV Cases: {boundary_count}/{len(spatial_df)} ({boundary_count/len(spatial_df)*100:.1f}%)")
-            print(f"[STATS] Spatial Dependency: {spatial_strength}")
+            print(i18n.t('stats_analysis.bbi_stats_index').format(value=bbi_mean))
+            print(i18n.t('stats_analysis.bbi_stats_pvalue').format(value=boundary_p_value))
+            print(i18n.t('stats_analysis.bbi_stats_cases').format(boundary=boundary_count, total=len(spatial_df), percent=boundary_count/len(spatial_df)*100))
+            print(i18n.t('stats_analysis.bbi_stats_dependency').format(strength=spatial_strength))
 
             # 26. Plot: LFV Min SSIMパッチ座標の散布図（境界偏り可視化）
             plt.figure(figsize=(12, 10))
@@ -1494,7 +1497,7 @@ def generate_research_plots(df, output_dir, csv_file):
             fig.text(0.5, -0.05, title_text, fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
             plt.savefig(output_dir / 'lfv_proof_coordinate_distribution.png', dpi=300, bbox_inches='tight')
             plt.close()
-            print(f"[OK] LFV証明③（座標分布・BBI可視化）")
+            print(i18n.t('stats_analysis.lfv_proof_3'))
 
 
     # LFV証明サマリーをCSVに出力（BBIと空間依存性を追加）
@@ -1510,14 +1513,14 @@ def generate_research_plots(df, output_dir, csv_file):
         'spatial_dependency_strength': [spatial_strength]
     }
     pd.DataFrame(lfv_summary).to_csv(output_dir / 'lfv_proof_summary.csv', index=False)
-    print(f"[OK] LFV証明サマリー（CSV出力 with BBI）")
+    print(i18n.t('stats_analysis.lfv_summary'))
 
     print(f"\n{'='*80}")
-    print(f"[OK] 全26種類の研究用プロット生成完了（LFV証明3種を含む）")
-    print(f"   論文・発表資料にそのまま使用できます（300dpi高解像度）")
-    print(f"   - Plot 24: テクスチャ依存性証明（相関分析）")
-    print(f"   - Plot 25: 空間依存性証明（分布比較）")
-    print(f"   - Plot 26: 座標分布（BBI可視化）\n")
+    print(i18n.t('stats_analysis.lfv_complete'))
+    print(i18n.t('stats_analysis.lfv_complete_detail'))
+    print(i18n.t('stats_analysis.lfv_complete_plot24'))
+    print(i18n.t('stats_analysis.lfv_complete_plot25'))
+    print(i18n.t('stats_analysis.lfv_complete_plot26') + '\n')
 
     # 出力ディレクトリのパスを返す
     return output_dir
