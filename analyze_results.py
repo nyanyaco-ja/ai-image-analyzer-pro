@@ -16,19 +16,21 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
-from translations import get_label, get_font_family
+from translations import get_label, get_font_family, I18n
 
 # Global language setting (will be set by command line argument)
 LANG = 'en'
+i18n = None
 
 
 def analyze_batch_results(csv_file, lang='en'):
     """
     バッチ処理結果の統計分析
     """
-    # Set global language
-    global LANG
+    # Set global language and i18n
+    global LANG, i18n
     LANG = lang
+    i18n = I18n(lang=lang)
 
     # Set font based on language
     plt.rcParams['font.family'] = get_font_family(LANG)
@@ -38,12 +40,12 @@ def analyze_batch_results(csv_file, lang='en'):
     df = pd.read_csv(csv_file)
 
     print(f"\n{'='*80}")
-    print(f"[STATS] 統計分析レポート")
+    print(i18n.t('stats.report_header'))
     print(f"{'='*80}")
-    print(f"[FILE] データファイル: {csv_file}")
-    print(f"[IMAGE] 画像数: {df['image_id'].nunique()}")
-    print(f"[MODEL] モデル数: {df['model'].nunique()}")
-    print(f"[STATS] 総データ数: {len(df)}")
+    print(i18n.t('stats.data_file').format(file=csv_file))
+    print(i18n.t('stats.image_count').format(count=df['image_id'].nunique()))
+    print(i18n.t('stats.model_count').format(count=df['model'].nunique()))
+    print(i18n.t('stats.total_data').format(count=len(df)))
     print(f"{'='*80}\n")
 
     # 出力ディレクトリ作成（タイムスタンプ付きサブフォルダ）
@@ -70,8 +72,8 @@ def analyze_batch_results(csv_file, lang='en'):
     # 6. 研究用プロット生成
     generate_research_plots(df, output_dir, csv_file)
 
-    print(f"\n[OK] 分析完了！")
-    print(f"[FOLDER] 結果保存先: {output_dir}/")
+    print(i18n.t('stats.analysis_complete'))
+    print(i18n.t('stats.results_saved').format(dir=output_dir))
 
     return str(output_dir)
 
@@ -81,7 +83,7 @@ def print_basic_statistics(df):
     基本統計量の表示
     """
 
-    print(f"\n[STATS] 主要指標の基本統計量:")
+    print(i18n.t('stats.basic_stats_header'))
     print(f"{'='*80}")
 
     # 16項目（total_scoreは除外）
@@ -102,7 +104,7 @@ def compare_models(df, output_dir):
     モデル別比較
     """
 
-    print(f"\n[RANK] モデル別ランキング:")
+    print(i18n.t('stats.model_ranking_header'))
     print(f"{'='*80}")
 
     # 主要指標でグループ化（total_score除外）
@@ -141,7 +143,7 @@ def compare_models(df, output_dir):
     plt.savefig(output_dir / 'model_scores.png', dpi=150)
     plt.close()
 
-    print(f"[STATS] グラフ保存: {output_dir}/model_scores.png")
+    print(i18n.t('stats.graph_saved').format(path=f"{output_dir}/model_scores.png"))
 
 
 def analyze_correlations(df, output_dir):
@@ -149,7 +151,7 @@ def analyze_correlations(df, output_dir):
     17項目間の相関分析
     """
 
-    print(f"\n[CORR] 相関分析:")
+    print(i18n.t('stats.correlation_header'))
     print(f"{'='*80}")
 
     # 数値列のみ抽出（total_score除外）
@@ -169,10 +171,10 @@ def analyze_correlations(df, output_dir):
     plt.savefig(output_dir / 'correlation_matrix.png', dpi=150)
     plt.close()
 
-    print(f"[STATS] 相関マトリックス保存: {output_dir}/correlation_matrix.png")
+    print(i18n.t('stats.correlation_matrix_saved').format(path=f"{output_dir}/correlation_matrix.png"))
 
     # 高相関ペアを表示
-    print(f"\n[HIGH] 高相関ペア（|r| > 0.7）:")
+    print(i18n.t('stats.high_correlation_pairs'))
     high_corr = []
     for i in range(len(corr_matrix.columns)):
         for j in range(i+1, len(corr_matrix.columns)):
@@ -188,7 +190,7 @@ def analyze_correlations(df, output_dir):
         high_corr_df = pd.DataFrame(high_corr).sort_values('correlation', ascending=False)
         print(high_corr_df.to_string(index=False))
     else:
-        print("   (なし)")
+        print(i18n.t('stats.none'))
 
     print(f"{'='*80}\n")
 
@@ -274,7 +276,7 @@ def suggest_hallucination_logic(df, output_dir):
     - 17の単独閾値判定
     """
 
-    print(f"\n[DETECT] ハルシネーション検出ロジックの提案（26パターン）:")
+    print(i18n.t('stats.hallucination_detection_header'))
     print(f"{'='*80}")
 
     # 検出カウント用
@@ -283,7 +285,7 @@ def suggest_hallucination_logic(df, output_dir):
     pattern_stats = {}
 
     # ========== 組み合わせパターン（9つ） ==========
-    print(f"\n【組み合わせパターン（複合異常検出）】")
+    print(i18n.t('stats.combination_patterns'))
     print(f"{'='*80}")
 
     # === パターン1: SSIM高 × PSNR低（2方式統合） ===
@@ -301,8 +303,8 @@ def suggest_hallucination_logic(df, output_dir):
     pattern_stats['P1'] = {'count': len(pattern1), 'rate': len(pattern1)/len(df)*100}
 
     print(f"P1: SSIM高 × PSNR低（構造類似だがピクセル値相違）")
-    print(f"    固定閾値 (SSIM>0.97 & PSNR<25): {len(pattern1a)}件")
-    print(f"    動的閾値 (SSIM≥{ssim_high:.4f} & PSNR≤{psnr_low:.2f}): {len(pattern1b)}件")
+    print(i18n.t('stats.fixed_threshold').format(count=len(pattern1a)))
+    print(i18n.t('stats.dynamic_threshold').format(ssim=ssim_high, psnr=psnr_low, count=len(pattern1b)))
     print(f"    統合後: {len(pattern1)}件 ({len(pattern1)/len(df)*100:.1f}%)")
     print(f"    リスク: 中～高（AIが構造を模倣した可能性）")
 
@@ -477,7 +479,7 @@ def suggest_hallucination_logic(df, output_dir):
 
     # ========== 総合リスクスコア計算 ==========
     print(f"\n{'='*80}")
-    print(f"[STATS] 総合ハルシネーションリスクスコア（26パターン統合）")
+    print(i18n.t('stats.risk_score_header'))
     print(f"{'='*80}")
 
     # 信頼度分類（多数決）
@@ -487,10 +489,10 @@ def suggest_hallucination_logic(df, output_dir):
     no_detection = df[detection_count == 0]  # 検出なし（正常）
 
     print(f"\n信頼度別分類:")
-    print(f"  高信頼度(5+パターン): {len(high_confidence):5d}件 ({len(high_confidence)/len(df)*100:5.1f}%)")
-    print(f"  中信頼度(3-4パターン): {len(medium_confidence):5d}件 ({len(medium_confidence)/len(df)*100:5.1f}%)")
-    print(f"  低信頼度(1-2パターン): {len(low_confidence):5d}件 ({len(low_confidence)/len(df)*100:5.1f}%)")
-    print(f"  正常(検出0):          {len(no_detection):5d}件 ({len(no_detection)/len(df)*100:5.1f}%)")
+    print(i18n.t('stats.high_confidence').format(count=len(high_confidence), percent=len(high_confidence)/len(df)*100))
+    print(i18n.t('stats.medium_confidence').format(count=len(medium_confidence), percent=len(medium_confidence)/len(df)*100))
+    print(i18n.t('stats.low_confidence').format(count=len(low_confidence), percent=len(low_confidence)/len(df)*100))
+    print(i18n.t('stats.normal').format(count=len(no_detection), percent=len(no_detection)/len(df)*100))
 
     # DataFrameに結果を追加
     df['detection_count'] = detection_count
@@ -505,7 +507,7 @@ def suggest_hallucination_logic(df, output_dir):
     # リスク付きCSV保存
     output_csv = output_dir / 'results_with_26pattern_detection.csv'
     df.to_csv(output_csv, index=False, encoding='utf-8-sig')
-    print(f"\n[SAVE] 26パターン検出結果保存: {output_csv}")
+    print(i18n.t('stats.detection_results_saved').format(path=output_csv))
 
     # サマリーCSV保存
     summary_data = {
@@ -713,7 +715,7 @@ def generate_research_plots(df, output_dir, csv_file):
     plot5_path = output_dir / 'radar_chart_model_comparison.png'
     plt.savefig(plot5_path, dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"[OK] モデル別レーダーチャート: {plot5_path}")
+    print(i18n.t('stats.radar_chart_saved').format(path=plot5_path))
 
 
     # 6. 17項目のバイオリンプロット（分布の可視化）
@@ -784,7 +786,7 @@ def generate_research_plots(df, output_dir, csv_file):
     plt.tight_layout()
     plt.savefig(output_dir / 'hallucination_ssim_high_psnr_low.png', dpi=300, bbox_inches='tight')
     plt.close()
-    print(f"[OK] ハルシネーション検出①（SSIM×PSNR）")
+    print(i18n.t('stats.hallucination_plot1'))
 
 
     # 8. Sharpness × Noise（過剰処理検出）
