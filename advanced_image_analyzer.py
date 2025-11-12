@@ -2332,53 +2332,78 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         }
 
     # 10. 色分布分析
-    print("\n【10. 色分布分析（RGB/HSV/LAB）】")
+    print(i18n.t('analyzer.section_10'))
     color_stats1 = analyze_color_distribution(img1_rgb)
     color_stats2 = analyze_color_distribution(img2_rgb)
 
     # RGB
-    print("RGB色空間:")
+    print(i18n.t('analyzer.rgb_colorspace'))
     for channel in ['Red', 'Green', 'Blue']:
-        print(f"  {channel}チャンネル:")
-        print(f"    元画像: 平均={color_stats1[channel]['mean']:.1f}, 標準偏差={color_stats1[channel]['std']:.1f}")
-        print(f"    AI処理結果: 平均={color_stats2[channel]['mean']:.1f}, 標準偏差={color_stats2[channel]['std']:.1f}")
+        channel_key = f"channel_{channel.lower()}"
+        print(i18n.t(f'analyzer.{channel_key}'))
+        print(i18n.t('analyzer.channel_original').format(
+            mean=color_stats1[channel]['mean'],
+            std=color_stats1[channel]['std']
+        ))
+        print(i18n.t('analyzer.channel_sr').format(
+            mean=color_stats2[channel]['mean'],
+            std=color_stats2[channel]['std']
+        ))
 
     # HSV
-    print(f"\nHSV色空間 - 彩度:")
-    print(f"  元画像: 平均={color_stats1['Saturation']['mean']:.1f}")
-    print(f"  AI処理結果: 平均={color_stats2['Saturation']['mean']:.1f}")
+    print(i18n.t('analyzer.hsv_saturation'))
+    print(i18n.t('analyzer.hsv_saturation_original').format(mean=color_stats1['Saturation']['mean']))
+    print(i18n.t('analyzer.hsv_saturation_sr').format(mean=color_stats2['Saturation']['mean']))
 
     # LAB（知覚的色差）
-    print(f"\nLAB色空間（知覚的色分析）:")
-    print(f"  明度(L):")
-    print(f"    元画像: {color_stats1['LAB']['L_mean']:.1f} ± {color_stats1['LAB']['L_std']:.1f}")
-    print(f"    AI処理結果: {color_stats2['LAB']['L_mean']:.1f} ± {color_stats2['LAB']['L_std']:.1f}")
-    print(f"  a(赤-緑):")
-    print(f"    元画像: {color_stats1['LAB']['a_mean']:.1f} ± {color_stats1['LAB']['a_std']:.1f}")
-    print(f"    AI処理結果: {color_stats2['LAB']['a_mean']:.1f} ± {color_stats2['LAB']['a_std']:.1f}")
-    print(f"  b(黄-青):")
-    print(f"    元画像: {color_stats1['LAB']['b_mean']:.1f} ± {color_stats1['LAB']['b_std']:.1f}")
-    print(f"    AI処理結果: {color_stats2['LAB']['b_mean']:.1f} ± {color_stats2['LAB']['b_std']:.1f}")
+    print(i18n.t('analyzer.lab_colorspace'))
+    print(i18n.t('analyzer.lab_lightness'))
+    print(i18n.t('analyzer.lab_l_original').format(
+        mean=color_stats1['LAB']['L_mean'],
+        std=color_stats1['LAB']['L_std']
+    ))
+    print(i18n.t('analyzer.lab_l_sr').format(
+        mean=color_stats2['LAB']['L_mean'],
+        std=color_stats2['LAB']['L_std']
+    ))
+    print(i18n.t('analyzer.lab_a'))
+    print(i18n.t('analyzer.lab_a_original').format(
+        mean=color_stats1['LAB']['a_mean'],
+        std=color_stats1['LAB']['a_std']
+    ))
+    print(i18n.t('analyzer.lab_a_sr').format(
+        mean=color_stats2['LAB']['a_mean'],
+        std=color_stats2['LAB']['a_std']
+    ))
+    print(i18n.t('analyzer.lab_b'))
+    print(i18n.t('analyzer.lab_b_original').format(
+        mean=color_stats1['LAB']['b_mean'],
+        std=color_stats1['LAB']['b_std']
+    ))
+    print(i18n.t('analyzer.lab_b_sr').format(
+        mean=color_stats2['LAB']['b_mean'],
+        std=color_stats2['LAB']['b_std']
+    ))
 
     # Delta E (CIE2000) - 知覚的色差
-    print_usage_status("色差計算開始（GPU使用）" if GPU_AVAILABLE else "色差計算開始（CPU使用）")
+    print_usage_status(i18n.t('analyzer.color_diff_calc_gpu') if GPU_AVAILABLE else i18n.t('analyzer.color_diff_calc_cpu'), i18n)
 
     if img_original_rgb is not None:
         # 元画像がある場合：元画像との色差を計算
         if comparison_mode == 'evaluation':
             # 評価モード：超解像画像の色再現性を評価
             delta_e_img2_vs_orig = calculate_color_difference_gpu(img2_rgb, img_original_rgb)
-            print(f"\n  超解像画像 vs 元画像 ΔE: {delta_e_img2_vs_orig:.2f}")
+            print(i18n.t('analyzer.delta_e_sr_vs_orig').format(value=delta_e_img2_vs_orig))
 
             # 絶対評価（色差は低い方が良い）
             if delta_e_img2_vs_orig < 1:
-                print(f"  評価: [OK] 優秀（ΔE < 1: 人間の目では区別不可能）")
+                print(i18n.t('analyzer.eval_delta_e_excellent'))
             elif delta_e_img2_vs_orig < 5:
-                print(f"  評価: [OK] 高品質（ΔE < 5: 許容範囲）")
+                print(i18n.t('analyzer.eval_delta_e_good'))
             elif delta_e_img2_vs_orig < 10:
-                print(f"  評価: [WARNING] 許容範囲（ΔE < 10: やや違いあり）")
+                print(i18n.t('analyzer.eval_delta_e_acceptable'))
             else:
-                print(f"  評価: [ERROR] 低品質（ΔE ≥ 10: 明確な色の違い）")
+                print(i18n.t('analyzer.eval_delta_e_poor'))
 
             # 互換性のためimg1の値も計算
             delta_e_img1_vs_orig = 0.0  # Dummy value
@@ -2390,13 +2415,13 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
             # 比較モード（将来実装）：2つのAI結果を比較
             delta_e_img1_vs_orig = calculate_color_difference_gpu(img1_rgb, img_original_rgb)
             delta_e_img2_vs_orig = calculate_color_difference_gpu(img2_rgb, img_original_rgb)
-            print(f"\n  モデルA vs 元画像 ΔE: {delta_e_img1_vs_orig:.2f}")
-            print(f"  モデルB vs 元画像 ΔE: {delta_e_img2_vs_orig:.2f}")
+            print(i18n.t('analyzer.delta_e_model_a_vs_orig').format(value=delta_e_img1_vs_orig))
+            print(i18n.t('analyzer.delta_e_model_b_vs_orig').format(value=delta_e_img2_vs_orig))
             if delta_e_img1_vs_orig < delta_e_img2_vs_orig:
-                print(f"  → モデルAの方が元画像の色に近い (差: {delta_e_img2_vs_orig - delta_e_img1_vs_orig:.2f})")
+                print(i18n.t('analyzer.delta_e_model_a_closer').format(diff=delta_e_img2_vs_orig - delta_e_img1_vs_orig))
             else:
-                print(f"  → モデルBの方が元画像の色に近い (差: {delta_e_img1_vs_orig - delta_e_img2_vs_orig:.2f})")
-            print(f"    (ΔE < 1: 人間の目では区別不可, ΔE < 5: 許容範囲, ΔE > 10: 明確な違い)")
+                print(i18n.t('analyzer.delta_e_model_b_closer').format(diff=delta_e_img1_vs_orig - delta_e_img2_vs_orig))
+            print(i18n.t('analyzer.delta_e_note'))
             delta_e_result = {
                 'img1_vs_original': round(delta_e_img1_vs_orig, 2),
                 'img2_vs_original': round(delta_e_img2_vs_orig, 2)
@@ -2404,8 +2429,8 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
     else:
         # 元画像がない場合：元画像 vs AI処理結果
         delta_e_val = calculate_color_difference_gpu(img1_rgb, img2_rgb)
-        print(f"\n  ΔE (色差): {delta_e_val:.2f}")
-        print(f"    (ΔE < 1: 人間の目では区別不可, ΔE < 5: 許容範囲, ΔE > 10: 明確な違い)")
+        print(i18n.t('analyzer.delta_e_value').format(value=delta_e_val))
+        print(i18n.t('analyzer.delta_e_note'))
         delta_e_result = round(delta_e_val, 2)
 
     results['color_distribution'] = {
@@ -2415,29 +2440,29 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
     }
 
     # 11. 周波数領域分析
-    print("\n【11. 周波数領域分析（FFT）】")
+    print(i18n.t('analyzer.section_11'))
 
     if comparison_mode == 'evaluation' and img_original_gray is not None:
         # 評価モード：超解像画像の周波数成分保持率を評価
         freq_analysis_orig = analyze_frequency_domain(img_original_gray)
         freq_analysis_img2 = analyze_frequency_domain(img2_gray)
 
-        print(f"元画像低周波成分比率: {freq_analysis_orig['low_freq_ratio']:.3f}")
-        print(f"超解像画像低周波成分比率: {freq_analysis_img2['low_freq_ratio']:.3f}")
-        print(f"元画像高周波成分比率: {freq_analysis_orig['high_freq_ratio']:.3f}")
-        print(f"超解像画像高周波成分比率: {freq_analysis_img2['high_freq_ratio']:.3f}")
+        print(i18n.t('analyzer.freq_low_original').format(ratio=freq_analysis_orig['low_freq_ratio']))
+        print(i18n.t('analyzer.freq_low_sr').format(ratio=freq_analysis_img2['low_freq_ratio']))
+        print(i18n.t('analyzer.freq_high_original').format(ratio=freq_analysis_orig['high_freq_ratio']))
+        print(i18n.t('analyzer.freq_high_sr').format(ratio=freq_analysis_img2['high_freq_ratio']))
 
         high_freq_ratio = (freq_analysis_img2['high_freq_ratio'] / freq_analysis_orig['high_freq_ratio']) if freq_analysis_orig['high_freq_ratio'] > 0 else 0
 
         # 絶対評価（高周波成分は細部の指標、保持/改善が重要）
         if high_freq_ratio >= 1.05:
-            print(f"  評価: [OK] 優秀（高周波成分改善: +{(high_freq_ratio - 1) * 100:.1f}%）")
+            print(i18n.t('analyzer.eval_freq_excellent').format(improvement=(high_freq_ratio - 1) * 100))
         elif high_freq_ratio >= 0.95:
-            print(f"  評価: [OK] 高品質（高周波成分保持: {high_freq_ratio:.2%}）")
+            print(i18n.t('analyzer.eval_freq_good').format(ratio=high_freq_ratio))
         elif high_freq_ratio >= 0.85:
-            print(f"  評価: [WARNING] 許容範囲（やや劣化: {high_freq_ratio:.2%}）")
+            print(i18n.t('analyzer.eval_freq_acceptable').format(ratio=high_freq_ratio))
         else:
-            print(f"  評価: [ERROR] 低品質（大幅劣化: {high_freq_ratio:.2%}）")
+            print(i18n.t('analyzer.eval_freq_poor').format(ratio=high_freq_ratio))
 
         results['frequency_analysis'] = {
             'img1': freq_analysis_orig,  # 互換性のため
@@ -2449,10 +2474,10 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         freq_analysis1 = analyze_frequency_domain(img1_gray)
         freq_analysis2 = analyze_frequency_domain(img2_gray)
 
-        print(f"画像1低周波成分比率: {freq_analysis1['low_freq_ratio']:.3f}")
-        print(f"画像2低周波成分比率: {freq_analysis2['low_freq_ratio']:.3f}")
-        print(f"画像1高周波成分比率: {freq_analysis1['high_freq_ratio']:.3f}")
-        print(f"画像2高周波成分比率: {freq_analysis2['high_freq_ratio']:.3f}")
+        print(i18n.t('analyzer.freq_low_img1').format(ratio=freq_analysis1['low_freq_ratio']))
+        print(i18n.t('analyzer.freq_low_img2').format(ratio=freq_analysis2['low_freq_ratio']))
+        print(i18n.t('analyzer.freq_high_img1').format(ratio=freq_analysis1['high_freq_ratio']))
+        print(i18n.t('analyzer.freq_high_img2').format(ratio=freq_analysis2['high_freq_ratio']))
 
         results['frequency_analysis'] = {
             'img1': freq_analysis1,
@@ -2460,28 +2485,28 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
         }
 
     # 12. テクスチャ分析
-    print("\n【12. テクスチャ分析】")
+    print(i18n.t('analyzer.section_12'))
 
     if comparison_mode == 'evaluation' and img_original_gray is not None:
         # 評価モード：超解像画像のテクスチャ保持率を評価
         texture_orig = analyze_texture(img_original_gray)
         texture_img2 = analyze_texture(img2_gray)
 
-        print(f"元画像テクスチャ複雑度: {texture_orig['texture_complexity']:.2f}")
-        print(f"超解像画像テクスチャ複雑度: {texture_img2['texture_complexity']:.2f}")
+        print(i18n.t('analyzer.texture_complexity_original').format(value=texture_orig['texture_complexity']))
+        print(i18n.t('analyzer.texture_complexity_sr').format(value=texture_img2['texture_complexity']))
 
         preservation_ratio = (texture_img2['texture_complexity'] / texture_orig['texture_complexity']) if texture_orig['texture_complexity'] > 0 else 0
-        print(f"保持率: {preservation_ratio:.2%}")
+        print(i18n.t('analyzer.texture_preservation').format(ratio=preservation_ratio))
 
         # 絶対評価（テクスチャは細部の指標、保持/改善が重要）
         if preservation_ratio >= 1.05:
-            print(f"  評価: [OK] 優秀（テクスチャ改善: +{(preservation_ratio - 1) * 100:.1f}%）")
+            print(i18n.t('analyzer.eval_texture_excellent').format(improvement=(preservation_ratio - 1) * 100))
         elif preservation_ratio >= 0.95:
-            print(f"  評価: [OK] 高品質（テクスチャ保持: {preservation_ratio:.2%}）")
+            print(i18n.t('analyzer.eval_texture_good').format(ratio=preservation_ratio))
         elif preservation_ratio >= 0.85:
-            print(f"  評価: [WARNING] 許容範囲（やや劣化: {preservation_ratio:.2%}）")
+            print(i18n.t('analyzer.eval_texture_acceptable').format(ratio=preservation_ratio))
         else:
-            print(f"  評価: [ERROR] 低品質（大幅劣化: {preservation_ratio:.2%}）")
+            print(i18n.t('analyzer.eval_texture_poor').format(ratio=preservation_ratio))
 
         results['texture'] = {
             'img1': texture_orig,  # 互換性のため
