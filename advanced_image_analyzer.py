@@ -1640,12 +1640,12 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
             # 比較モード（将来実装）：2つのAI結果を比較
             ssim_img1_vs_orig = calculate_ssim_gpu(img1_rgb, img_original_rgb)
             ssim_img2_vs_orig = calculate_ssim_gpu(img2_rgb, img_original_rgb)
-            print(f"モデルA vs 元画像 SSIM: {ssim_img1_vs_orig:.4f}")
-            print(f"モデルB vs 元画像 SSIM: {ssim_img2_vs_orig:.4f}")
+            print(i18n.t('analyzer.ssim_model_a_vs_orig').format(value=ssim_img1_vs_orig))
+            print(i18n.t('analyzer.ssim_model_b_vs_orig').format(value=ssim_img2_vs_orig))
             if ssim_img1_vs_orig > ssim_img2_vs_orig:
-                print(f"→ モデルAの方が元画像に近い (+{(ssim_img1_vs_orig - ssim_img2_vs_orig):.4f})")
+                print(i18n.t('analyzer.ssim_model_a_closer').format(diff=(ssim_img1_vs_orig - ssim_img2_vs_orig)))
             else:
-                print(f"→ モデルBの方が元画像に近い (+{(ssim_img2_vs_orig - ssim_img1_vs_orig):.4f})")
+                print(i18n.t('analyzer.ssim_model_b_closer').format(diff=(ssim_img2_vs_orig - ssim_img1_vs_orig)))
         results['ssim'] = {
             'img1_vs_original': round(ssim_img1_vs_orig, 4),
             'img2_vs_original': round(ssim_img2_vs_orig, 4)
@@ -1653,7 +1653,7 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
     else:
         # 元画像がない場合：元画像 vs AI処理結果
         ssim_score = calculate_ssim_gpu(img1_rgb, img2_rgb)
-        print(f"SSIM (元画像 vs AI処理結果): {ssim_score:.4f}")
+        print(i18n.t('analyzer.ssim_no_orig').format(value=ssim_score))
         results['ssim'] = round(ssim_score, 4)
 
     # 2.5. MS-SSIM（Multi-Scale SSIM）
@@ -1676,7 +1676,7 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
             print(i18n.t('analyzer.eval_ms_ssim_different'))
         results['ms_ssim'] = round(ms_ssim_score, 4)
     else:
-        print("  ※MS-SSIM計算をスキップしました（ライブラリ未インストール）")
+        print(i18n.t('analyzer.ms_ssim_skipped'))
         results['ms_ssim'] = None
 
     # 3. PSNR
@@ -1706,12 +1706,12 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
             # 比較モード（将来実装）：2つのAI結果を比較
             psnr_img1_vs_orig = calculate_psnr_gpu(img1_rgb, img_original_rgb)
             psnr_img2_vs_orig = calculate_psnr_gpu(img2_rgb, img_original_rgb)
-            print(f"モデルA vs 元画像 PSNR: {psnr_img1_vs_orig:.2f} dB")
-            print(f"モデルB vs 元画像 PSNR: {psnr_img2_vs_orig:.2f} dB")
+            print(i18n.t('analyzer.psnr_model_a_vs_orig').format(value=psnr_img1_vs_orig))
+            print(i18n.t('analyzer.psnr_model_b_vs_orig').format(value=psnr_img2_vs_orig))
             if psnr_img1_vs_orig > psnr_img2_vs_orig:
-                print(f"→ モデルAの方が元画像に近い (+{(psnr_img1_vs_orig - psnr_img2_vs_orig):.2f} dB)")
+                print(i18n.t('analyzer.psnr_model_a_closer').format(diff=(psnr_img1_vs_orig - psnr_img2_vs_orig)))
             else:
-                print(f"→ モデルBの方が元画像に近い (+{(psnr_img2_vs_orig - psnr_img1_vs_orig):.2f} dB)")
+                print(i18n.t('analyzer.psnr_model_b_closer').format(diff=(psnr_img2_vs_orig - psnr_img1_vs_orig)))
 
         results['psnr'] = {
             'img1_vs_original': round(psnr_img1_vs_orig, 2) if psnr_img1_vs_orig != float('inf') else psnr_img1_vs_orig,
@@ -1720,7 +1720,7 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
     else:
         # 元画像がない場合：元画像 vs AI処理結果
         psnr_score = calculate_psnr_gpu(img1_rgb, img2_rgb)
-        print(f"PSNR (元画像 vs AI処理結果): {psnr_score:.2f} dB")
+        print(i18n.t('analyzer.psnr_no_orig').format(value=psnr_score))
         results['psnr'] = round(psnr_score, 2)
 
     # 3.4. ピクセル差分（MAE - 平均絶対誤差）
@@ -1785,9 +1785,9 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
             mae_img1 = np.mean(diff_img1)
             mae_img2 = np.mean(diff_img2)
 
-            print(f" 全体MAE:")
-            print(f"  モデルA vs 元画像: {mae_img1:.2f} (差分率: {(mae_img1/255)*100:.1f}%)")
-            print(f"  モデルB vs 元画像: {mae_img2:.2f} (差分率: {(mae_img2/255)*100:.1f}%)")
+            print(i18n.t('analyzer.mae_overall_comparison'))
+            print(i18n.t('analyzer.mae_model_a_vs_orig').format(value=mae_img1, ratio=(mae_img1/255)*100))
+            print(i18n.t('analyzer.mae_model_b_vs_orig').format(value=mae_img2, ratio=(mae_img2/255)*100))
 
             # テキスト領域のMAE
             text_mask_img1 = np.mean(img1_rgb, axis=2) < 200
@@ -1803,28 +1803,28 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
                 mae_text_img1 = np.mean(diff_img1[text_mask_combined])
                 mae_text_img2 = np.mean(diff_img2[text_mask_combined])
 
-                print(f"\n テキスト領域MAE（白背景除外、{text_ratio*100:.1f}%の領域）:")
-                print(f"  モデルA vs 元画像: {mae_text_img1:.2f} (差分率: {(mae_text_img1/255)*100:.1f}%)")
-                print(f"  モデルB vs 元画像: {mae_text_img2:.2f} (差分率: {(mae_text_img2/255)*100:.1f}%)")
+                print(i18n.t('analyzer.mae_text_comparison_header').format(ratio=text_ratio*100))
+                print(i18n.t('analyzer.mae_text_model_a_vs_orig').format(value=mae_text_img1, ratio=(mae_text_img1/255)*100))
+                print(i18n.t('analyzer.mae_text_model_b_vs_orig').format(value=mae_text_img2, ratio=(mae_text_img2/255)*100))
             else:
                 mae_text_img1 = None
                 mae_text_img2 = None
-                print(f"\n  [WARNING]  テキスト領域が検出されませんでした（白背景のみの画像）")
+                print(i18n.t('analyzer.mae_text_not_detected_comp'))
 
             # 比較表示
-            print(f"\n 全体MAE比較:")
+            print(i18n.t('analyzer.mae_overall_comparison_result'))
             if mae_img1 < mae_img2:
-                print(f"  → モデルAの方が元画像に近い (差分差: {mae_img2 - mae_img1:.2f})")
+                print(i18n.t('analyzer.mae_model_a_closer_overall').format(diff=mae_img2 - mae_img1))
             else:
-                print(f"  → モデルBの方が元画像に近い (差分差: {mae_img1 - mae_img2:.2f})")
+                print(i18n.t('analyzer.mae_model_b_closer_overall').format(diff=mae_img1 - mae_img2))
 
         # 比較モード用のテキストMAE比較（評価モードではスキップ）
         if comparison_mode != 'evaluation' and mae_text_img1 is not None and mae_text_img2 is not None:
-            print(f"\n テキスト領域MAE比較:")
+            print(i18n.t('analyzer.mae_text_comparison_result'))
             if mae_text_img1 < mae_text_img2:
-                print(f"  → モデルAの方が元画像に近い (差分差: {mae_text_img2 - mae_text_img1:.2f})")
+                print(i18n.t('analyzer.mae_model_a_closer_text').format(diff=mae_text_img2 - mae_text_img1))
             else:
-                print(f"  → モデルBの方が元画像に近い (差分差: {mae_text_img1 - mae_text_img2:.2f})")
+                print(i18n.t('analyzer.mae_model_b_closer_text').format(diff=mae_text_img1 - mae_text_img2))
 
         results['mae'] = {
             'img1_vs_original': round(mae_img1, 2),
@@ -1838,18 +1838,18 @@ def analyze_images(img1_path, img2_path, output_dir='analysis_results', original
     else:
         # 元画像がない場合：元画像 vs AI処理結果
         mae_score = np.mean(np.abs(img1_rgb.astype(float) - img2_rgb.astype(float)))
-        print(f"MAE (元画像 vs AI処理結果): {mae_score:.2f} (差分率: {(mae_score/255)*100:.1f}%)")
+        print(i18n.t('analyzer.mae_no_orig').format(value=mae_score, ratio=(mae_score/255)*100))
 
         if mae_score < 5:
-            print("  評価: ほぼ完全一致")
+            print(i18n.t('analyzer.mae_eval_perfect'))
         elif mae_score < 10:
-            print("  評価: 非常に類似")
+            print(i18n.t('analyzer.mae_eval_very_similar'))
         elif mae_score < 20:
-            print("  評価: 類似")
+            print(i18n.t('analyzer.mae_eval_similar'))
         elif mae_score < 40:
-            print("  評価: やや異なる")
+            print(i18n.t('analyzer.mae_eval_somewhat_different'))
         else:
-            print("  評価: 大きく異なる")
+            print(i18n.t('analyzer.mae_eval_very_different'))
 
         results['mae'] = {
             'value': round(mae_score, 2),
