@@ -825,7 +825,7 @@
     "header_noise": "Noise",
     "header_artifacts": "Artifacts"
   },
-  "stats": {
+  "stats_analysis": {
     "report_header": "[STATS] Statistical Analysis Report",
     "data_file": "[FILE] Data file: {file}",
     "image_count": "[IMAGE] Number of images: {count}",
