@@ -4,6 +4,69 @@ Translation dictionaries for analyze_results.py
 Supports Japanese (ja) and English (en)
 """
 
+import json
+import os
+
+class I18n:
+    """Internationalization class for loading translations from JSON files"""
+
+    def __init__(self, lang='ja'):
+        """
+        Initialize I18n with specified language
+
+        Args:
+            lang: Language code ('ja' or 'en')
+        """
+        self.lang = lang
+        self.translations = {}
+        self._load_translations()
+
+    def _load_translations(self):
+        """Load translations from JSON files"""
+        locales_dir = os.path.join(os.path.dirname(__file__), 'locales')
+        locale_file = os.path.join(locales_dir, f'{self.lang}.json')
+
+        try:
+            with open(locale_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                # Flatten nested structure if analyzer key exists
+                if 'analyzer' in data:
+                    self.translations = data['analyzer']
+                else:
+                    self.translations = data
+        except FileNotFoundError:
+            print(f"Warning: Translation file not found: {locale_file}")
+            self.translations = {}
+        except json.JSONDecodeError as e:
+            print(f"Warning: Error parsing translation file: {e}")
+            self.translations = {}
+
+    def t(self, key):
+        """
+        Get translated string
+
+        Args:
+            key: Translation key (e.g., 'analyzer.section_1')
+
+        Returns:
+            Translated string or key if not found
+        """
+        # Remove 'analyzer.' prefix if present since we already loaded analyzer namespace
+        if key.startswith('analyzer.'):
+            key = key[9:]  # Remove 'analyzer.' prefix
+
+        return self.translations.get(key, key)
+
+    def set_language(self, lang):
+        """
+        Change language
+
+        Args:
+            lang: Language code ('ja' or 'en')
+        """
+        self.lang = lang
+        self._load_translations()
+
 TRANSLATIONS = {
     'ja': {
         # Font settings
