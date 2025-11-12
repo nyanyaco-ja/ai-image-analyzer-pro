@@ -28,12 +28,8 @@ class I18n:
 
         try:
             with open(locale_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                # Flatten nested structure if analyzer key exists
-                if 'analyzer' in data:
-                    self.translations = data['analyzer']
-                else:
-                    self.translations = data
+                # Load entire JSON structure (includes all namespaces)
+                self.translations = json.load(f)
         except FileNotFoundError:
             print(f"Warning: Translation file not found: {locale_file}")
             self.translations = {}
@@ -46,16 +42,25 @@ class I18n:
         Get translated string
 
         Args:
-            key: Translation key (e.g., 'analyzer.section_1')
+            key: Translation key (e.g., 'analyzer.section_1' or 'stats_analysis.report_header')
 
         Returns:
             Translated string or key if not found
         """
-        # Remove 'analyzer.' prefix if present since we already loaded analyzer namespace
-        if key.startswith('analyzer.'):
-            key = key[9:]  # Remove 'analyzer.' prefix
+        # Support dot notation (namespace.key)
+        if '.' in key:
+            parts = key.split('.', 1)  # Split into namespace and key
+            namespace = parts[0]
+            subkey = parts[1]
 
-        return self.translations.get(key, key)
+            if namespace in self.translations:
+                namespace_data = self.translations[namespace]
+                return namespace_data.get(subkey, key)
+            else:
+                return key
+        else:
+            # Direct key lookup (backward compatibility)
+            return self.translations.get(key, key)
 
     def set_language(self, lang):
         """
