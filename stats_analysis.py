@@ -163,8 +163,8 @@ class StatsAnalysisMixin:
 
             # ログを保存
             with open(log_file, 'w', encoding='utf-8') as f:
-                f.write(f"統計分析ログ\n")
-                f.write(f"生成日時: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                f.write(f"{self.i18n.t('stats_gui.log_header')}\n")
+                f.write(f"{self.i18n.t('stats_gui.log_generated').format(datetime=datetime.now().strftime('%Y-%m-%d %H:%M:%S'))}\n")
                 f.write(f"{'='*80}\n\n")
                 f.write(log_content)
 

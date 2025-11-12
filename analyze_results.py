@@ -435,13 +435,22 @@ def suggest_hallucination_logic(df, output_dir):
     single_pattern_count = 0
 
     # 高い方が良い指標（異常に低い = 下位10%）
-    high_is_good = [
-        ('ssim', 'SSIM低'), ('ms_ssim', 'MS-SSIM低'), ('psnr', 'PSNR低'),
-        ('sharpness', 'Sharpness低'), ('contrast', 'Contrast低'), ('entropy', 'Entropy低'),
-        ('edge_density', 'EdgeDensity低'), ('high_freq_ratio', 'HighFreq低'),
-        ('texture_complexity', 'Texture低'), ('local_quality_mean', 'LocalQuality低'),
-        ('histogram_corr', 'HistCorr低')
-    ]
+    if LANG == 'en':
+        high_is_good = [
+            ('ssim', 'Low SSIM'), ('ms_ssim', 'Low MS-SSIM'), ('psnr', 'Low PSNR'),
+            ('sharpness', 'Low Sharpness'), ('contrast', 'Low Contrast'), ('entropy', 'Low Entropy'),
+            ('edge_density', 'Low EdgeDensity'), ('high_freq_ratio', 'Low HighFreq'),
+            ('texture_complexity', 'Low Texture'), ('local_quality_mean', 'Low LocalQuality'),
+            ('histogram_corr', 'Low HistCorr')
+        ]
+    else:
+        high_is_good = [
+            ('ssim', 'SSIM低'), ('ms_ssim', 'MS-SSIM低'), ('psnr', 'PSNR低'),
+            ('sharpness', 'Sharpness低'), ('contrast', 'Contrast低'), ('entropy', 'Entropy低'),
+            ('edge_density', 'EdgeDensity低'), ('high_freq_ratio', 'HighFreq低'),
+            ('texture_complexity', 'Texture低'), ('local_quality_mean', 'LocalQuality低'),
+            ('histogram_corr', 'HistCorr低')
+        ]
 
     print(i18n.t('stats_analysis.high_is_better'))
     for col, name in high_is_good:
@@ -456,10 +465,16 @@ def suggest_hallucination_logic(df, output_dir):
                 name=name, threshold=threshold, count=len(detected), percent=len(detected)/len(df)*100))
 
     # 低い方が良い指標（異常に高い = 上位10%）
-    low_is_good = [
-        ('lpips', 'LPIPS高'), ('noise', 'Noise高'),
-        ('artifact_total', 'Artifacts高'), ('delta_e', 'DeltaE高')
-    ]
+    if LANG == 'en':
+        low_is_good = [
+            ('lpips', 'High LPIPS'), ('noise', 'High Noise'),
+            ('artifact_total', 'High Artifacts'), ('delta_e', 'High DeltaE')
+        ]
+    else:
+        low_is_good = [
+            ('lpips', 'LPIPS高'), ('noise', 'Noise高'),
+            ('artifact_total', 'Artifacts高'), ('delta_e', 'DeltaE高')
+        ]
 
     print(i18n.t('stats_analysis.low_is_better'))
     for col, name in low_is_good:
@@ -477,11 +492,12 @@ def suggest_hallucination_logic(df, output_dir):
         threshold = df['local_quality_std'].quantile(0.90)
         detected = df[df['local_quality_std'] > threshold]
         detection_count[detected.index] += 1
+        local_quality_std_name = 'High LocalQualityStd' if LANG == 'en' else 'LocalQualityStd高'
         for idx in detected.index:
-            detected_patterns[idx].append(f'単独:LocalQualityStd高')
+            detected_patterns[idx].append(f'単独:{local_quality_std_name}')
         single_pattern_count += len(detected)
         print(i18n.t('stats_analysis.single_pattern_format_high').format(
-            name='LocalQualityStd高', threshold=threshold, count=len(detected), percent=len(detected)/len(df)*100))
+            name=local_quality_std_name, threshold=threshold, count=len(detected), percent=len(detected)/len(df)*100))
 
     print(i18n.t('stats_analysis.single_pattern_total').format(count=single_pattern_count))
 
