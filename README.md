@@ -248,7 +248,11 @@ brew install python@3.12
 cd C:\Projects\image_compare
 
 # 仮想環境を作成
-python -m venv venv
+# 方法1: py コマンド（推奨・Python Launcher使用）
+py -m venv venv
+
+# 方法2: python コマンド（環境によってはこちら）
+# python -m venv venv
 
 # 仮想環境をアクティベート（PowerShell）
 venv\Scripts\Activate.ps1
@@ -259,6 +263,8 @@ venv\Scripts\activate.bat
 # 成功すると (venv) がプロンプトの先頭に表示されます
 # (venv) PS C:\Projects\image_compare>
 ```
+
+**注意:** Windowsでは`py`コマンド（Python Launcher）の使用を推奨します。`python`コマンドが認識されない場合は`py`を使用してください。
 
 **PowerShellで実行ポリシーエラーが出る場合:**
 ```powershell
