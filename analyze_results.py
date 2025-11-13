@@ -143,7 +143,7 @@ def compare_models(df, output_dir):
     model_scores = df.groupby('model')['ssim'].mean().sort_values(ascending=False)
 
     plt.bar(range(len(model_scores)), model_scores.values)
-    plt.xticks(range(len(model_scores)), model_scores.index, rotation=45, ha='right')
+    plt.xticks(range(len(model_scores)), model_scores.index, rotation=0, ha='center')
     plt.ylabel('SSIM (Average)')
     # TITLE_BOTTOM:{get_label('model_comparison', LANG)}
     plt.grid(axis='y', alpha=0.3)
@@ -630,7 +630,7 @@ def generate_research_plots(df, output_dir, csv_file):
     plt.xlabel(get_label('ai_model', LANG), fontsize=14, fontweight='bold')
     # TITLE_BOTTOM:{'LPIPS Distribution by Model (Stability)\nSmaller box = More stable', fontsize=16, fontweight='bold'}
     plt.grid(axis='y', alpha=0.3)
-    plt.xticks(rotation=45, ha='right')
+    plt.xticks(rotation=0, ha='center')
 
     plt.tight_layout()
     plot2_path = output_dir / 'stability_lpips_boxplot.png'
@@ -741,12 +741,14 @@ def generate_research_plots(df, output_dir, csv_file):
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels(categories, fontsize=12)
     ax.set_ylim(0, 1)
-    ax.set_title('Model Performance Profile (Radar Chart)\nOuter = Better', fontsize=16, fontweight='bold', pad=20)
     ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1.1), fontsize=12)
     ax.grid(True)
 
     plt.tight_layout()
     plot5_path = output_dir / 'radar_chart_model_comparison.png'
+    # Place title at bottom for academic papers
+    fig = plt.gcf()
+    fig.text(0.5, -0.05, 'Model Performance Profile (Radar Chart)\nOuter = Better', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(plot5_path, dpi=300, bbox_inches='tight')
     plt.close()
     print(i18n.t('stats_analysis.radar_chart_saved').format(path=plot5_path))
@@ -775,16 +777,20 @@ def generate_research_plots(df, output_dir, csv_file):
             pc.set_alpha(0.7)
 
         ax.set_xticks(range(1, len(df['model'].unique()) + 1))
-        ax.set_xticklabels(df['model'].unique(), rotation=45, ha='right', fontsize=8)
-        ax.set_title(metric, fontsize=10, fontweight='bold')
+        ax.set_xticklabels(df['model'].unique(), rotation=0, ha='center', fontsize=8)
         ax.grid(axis='y', alpha=0.3)
+        # Place subplot title at bottom instead of top
+        ax.text(0.5, -0.15, metric, fontsize=10, fontweight='bold',
+                ha='center', va='top', transform=ax.transAxes)
 
     # 余った軸を非表示
     for i in range(len(metrics_for_violin), 18):
         axes[i // 6, i % 6].axis('off')
 
-    plt.tight_layout()
+    plt.tight_layout(h_pad=3.5)  # Add vertical spacing between rows
     plot6_path = output_dir / 'violin_plots_all_metrics.png'
+    # Place title at bottom for academic papers
+    fig.text(0.5, -0.05, '17 Metrics Distribution (Violin Plots)\nBox shows IQR, Line shows median', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(plot6_path, dpi=300, bbox_inches='tight')
     plt.close()
     print(i18n.t('stats_analysis.plot_violin').format(path=plot6_path))
@@ -1156,15 +1162,16 @@ def generate_research_plots(df, output_dir, csv_file):
             ax.plot(i, q50, 'ro', markersize=10)
 
         ax.set_xticks(positions)
-        ax.set_xticklabels(models, rotation=45, ha='right', fontsize=9)
+        ax.set_xticklabels(models, rotation=0, ha='center', fontsize=9)
         ax.set_ylabel(name, fontsize=11, fontweight='bold')
         ax.grid(axis='y', alpha=0.3)
-        ax.set_title(f'{name} Distribution', fontsize=12)
+        # Place subplot title at bottom instead of top
+        ax.text(0.5, -0.18, f'{name} Distribution', fontsize=12, fontweight='bold',
+                ha='center', va='top', transform=ax.transAxes)
 
-    plt.tight_layout()
+    plt.tight_layout(h_pad=4.0)  # Add vertical spacing between rows
     # Place title at bottom for academic papers
-    fig = plt.gcf()
-    fig.text(0.5, -0.05, f'Principal Component Analysis (PCA): 16 Metrics to 2D\nCumulative variance: {sum(pca.explained_variance_ratio_)*100:.1f}%', ha='center', va='bottom', transform=fig.transFigure)
+    fig.text(0.5, -0.06, 'Percentile Bands (Key Metrics)\nBlue line = IQR (25th-75th), Red dot = Median', fontsize=16, fontweight='bold', ha='center', va='bottom', transform=fig.transFigure)
     plt.savefig(output_dir / 'percentile_bands.png', dpi=300, bbox_inches='tight')
     plt.close()
     print(i18n.t('stats_analysis.plot_percentile'))
@@ -1276,9 +1283,12 @@ def generate_research_plots(df, output_dir, csv_file):
 
     plt.xlabel('Local Quality Min (Worst Patch SSIM)', fontsize=12, fontweight='bold')
     plt.ylabel('Frequency (Number of Images)', fontsize=12, fontweight='bold')
-    plt.title('Distribution of Local Quality Min', fontsize=13, fontweight='bold')
     plt.legend(fontsize=10)
     plt.grid(True, alpha=0.3, axis='y')
+    # Place subplot title at bottom
+    ax1 = plt.gca()
+    ax1.text(0.5, -0.2, 'Distribution of Local Quality Min', fontsize=13, fontweight='bold',
+             ha='center', va='top', transform=ax1.transAxes)
 
     # 右: Boxplot（モデル別）
     plt.subplot(1, 2, 2)
@@ -1299,10 +1309,13 @@ def generate_research_plots(df, output_dir, csv_file):
 
     plt.ylabel('Local Quality Min', fontsize=12, fontweight='bold')
     plt.xlabel('AI Model', fontsize=12, fontweight='bold')
-    plt.title('Model Comparison: Spatial Quality Variance', fontsize=13, fontweight='bold')
-    plt.xticks(rotation=45, ha='right')
+    plt.xticks(rotation=0, ha='center')
     plt.legend(fontsize=9)
     plt.grid(True, alpha=0.3, axis='y')
+    # Place subplot title at bottom
+    ax2 = plt.gca()
+    ax2.text(0.5, -0.2, 'Model Comparison: Spatial Quality Variance', fontsize=13, fontweight='bold',
+             ha='center', va='top', transform=ax2.transAxes)
 
     plt.tight_layout()
 
