@@ -196,7 +196,7 @@ CLIP > 0.85 & LPIPS < 0.2 → ✅ 幻覚なし・高品質
 ## 動作環境
 
 - **OS**: Windows / Linux / macOS
-- **Python**: 3.8以上
+- **Python**: 3.12以上（開発・動作確認環境: 3.12.10）
 - **PyTorch**: **2.6.0以上**（CLIP機能使用に必須）
 - **GPU（オプション）**: NVIDIA CUDA対応GPU（推奨）
 - **推奨GPU**: RTX 4000シリーズ以上（6GB VRAM以上）
@@ -208,19 +208,75 @@ CLIP > 0.85 & LPIPS < 0.2 → ✅ 幻覚なし・高品質
 
 ## インストール
 
+### 0. Pythonのインストール（未インストールの場合）
+
+#### Windows（推奨方法）
+
+**方法1: 公式サイトからダウンロード（初心者向け）**
+1. [Python公式サイト](https://www.python.org/downloads/)にアクセス
+2. 「Download Python 3.12.x」をクリックしてインストーラーをダウンロード
+3. ダウンロードしたインストーラーを実行
+4. **重要: 「Add Python to PATH」に必ずチェックを入れる**
+5. 「Install Now」をクリック
+6. インストール完了後、PowerShellまたはコマンドプロンプトで確認：
+   ```powershell
+   python --version
+   # Python 3.12.10 などと表示されればOK
+   ```
+
+**方法2: コマンドラインからインストール（winget使用）**
+```powershell
+winget install Python.Python.3.12
+```
+
+#### Linux (Ubuntu/Debian)
+```bash
+sudo apt update
+sudo apt install python3.12 python3.12-venv python3-pip
+```
+
+#### macOS (Homebrew使用)
+```bash
+brew install python@3.12
+```
+
 ### 1. 仮想環境の作成（推奨）
 
-```bash
-# Windowsの場合
-python -m venv venv
-venv\Scripts\activate
+#### Windows（PowerShell または コマンドプロンプト）
+```powershell
+# プロジェクトフォルダに移動
+cd C:\Projects\image_compare
 
-# Linux/macOSの場合
+# 仮想環境を作成
 python -m venv venv
+
+# 仮想環境をアクティベート（PowerShell）
+venv\Scripts\Activate.ps1
+
+# または（コマンドプロンプト）
+venv\Scripts\activate.bat
+
+# 成功すると (venv) がプロンプトの先頭に表示されます
+# (venv) PS C:\Projects\image_compare>
+```
+
+**PowerShellで実行ポリシーエラーが出る場合:**
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+#### Linux/macOS
+```bash
+# 仮想環境を作成
+python3 -m venv venv
+
+# 仮想環境をアクティベート
 source venv/bin/activate
 ```
 
 ### 2. 必要なライブラリのインストール
+
+**注意: 仮想環境をアクティベートした状態で実行してください（`(venv)`が表示されているか確認）**
 
 #### GPU版（推奨）
 NVIDIA CUDA対応GPUをお持ちの場合：
@@ -233,11 +289,22 @@ pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
 pip install -r requirements.txt
 ```
 
+**管理者権限がない場合（システム環境で実行する場合）:**
+```bash
+pip install --user torch torchvision --index-url https://download.pytorch.org/whl/cu121
+pip install --user -r requirements.txt
+```
+
 #### CPU版
 GPUがない場合：
 
 ```bash
 pip install -r requirements.txt
+```
+
+**管理者権限がない場合（システム環境で実行する場合）:**
+```bash
+pip install --user -r requirements.txt
 ```
 
 ### 3. GPUの動作確認（GPU版の場合）
