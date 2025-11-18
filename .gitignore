@@ -13,9 +13,9 @@ analysis_results/
 results/
 output/
 
-# analysis_output/: サンプル（20251113_104154）のみ公開、他は除外
+# analysis_output/: サンプル（20251113_161602）のみ公開、他は除外
 analysis_output/*
-!analysis_output/20251113_104154/
+!analysis_output/20251113_161602/
 
 # テスト画像（analysis_output/とimages/は除外しない）
 *.png

@@ -1,4 +1,4 @@
 ﻿,ssim,ssim,psnr,psnr,lpips,lpips,noise,noise,artifact_total,artifact_total,sharpness,sharpness,edge_density,edge_density
 ,mean,std,mean,std,mean,std,mean,std,mean,std,mean,std,mean,std
 model,,,,,,,,,,,,,,
-model2_main,0.9322,0.0176,33.395,1.2779,0.2693,0.0786,2.3475,0.3156,305.615,45.3538,0.8425,0.2205,0.3625,0.1266
+model1_TAA_standard,0.9571,0.0193,37.3768,2.0122,0.1915,0.0624,2.2622,0.3666,306.9744,63.4515,1.0629,0.7848,0.3352,0.25

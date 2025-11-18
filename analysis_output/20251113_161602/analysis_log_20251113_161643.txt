@@ -1,0 +1,240 @@
+Statistical Analysis Log
+Generated: 2025-11-13 16:16:43
+================================================================================
+
+
+================================================================================
+[STATS] Statistical Analysis Report
+================================================================================
+[FILE] Data file: E:\Analysis\TTA_1024\batch_analysis_20251113_121644.csv
+[IMAGE] Number of images: 5004
+[MODEL] Number of models: 1
+[STATS] Total data count: 5004
+================================================================================
+
+
+[STATS] Basic statistics for key metrics:
+================================================================================
+                     count      mean      std       min       25%       50%       75%       max
+ssim                5004.0    0.9571   0.0193    0.8734    0.9411    0.9614    0.9743    0.9872
+ms_ssim             5004.0    0.9915   0.0019    0.9806    0.9901    0.9914    0.9932    0.9969
+psnr                5004.0   37.3768   2.0122   31.5200   35.9000   37.1800   38.7200   44.2800
+lpips               5004.0    0.1915   0.0624    0.0358    0.1340    0.1897    0.2468    0.3673
+sharpness           5004.0    1.0629   0.7848    0.1000    0.4800    0.7700    1.4700    6.8900
+contrast            5004.0   58.9912  10.5605   26.2300   51.8275   60.9050   67.1125   90.3000
+entropy             5004.0    7.4402   0.3098    3.1900    7.3028    7.5040    7.6610    7.8770
+noise               5004.0    2.2622   0.3666    1.3100    2.0300    2.2300    2.4600    4.8600
+edge_density        5004.0    0.3352   0.2500    0.0000    0.1500    0.2800    0.4500    2.0600
+artifact_total      5004.0  306.9744  63.4515  124.7200  265.9200  307.1150  343.7125  701.8400
+delta_e             5004.0    0.9967   0.1026    0.4200    0.9200    1.0000    1.0700    1.5600
+high_freq_ratio     5004.0    0.3538   0.0475    0.2561    0.3165    0.3425    0.3840    0.5155
+texture_complexity  5004.0    4.1617   1.0367    1.3768    3.3873    4.2394    4.9054    9.2503
+local_quality_mean  5004.0    0.9512   0.0163    0.8724    0.9388    0.9557    0.9636    0.9846
+histogram_corr      5004.0    0.7829   0.2329   -0.0015    0.6634    0.8764    0.9657    0.9995
+lab_L_mean          5004.0  135.4064  22.2254   28.2030  118.7491  130.8056  152.7792  206.0419
+================================================================================
+
+
+[RANK] Model ranking:
+================================================================================
+                       ssim             psnr           lpips           noise         artifact_total          sharpness         edge_density      
+                       mean     std     mean     std    mean     std    mean     std           mean      std      mean     std         mean   std
+model                                                                                                                                            
+model1_TAA_standard  0.9571  0.0193  37.3768  2.0122  0.1915  0.0624  2.2622  0.3666       306.9744  63.4515    1.0629  0.7848       0.3352  0.25
+================================================================================
+
+[STATS] Graph saved: analysis_output\20251113_161602/model_scores.png
+
+[CORR] Correlation analysis:
+================================================================================
+[STATS] Correlation matrix saved: analysis_output\20251113_161602/correlation_matrix.png
+
+[HIGH] High correlation pairs (|r| > 0.7):
+       metric1            metric2  correlation
+          ssim local_quality_mean     0.965708
+     sharpness       edge_density     0.926162
+artifact_total texture_complexity     0.890489
+         noise     artifact_total     0.871127
+          ssim            ms_ssim     0.810549
+         noise texture_complexity     0.746733
+       ms_ssim local_quality_mean     0.736097
+       delta_e texture_complexity     0.721671
+         lpips local_quality_mean    -0.745651
+       ms_ssim            delta_e    -0.747062
+          ssim              lpips    -0.808607
+         lpips            ms_ssim    -0.832759
+================================================================================
+
+
+[TIP] Recommended Threshold Suggestions:
+================================================================================
+SSIM (Structural Similarity)       : >= 0.9411            (mean: 0.9571, std: 0.0193)
+MS-SSIM (Multi-Scale SSIM)         : >= 0.9901            (mean: 0.9915, std: 0.0019)
+PSNR (Peak Signal-to-Noise Ratio)  : >= 35.9000           (mean: 37.3768, std: 2.0122)
+LPIPS (Perceptual Similarity)      : <= 0.2468            (mean: 0.1915, std: 0.0624)
+Sharpness                          : >= 0.4800            (mean: 1.0629, std: 0.7848)
+Contrast                           : >= 51.8275           (mean: 58.9912, std: 10.5605)
+Entropy (Information Content)      : >= 7.3027            (mean: 7.4402, std: 0.3098)
+Noise Level                        : <= 2.4600            (mean: 2.2622, std: 0.3666)
+Edge Density                       : >= 0.1500            (mean: 0.3352, std: 0.2500)
+Artifacts                          : <= 343.7125          (mean: 306.9744, std: 63.4515)
+Color Difference (ΔE)              : <= 1.0700            (mean: 0.9967, std: 0.1026)
+High Frequency Ratio               : >= 0.3165            (mean: 0.3538, std: 0.0475)
+Texture Complexity                 : >= 3.3873            (mean: 4.1617, std: 1.0367)
+Local Quality Mean                 : >= 0.9388            (mean: 0.9512, std: 0.0163)
+Histogram Correlation              : >= 0.6634            (mean: 0.7829, std: 0.2329)
+LAB Lightness (Reference)          : Reference: 130.8056  (mean: 135.4064, std: 22.2254)
+================================================================================
+[TIP] Interpretation:
+   - These thresholds are based on statistical distribution of all data
+   - 25th percentile = Standard to pass top 75% quality
+   - 75th percentile = Standard to pass bottom 75% quality
+================================================================================
+
+[SAVE] Thresholds saved: analysis_output\20251113_161602/recommended_thresholds.json
+
+
+[DETECT] Hallucination Detection Logic Proposals (26 Patterns):
+================================================================================
+
+【Combination Patterns (Composite Anomaly Detection)】
+================================================================================
+P1: High SSIM × Low PSNR (Structural similarity but pixel value mismatch)
+    Fixed threshold (SSIM>0.97 & PSNR<25): 0 cases
+    Dynamic threshold (SSIM≥0.9743 & PSNR≤35.90): 351 cases
+    Unified: 351 cases (7.014388489208632%)
+    Risk: Medium-High (AI may have mimicked structure)
+
+P2: High Sharpness × High Noise (Over-processing)
+    Condition: Sharpness>1.47 & Noise>2.46
+    Match: 565 cases (11.290967226219024%)
+    Risk: Medium (Noise amplification from excessive sharpening)
+
+P3: High Edge Density × Low Local Quality (Unnatural edges)
+    Condition: Edge>0.67 & Local quality<0.9388
+    Match: 43 cases (0.8593125499600319%)
+    Risk: Medium-High (Uneven edge addition)
+
+P4: Abnormally High Artifacts (GAN-specific distortion)
+    Condition: Artifacts>378.24
+    Match: 501 cases (10.011990407673862%)
+    Risk: High (Ringing/blocking noise)
+
+P5: High LPIPS × High SSIM (Perceptual-structural contradiction)
+    Condition: LPIPS>0.2468 & SSIM>0.9743
+    Match: 0 cases (0.0%)
+    Risk: Medium (Structurally similar but perceptually different)
+
+P6: High Local Quality Variance (Non-uniform processing)
+    Condition: Local SSIM std dev>0.0915
+    Match: 1250 cases (24.980015987210233%)
+    Risk: Medium-High (Quality varies by region)
+
+P7: Low Entropy × High Frequency (Repetitive pattern)
+    Condition: Entropy<7.303 & High freq>0.3840
+    Match: 390 cases (7.793764988009593%)
+    Risk: Medium (Artificial repetitive pattern)
+
+P8: Abnormal Contrast × Low Histogram Correlation (Intensity distribution collapse)
+    Condition: Contrast>71.07 & Hist corr<0.6634
+    Match: 276 cases (5.515587529976019%)
+    Risk: Medium (Contrast enhancement disrupted intensity distribution)
+
+P9: Low MS-SSIM × Low SSIM (Overall low quality)
+    Condition: MS-SSIM<0.9901 & SSIM<0.9411
+    Match: 807 cases (16.127098321342924%)
+    Risk: High (Quality degradation at multiple scales)
+
+================================================================================
+【Single Threshold Patterns (17 Metrics)】
+================================================================================
+
+Higher is better (bottom 10% detected as anomaly):
+  Low SSIM            : <  0.9322 →  498 cases ( 10.0%)
+  Low MS-SSIM         : <  0.9893 →  498 cases ( 10.0%)
+  Low PSNR            : < 34.9600 →  498 cases ( 10.0%)
+  Low Sharpness       : <  0.3500 →  498 cases ( 10.0%)
+  Low Contrast        : < 44.1830 →  501 cases ( 10.0%)
+  Low Entropy         : <  7.0833 →  501 cases ( 10.0%)
+  Low EdgeDensity     : <  0.0900 →  473 cases (  9.5%)
+  Low HighFreq        : <  0.3011 →  501 cases ( 10.0%)
+  Low Texture         : <  2.7225 →  501 cases ( 10.0%)
+  Low LocalQuality    : <  0.9302 →  494 cases (  9.9%)
+  Low HistCorr        : <  0.3968 →  501 cases ( 10.0%)
+
+Lower is better (top 10% detected as anomaly):
+  High LPIPS          : >  0.2733 →  501 cases ( 10.0%)
+  High Noise          : >  2.6900 →  490 cases (  9.8%)
+  High Artifacts      : >378.2420 →  501 cases ( 10.0%)
+  High DeltaE         : >  1.1200 →  474 cases (  9.5%)
+  High LocalQualityStd: >  0.1050 →  494 cases (  9.9%)
+
+Single pattern total detections: 7924 cases (cumulative)
+
+================================================================================
+[STATS] Comprehensive Hallucination Risk Score (26 Patterns Integrated)
+================================================================================
+
+Confidence classification:
+  High confidence (5+ patterns):   866 cases ( 17.3%)
+  Medium confidence (3-4 patterns):  1190 cases ( 23.8%)
+  Low confidence (1-2 patterns):  1830 cases ( 36.6%)
+  Normal (0 detections):         1118 cases ( 22.3%)
+
+[SAVE] 26-pattern detection results saved: analysis_output\20251113_161602\results_with_26pattern_detection.csv
+[SAVE] Pattern summary saved: analysis_output\20251113_161602\pattern_detection_summary.csv
+================================================================================
+
+
+[STATS] Generating research plots:
+================================================================================
+[OK] Sharpness vs PSNR scatter plot: analysis_output\20251113_161602\strategy_map_sharpness_vs_psnr.png
+[OK] LPIPS box plot: analysis_output\20251113_161602\stability_lpips_boxplot.png
+[OK] SSIM vs PSNR scatter plot: analysis_output\20251113_161602\correlation_ssim_vs_psnr.png
+[OK] Noise vs Artifacts: analysis_output\20251113_161602\quality_noise_vs_artifact.png
+[OK] Model radar chart: analysis_output\20251113_161602\radar_chart_model_comparison.png
+[OK] 17-metric violin plot: analysis_output\20251113_161602\violin_plots_all_metrics.png
+[OK] Hallucination Detection ① (SSIM×PSNR)
+[OK] Hallucination Detection ② (Sharpness×Noise)
+[OK] Hallucination Detection ③ (Edge×Local Quality)
+[OK] Hallucination Detection ④ (High Freq×Entropy)
+[OK] Tradeoff ① (SSIM×Noise)
+[OK] Tradeoff ② (PSNR×Contrast)
+[OK] Tradeoff ③ (Sharpness×Artifacts)
+[OK] Tradeoff ④ (LPIPS×MS-SSIM)
+[OK] Tradeoff ⑤ (Texture×Frequency)
+[OK] Medical ① (Contrast×Histogram)
+[OK] Medical ② (Edge×Local Quality)
+[OK] Medical ③ (Noise×Local Quality SD)
+[OK] Medical ④ (Color Diff×LAB Lightness)
+[SKIP] Distribution ① (Total Score Histogram: Not applicable, skipped)
+[OK] Distribution ② (PCA 2D plot)
+[OK] Distribution ③ (Percentile bands)
+[OK] Distribution ④ (PCA variance ratio)
+
+================================================================================
+[LFV PROOF] Generating theoretical proof plots for LFV theorem...
+================================================================================
+[OK] LFV Proof ① (Texture dependency) r=-0.153
+[OK] LFV Proof ② (Spatial dependency, boundary bias)
+
+[INFO] Starting BBI (Boundary Bias Index) calculation...
+[INFO] Detailed data directory: E:\Analysis\TTA_1024\detailed_20251113_121644
+[OK] LFV spatial analysis data (CSV output: 1251 cases)
+[STATS] BBI (Boundary Bias Index): 0.993
+[STATS] Boundary Bias p-value: 0.000000
+[STATS] Boundary LFV Cases: 1250/1251 (99.9%)
+[STATS] Spatial Dependency: Strong
+[OK] LFV Proof ③ (Coordinate distribution, BBI visualization)
+[OK] LFV proof summary (CSV output with BBI)
+
+================================================================================
+[OK] All 26 research plots completed (including 3 LFV proofs)
+   Ready for papers and presentations (300dpi high resolution)
+   - Plot 24: Texture dependency proof (correlation analysis)
+   - Plot 25: Spatial dependency proof (distribution comparison)
+   - Plot 26: Coordinate distribution (BBI visualization)
+
+
+[OK] Analysis complete!
+[FOLDER] Results saved to: analysis_output\20251113_161602/

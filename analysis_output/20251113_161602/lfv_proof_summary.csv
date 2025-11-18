@@ -1,2 +1,2 @@
 correlation_texture_localmin,correlation_p_value,lfv_threshold_25th,lfv_cases_count,lfv_cases_percentage,texture_dependency_strength,boundary_bias_index,boundary_p_value,spatial_dependency_strength
--0.3623104460696333,0.6376895539303666,0.063625,1,25.0,Weak,0.984375,0.5637028616507731,Weak
+-0.1529839571257519,1.3839425872224825e-27,0.113775,1251,25.0,Weak,0.9928557154276578,4.16826241961808e-92,Strong

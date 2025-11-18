@@ -1,0 +1,146 @@
+{
+  "ssim": {
+    "name": "SSIM (Structural Similarity)",
+    "threshold": 0.9411,
+    "condition": ">= 0.9411",
+    "mean": 0.9571423860911269,
+    "std": 0.019331178942176234,
+    "min": 0.8734,
+    "max": 0.9872
+  },
+  "ms_ssim": {
+    "name": "MS-SSIM (Multi-Scale SSIM)",
+    "threshold": 0.9901,
+    "condition": ">= 0.9901",
+    "mean": 0.9915208633093526,
+    "std": 0.0019484184800388,
+    "min": 0.9806,
+    "max": 0.9969
+  },
+  "psnr": {
+    "name": "PSNR (Peak Signal-to-Noise Ratio)",
+    "threshold": 35.9,
+    "condition": ">= 35.9000",
+    "mean": 37.37683253397282,
+    "std": 2.0122434904389195,
+    "min": 31.52,
+    "max": 44.28
+  },
+  "lpips": {
+    "name": "LPIPS (Perceptual Similarity)",
+    "threshold": 0.246825,
+    "condition": "<= 0.2468",
+    "mean": 0.1915266586730615,
+    "std": 0.06243693869784318,
+    "min": 0.0358,
+    "max": 0.3673
+  },
+  "sharpness": {
+    "name": "Sharpness",
+    "threshold": 0.48,
+    "condition": ">= 0.4800",
+    "mean": 1.0629376498800958,
+    "std": 0.7847777504738327,
+    "min": 0.1,
+    "max": 6.89
+  },
+  "contrast": {
+    "name": "Contrast",
+    "threshold": 51.8275,
+    "condition": ">= 51.8275",
+    "mean": 58.99121103117506,
+    "std": 10.560506886925689,
+    "min": 26.23,
+    "max": 90.3
+  },
+  "entropy": {
+    "name": "Entropy (Information Content)",
+    "threshold": 7.30275,
+    "condition": ">= 7.3027",
+    "mean": 7.440185851318944,
+    "std": 0.3098434444289911,
+    "min": 3.19,
+    "max": 7.877
+  },
+  "noise": {
+    "name": "Noise Level",
+    "threshold": 2.46,
+    "condition": "<= 2.4600",
+    "mean": 2.2622442046362905,
+    "std": 0.3666176406281278,
+    "min": 1.31,
+    "max": 4.86
+  },
+  "edge_density": {
+    "name": "Edge Density",
+    "threshold": 0.15,
+    "condition": ">= 0.1500",
+    "mean": 0.335169864108713,
+    "std": 0.24997107792547119,
+    "min": 0.0,
+    "max": 2.06
+  },
+  "artifact_total": {
+    "name": "Artifacts",
+    "threshold": 343.71250000000003,
+    "condition": "<= 343.7125",
+    "mean": 306.97436850519586,
+    "std": 63.451468119634335,
+    "min": 124.72,
+    "max": 701.84
+  },
+  "delta_e": {
+    "name": "Color Difference (ΔE)",
+    "threshold": 1.07,
+    "condition": "<= 1.0700",
+    "mean": 0.99671862509992,
+    "std": 0.1025709095695957,
+    "min": 0.42,
+    "max": 1.56
+  },
+  "high_freq_ratio": {
+    "name": "High Frequency Ratio",
+    "threshold": 0.3165169648324785,
+    "condition": ">= 0.3165",
+    "mean": 0.3537781595598234,
+    "std": 0.047531603741599836,
+    "min": 0.2561055532788067,
+    "max": 0.5155015734887042
+  },
+  "texture_complexity": {
+    "name": "Texture Complexity",
+    "threshold": 3.3872867957688872,
+    "condition": ">= 3.3873",
+    "mean": 4.161693370403841,
+    "std": 1.0367042039983525,
+    "min": 1.3767677731812,
+    "max": 9.250341430306436
+  },
+  "local_quality_mean": {
+    "name": "Local Quality Mean",
+    "threshold": 0.9388,
+    "condition": ">= 0.9388",
+    "mean": 0.9511594924060751,
+    "std": 0.01629711870777277,
+    "min": 0.8724,
+    "max": 0.9846
+  },
+  "histogram_corr": {
+    "name": "Histogram Correlation",
+    "threshold": 0.6633749999999999,
+    "condition": ">= 0.6634",
+    "mean": 0.7828625699440448,
+    "std": 0.23294598617787832,
+    "min": -0.0015,
+    "max": 0.9995
+  },
+  "lab_L_mean": {
+    "name": "LAB Lightness (Reference)",
+    "threshold": 130.80560636520386,
+    "condition": "Reference: 130.8056",
+    "mean": 135.40635745016505,
+    "std": 22.225424412828914,
+    "min": 28.20300006866455,
+    "max": 206.041898727417
+  }
+}
