@@ -1,2 +1,0 @@
-image_id,model,min_ssim_value,min_row,min_col,total_rows,total_cols,distance_to_boundary,normalized_distance,is_boundary
-00000001_001,model2oiuy,0.0376,14,1,128,128,1,0.015625,True
