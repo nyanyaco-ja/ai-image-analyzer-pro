@@ -1,5 +1,6 @@
 # AI Image Analyzer Pro (v1.7.0: 完全国際化対応)
 
+[![DOI: v1.7.0](https://zenodo.org/badge/DOI/10.5281/zenodo.17645618.svg)](https://doi.org/10.5281/zenodo.17645618)
 [![DOI: v1.6.1](https://zenodo.org/badge/DOI/10.5281/zenodo.17498299.svg)](https://doi.org/10.5281/zenodo.17498299)
 [![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
 
