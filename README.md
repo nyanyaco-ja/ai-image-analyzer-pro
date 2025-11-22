@@ -1,5 +1,6 @@
-# AI Image Analyzer Pro (v1.7.0: 完全国際化対応)
+# AI Image Analyzer Pro (v1.7.2: 完全国際化対応)
 
+[![DOI: v1.7.2](https://zenodo.org/badge/DOI/10.5281/zenodo.17677441.svg)](https://doi.org/10.5281/zenodo.17677441)
 [![DOI: v1.7.1](https://zenodo.org/badge/DOI/10.5281/zenodo.17656774.svg)](https://doi.org/10.5281/zenodo.17656774)
 [![DOI: v1.7.0](https://zenodo.org/badge/DOI/10.5281/zenodo.17645618.svg)](https://doi.org/10.5281/zenodo.17645618)
 [![DOI: v1.6.1](https://zenodo.org/badge/DOI/10.5281/zenodo.17498299.svg)](https://doi.org/10.5281/zenodo.17498299)
@@ -743,25 +744,6 @@ pip install kornia
 - 📊 Internal business operations (quality control, workflow automation) / 社内業務での利用（品質管理、ワークフロー自動化）
 - 🤝 **Industry-academia collaborations by for-profit companies / 営利企業による産学連携研究**
 
-### 🤝 Special Exemptions (特例)
-
-The following are **allowed without commercial license** / 以下の場合は**商用ライセンス不要**:
-- ✅ Non-profit organizations (NPO, NGO) / 非営利組織（NPO、NGO）
-- ✅ Government research institutions / 政府研究機関
-- ✅ Open-source project contributions / オープンソースプロジェクトへの貢献
-
-### 🏢 Industry-Academia Collaboration Requirements / 産学連携研究の必須条件
-
-**For industry-academia collaborations by for-profit companies:**
-
-営利企業が本ツールの機能を利用した産学連携研究を希望する場合、無償での利用は認められません。利用の唯一の条件として、以下の事項を必須とします：
-
-1. **Include the developer (mohumohu neco) as a co-researcher** / 本ツールの開発者（mohumohu neco）を必ず共同研究者として迎え入れること
-2. **Pay appropriate compensation** (research funds, personnel costs, technical consulting fees, etc.) / 開発者に対し、**貢献に見合った適切な対価（研究費、人件費、技術指導料等）**を支払うこと
-
-This is a legitimate requirement under CC BY-NC 4.0 license and international open-source standards (similar to MongoDB, Qt, Elasticsearch).
-
-CC BY-NC 4.0ライセンスに基づく正当な権利として明記。無償での産学連携利用は認めず、開発者の貢献に対する適切な評価と対価支払いを必須条件とします。
 
 ### 📞 Commercial Licensing Contact / お問い合わせ
 
